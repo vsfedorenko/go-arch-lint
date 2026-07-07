@@ -24,7 +24,7 @@ func run() int {
 		fmt.Printf("go-arch-lint launcher v2.0.0-dev\n")
 		return 0
 	case "init":
-		return cmdInit()
+		return cmdInit(os.Args[2:])
 	case "help", "--help", "-h":
 		printUsage()
 		return 0

@@ -4,11 +4,11 @@ const UnknownVersion = "dev"
 
 const (
 	DefaultProjectPath   = "./"
-	DefaultArchFileName  = ".go-arch-lint.yml"
+	DefaultArchFileName  = ".go-arch-lint/arch.go"
 	DefaultGoModFileName = "go.mod"
 )
 
 const (
 	SupportedVersionMin = 1
-	SupportedVersionMax = 3
+	SupportedVersionMax = 1
 )

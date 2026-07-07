@@ -2,10 +2,7 @@ tests:
 	go test ./...
 
 tests-functional:
-	go test
-
-tests-functional-update-ct:
-	go test --update
+	go test ./test/check/...
 
 arch-next:
 	@echo "-version:"

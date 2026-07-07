@@ -118,10 +118,10 @@ Usage:
   go-arch-lint check [flags]
 
 Flags:
-      --arch-file string      arch file path (default ".go-arch-lint.yml")
+      --arch-file string      arch file path (default ".go-arch-lint/arch.go")
   -h, --help                  help for check
       --max-warnings int      max number of warnings to output (default 512)
-      --project-path string   absolute path to project directory (where '.go-arch-lint.yml' is located) (default "./")
+      --project-path string   absolute path to project directory (where '.go-arch-lint/' is located) (default "./")
 
 Global Flags:
       --json                   (alias for --output-type=json)
