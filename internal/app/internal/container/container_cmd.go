@@ -108,7 +108,6 @@ func (c *Container) commands() []*cobra.Command {
 	executors := []exec{
 		unwrap(c.commandVersion()),
 		unwrap(c.commandSelfInspect()),
-		unwrap(c.commandSchema()),
 		unwrap(c.commandCheck()),
 		unwrap(c.commandMapping()),
 		unwrap(c.commandGraph()),

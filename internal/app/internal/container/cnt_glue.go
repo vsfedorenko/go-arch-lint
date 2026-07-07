@@ -8,7 +8,6 @@ import (
 	"github.com/fe3dback/go-arch-lint/internal/services/project/resolver"
 	"github.com/fe3dback/go-arch-lint/internal/services/project/scanner"
 	"github.com/fe3dback/go-arch-lint/internal/services/render/code"
-	"github.com/fe3dback/go-arch-lint/internal/services/schema"
 	specassembler "github.com/fe3dback/go-arch-lint/internal/services/spec/assembler"
 	"github.com/fe3dback/go-arch-lint/internal/services/spec/decoder"
 	specvalidator "github.com/fe3dback/go-arch-lint/internal/services/spec/validator"
@@ -79,8 +78,4 @@ func (c *Container) provideProjectFilesHolder() *holder.Holder {
 
 func (c *Container) provideProjectInfoAssembler() *info.Assembler {
 	return info.NewAssembler()
-}
-
-func (c *Container) provideJsonSchemaProvider() *schema.Provider {
-	return schema.NewProvider()
 }

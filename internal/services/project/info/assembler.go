@@ -98,11 +98,7 @@ func resolveArchPath(projectPath, archFilePath string) (string, error) {
 }
 
 func checkArchFile(archFilePath string) (string, error) {
-	_, err := os.Stat(archFilePath)
-	if os.IsNotExist(err) {
-		return "", fmt.Errorf("not found archfile in '%s'", archFilePath)
-	}
-
+	// GoDecoder reads from in-memory SpecBuilder; arch file need not exist.
 	return archFilePath, nil
 }
 
