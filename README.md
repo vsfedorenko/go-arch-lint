@@ -13,30 +13,28 @@ You can imagine some simple architecture, for example classic onion part from "c
 
 ![Layouts example](./docs/images/layout_example.png)
 
-And describe/declare it as semantic yaml linter config:
+And describe/declare it as Go DSL config:
 
-```yaml
-version: 3
-workdir: internal
-components:
-  handler:    { in: handlers/* }           # wildcard one level
-  service:    { in: services/** }          # wildcard many levels
-  repository: { in: domain/*/repository }  # wildcard DDD repositories
-  model:      { in: models }               # match exactly one package
+```go
+// .go-arch-lint/arch.go
+package main
 
-commonComponents:
-  - models
+import . "github.com/fe3dback/go-arch-lint/dsl"
 
-deps:
-  handler:
-    mayDependOn:
-      - service
-  service:
-    mayDependOn:
-      - repository
+var _ = Spec(func() {
+    Version(1)
+    Workdir("internal")
+    Component("handler", "handlers/*")
+    Component("service", "services/**")
+    Component("repository", "domain/*/repository")
+    Component("model", "models")
+    CommonComponents("model")
+    Deps("handler", func() { MayDependOn("service") })
+    Deps("service", func() { MayDependOn("repository") })
+})
 ```
 
-see [config syntax](docs/syntax/README.md) for details. 
+see [config syntax](docs/syntax/README.md) for details.
 
 And now linter will check all project code inside `internal` workdir
 and show warnings, when code violate this rules.
@@ -81,10 +79,17 @@ It requires go 1.25+
 go install github.com/fe3dback/go-arch-lint@latest
 ```
 
+Scaffold the arch config in your project:
+
 ```bash
-go-arch-lint check --project-path ~/code/my-project
-# or
 cd ~/code/my-project
+go-arch-lint init
+```
+
+This creates a `.go-arch-lint/` directory with `go.mod`, a generated `main.go`,
+and a starter `arch.go` for you to edit. Then run the linter:
+
+```bash
 go-arch-lint check
 ```
 
@@ -101,8 +106,8 @@ go-arch-lint check
 Adding a linter to a project takes several steps:
 
 1. Current state of the project
-2. Create a `.go-arch-lint.yml` file describing the ideal project architecture
-3. Linter find some issues in the project. Don’t fix them right now, but “legalize” them by adding them to the config and marking `todo` with the label
+2. Run `go-arch-lint init` to scaffold `.go-arch-lint/`, then edit `arch.go` to describe the ideal project architecture
+3. Linter find some issues in the project. Don't fix them right now, but "legalize" them by adding them to the config and marking `todo` with the label
 4. In your free time, technical debt, etc. fix the code
 5. After fixes, clean up config to target state
 
@@ -146,7 +151,7 @@ Linter will:
 
 ## Graph
 
-Example config of this repository: [.go-arch-lint.yml](.go-arch-lint.yml)
+Example config of this repository: [.go-arch-lint/arch.go](.go-arch-lint/arch.go)
 
 ![graph](./docs/images/graph-example.png)
 

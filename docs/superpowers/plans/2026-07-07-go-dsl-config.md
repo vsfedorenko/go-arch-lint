@@ -104,7 +104,7 @@ Task 6 (migrate own config) — independent, any time after Task 2
 - Test: `dsl/types_test.go`
 
 **Interfaces:**
-- Produces: `SpecBuilder` struct, `Spec(fn func())`, `FlushSpec() (*SpecBuilder, error)`, `resetSpecBuilder()`
+- Produces: `SpecBuilder` struct, `Spec(fn func()) struct{}`, `FlushSpec() (*SpecBuilder, error)`, `resetSpecBuilder()`
 
 - [ ] **Step 1: Write failing test for SpecBuilder accumulation**
 
@@ -274,13 +274,17 @@ import (
 //	    Workdir("internal")
 //	    Component("main", "app")
 //	})
-func Spec(fn func()) {
+//
+// Spec returns a zero-value struct so the `var _ = Spec(...)` pattern
+// runs at package init time, populating the global builder before main().
+func Spec(fn func()) struct{} {
 	globalBuilder = newSpecBuilder()
 	current = contextStack{spec: globalBuilder}
 
 	fn()
 
 	current = contextStack{}
+	return struct{}{}
 }
 
 // FlushSpec returns the populated SpecBuilder and resets the global state.

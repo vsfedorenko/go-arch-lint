@@ -1,30 +1,244 @@
-# Archfile Syntax
+# Arch DSL Reference
 
-| Path                       | Req? | Type       | Description                                                                                     |
-|----------------------------|------|------------|-------------------------------------------------------------------------------------------------|
-| version                    | `+`  | int        | schema version (__latest: 3__)                                                                  |
-| workdir                    |      | str        | relative directory for analyse                                                                  |
-| allow                      |      | map        | global rules                                                                                    |
-| . depOnAnyVendor           |      | bool       | allow import any vendor code to any project file                                                |
-| . deepScan                 |      | bool       | use advanced AST code analyse (default `true`, since v3+).                                      |
-| . ignoreNotFoundComponents |      | bool       | ignore not found components (default `false`)                                                   |
-| exclude                    |      | []str      | list of directories (relative path) for exclude from analyse                                    |
-| excludeFiles               |      | []str      | regular expression rules for file names, will exclude this files and it's packages from analyse |
-| components                 | `+`  | map        | component is abstraction on go packages. One component = one or more go packages                |
-| . %name%                   | `+`  | str        | name of component                                                                               |
-| . . in                     | `+`  | str, []str | one or more relative directory name, support glob masking (src/\*/engine/\*\*)                  |
-| vendors                    |      | map        | vendor libs (go.mod)                                                                            |
-| . %name%                   | `+`  | str        | name of vendor component                                                                        |
-| . . in                     | `+`  | str, []str | one or more import path of vendor libs, support glob masking (github.com/abc/\*/engine/\*\*)    |
-| commonComponents           |      | []str      | list of components, allow import them into any code                                             |
-| commonVendors              |      | []str      | list of vendors, allow import them into any code                                                |
-| deps                       | `+`  | map        | dependency rules                                                                                |
-| . %name%                   | `+`  | str        | name of component, exactly as defined in "components" section                                   |
-| . . anyVendorDeps          |      | bool       | all component code can import any vendor code                                                   |
-| . . anyProjectDeps         |      | bool       | all component code can import any other project code, useful for DI/main component              |
-| . . mayDependOn            |      | []str      | list of components that can by imported in %name%                                               |
-| . . canUse                 |      | []str      | list of vendors that can by imported in %name%                                                  |
-| . . deepScan               |      | bool       | override of allow.deepScan for this component. Default `nil` = use global settings              |
+The arch config is a Go file (`.go-arch-lint/arch.go`) that uses the
+`github.com/fe3dback/go-arch-lint/dsl` package. Each DSL function captures its
+source position via `runtime.Caller`, so error messages point back to the exact
+line in your `arch.go`.
+
+## Entry point
+
+### `func Spec(fn func()) struct{}`
+
+Registers a new spec builder, sets it as the current context, and executes `fn`.
+DSL functions called inside `fn` populate the builder. Returns a zero-value
+`struct{}` so the `var _ = Spec(...)` pattern runs at package init time, before
+`main()`.
+
+```go
+var _ = Spec(func() {
+    Version(1)
+    Workdir("internal")
+    Component("main", "app")
+})
+```
+
+## Top-level attributes
+
+### `func Version(v int)`
+
+Sets the DSL schema version. Always `1` for v2.0.
+
+```go
+Version(1)
+```
+
+### `func Workdir(path string)`
+
+Sets the relative working directory for analysis. The linter only checks Go
+packages under this directory.
+
+```go
+Workdir("internal")
+```
+
+## Global rules
+
+### `func Allow(fn func())`
+
+Opens a callback block for global allow rules. Call `DepOnAnyVendor`,
+`DeepScan`, and `IgnoreNotFoundComponents` inside `fn`.
+
+```go
+Allow(func() {
+    DepOnAnyVendor(false)
+    DeepScan(true)
+    IgnoreNotFoundComponents(false)
+})
+```
+
+### `func DepOnAnyVendor(b bool)`
+
+Sets whether any project code may import any vendor library. Default `false`.
+Call inside `Allow`.
+
+### `func DeepScan(b bool)`
+
+Enables or disables advanced AST analysis (constructor injection tracking).
+Default `true`.
+
+Inside `Allow`: sets the global default. Inside `Deps`: overrides the setting
+for a single component.
+
+### `func IgnoreNotFoundComponents(b bool)`
+
+When `true`, components whose glob matches no packages are silently skipped
+instead of producing an error. Default `false`. Call inside `Allow`.
+
+## Exclusions
+
+### `func Exclude(paths ...string)`
+
+Adds directories (relative paths) to exclude from analysis.
+
+```go
+Exclude("vendor", "testdata")
+```
+
+### `func ExcludeFiles(patterns ...string)`
+
+Adds regular expression patterns for filenames to exclude. Matching files and
+their packages are skipped during analysis.
+
+```go
+ExcludeFiles(`^.*_test\.go$`, `^.*\/mock\/.*$`)
+```
+
+## Components
+
+A component is an abstraction over one or more Go packages. One component can
+map to many packages via glob patterns.
+
+### `func Component(name string, paths ...string)`
+
+Defines a named component mapping to one or more relative package paths. Supports
+glob masking (`src/*/engine/**`).
+
+```go
+Component("handler", "handlers/*")
+Component("services", "services/**", "lib/svc")
+```
+
+## Vendors
+
+Vendors are external libraries from `go.mod`.
+
+### `func Vendor(name string, importPaths ...string)`
+
+Defines a named vendor mapping to one or more import paths. Supports glob
+masking (`github.com/abc/*/engine/**`).
+
+```go
+Vendor("cobra", "github.com/spf13/cobra")
+Vendor("yaml", "github.com/goccy/go-yaml", "github.com/goccy/go-yaml/**")
+```
+
+## Common access lists
+
+### `func CommonComponents(names ...string)`
+
+Marks components as importable by any project package, bypassing dependency
+rules. Useful for shared models or utility packages.
+
+```go
+CommonComponents("models", "utils")
+```
+
+### `func CommonVendors(names ...string)`
+
+Marks vendors as importable by any project package.
+
+```go
+CommonVendors("go-common")
+```
+
+## Dependency rules
+
+### `func Deps(component string, fn func())`
+
+Defines dependency rules for a component. Call `MayDependOn`, `CanUse`,
+`AnyProjectDeps`, `AnyVendorDeps`, and `DeepScan` inside `fn`. The component
+name must match one defined via `Component`.
+
+```go
+Deps("handler", func() {
+    MayDependOn("service", "model")
+    CanUse("cobra")
+})
+```
+
+### `func MayDependOn(components ...string)`
+
+Lists project components that this component may import. Must be called inside
+`Deps`.
+
+```go
+Deps("handler", func() {
+    MayDependOn("service")
+})
+```
+
+### `func CanUse(vendors ...string)`
+
+Lists vendor names that this component may import. Must be called inside `Deps`.
+
+```go
+Deps("services", func() {
+    CanUse("cobra", "yaml")
+})
+```
+
+### `func AnyProjectDeps(b bool)`
+
+When `true`, allows this component to import any other project package. Useful
+for DI containers or main entry points. Must be called inside `Deps`.
+
+```go
+Deps("container", func() {
+    AnyProjectDeps(true)
+})
+```
+
+### `func AnyVendorDeps(b bool)`
+
+When `true`, allows this component to import any vendor package. Must be called
+inside `Deps`.
+
+```go
+Deps("container", func() {
+    AnyVendorDeps(true)
+})
+```
+
+## Full example
+
+```go
+// .go-arch-lint/arch.go
+package main
+
+import . "github.com/fe3dback/go-arch-lint/dsl"
+
+var _ = Spec(func() {
+    Version(1)
+    Workdir("internal")
+
+    Allow(func() {
+        DepOnAnyVendor(false)
+    })
+
+    ExcludeFiles(`^.*_test\.go$`)
+
+    Vendor("cobra", "github.com/spf13/cobra")
+    Vendor("yaml", "github.com/goccy/go-yaml", "github.com/goccy/go-yaml/**")
+
+    Component("main", "app")
+    Component("services", "services/**")
+    Component("models", "models/**")
+
+    CommonComponents("models")
+    CommonVendors("cobra")
+
+    Deps("main", func() {
+        MayDependOn("services")
+    })
+
+    Deps("services", func() {
+        MayDependOn("services")
+        CanUse("cobra", "yaml")
+    })
+})
+```
+
+For the YAML to DSL migration table, see [migration-v2.md](../migration-v2.md).
 
 Examples:
-- [.go-arch-lint.yml](../../.go-arch-lint.yml)
+- [.go-arch-lint/arch.go](../../.go-arch-lint/arch.go)
