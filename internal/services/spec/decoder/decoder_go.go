@@ -1,8 +1,11 @@
 package decoder
 
 import (
+	"fmt"
+
 	"github.com/fe3dback/go-arch-lint/dsl"
 	"github.com/fe3dback/go-arch-lint/internal/models"
+	"github.com/fe3dback/go-arch-lint/internal/models/arch"
 	"github.com/fe3dback/go-arch-lint/internal/models/common"
 	"github.com/fe3dback/go-arch-lint/internal/services/spec"
 )
@@ -153,4 +156,25 @@ func (r *goDependencyRule) DeepScan() common.Referable[bool] {
 		return r.dep.DeepScan
 	}
 	return common.NewEmptyReferable(false)
+}
+
+// --- GoDecoder implements archDecoder ---
+
+// GoDecoder implements the archDecoder interface by reading from the
+// in-memory dsl.SpecBuilder (populated by the user's arch.go).
+// The archFile parameter is ignored — the spec is already in-process.
+type GoDecoder struct{}
+
+func NewGoDecoder() *GoDecoder {
+	return &GoDecoder{}
+}
+
+func (d *GoDecoder) Decode(_ string) (spec.Document, []arch.Notice, error) {
+	builder, err := dsl.FlushSpec()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get spec from DSL: %w", err)
+	}
+
+	document := NewGoSpecDocument(builder)
+	return document, []arch.Notice{}, nil
 }
