@@ -1,5 +1,0 @@
-version: 999
-
-components:
-  a:
-    in: internal/a
