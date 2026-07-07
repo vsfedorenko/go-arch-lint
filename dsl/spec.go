@@ -17,13 +17,17 @@ import (
 //	    Workdir("internal")
 //	    Component("main", "app")
 //	})
-func Spec(fn func()) {
+//
+// Spec returns a zero-value struct so the `var _ = Spec(...)` pattern
+// runs at package init time, populating the global builder before main().
+func Spec(fn func()) struct{} {
 	globalBuilder = newSpecBuilder()
 	current = contextStack{spec: globalBuilder}
 
 	fn()
 
 	current = contextStack{}
+	return struct{}{}
 }
 
 // FlushSpec returns the populated SpecBuilder and resets the global state.
