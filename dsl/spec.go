@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
-
-	"github.com/fe3dback/go-arch-lint/internal/models/common"
 )
 
 // Spec is the entry point for the DSL. It creates a new SpecBuilder,
@@ -53,22 +51,4 @@ func callerRef(skip int) (file string, line int) {
 		return "", 0
 	}
 	return filepath.Base(file), line
-}
-
-// Version sets the config schema version.
-func Version(v int) {
-	file, line := callerRef(1)
-	current.spec.Version = common.Referable[int]{
-		Value:     v,
-		Reference: common.NewReferenceSingleLine(file, line, 0),
-	}
-}
-
-// Workdir sets the project working directory (relative to the config file).
-func Workdir(path string) {
-	file, line := callerRef(1)
-	current.spec.Workdir = common.Referable[string]{
-		Value:     path,
-		Reference: common.NewReferenceSingleLine(file, line, 0),
-	}
 }
