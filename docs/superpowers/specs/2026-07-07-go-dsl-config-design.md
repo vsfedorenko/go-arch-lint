@@ -159,7 +159,8 @@ position via `runtime.Caller(1)`.
 package dsl
 
 // Entry point. Registers spec-builder, executes fn.
-func Spec(fn func())
+// Returns struct{} so the `var _ = Spec(...)` pattern runs at package init time.
+func Spec(fn func()) struct{}
 
 // Top-level attributes
 func Version(v int)        // DSL schema version, always 1 for v2.0
