@@ -9,9 +9,9 @@ tests-functional-update-ct:
 
 arch-next:
 	@echo "-version:"
-	go run main.go version
+	go run ./cmd/arch-lint/ version
 	@echo "-status:"
-	go run main.go check
+	go run ./cmd/arch-lint/ check
 
 arch-prev:
 	@echo "-version:"
