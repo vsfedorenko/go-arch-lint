@@ -3,7 +3,6 @@ package container
 import (
 	"github.com/fe3dback/go-arch-lint/internal/services/checker"
 	"github.com/fe3dback/go-arch-lint/internal/services/common/path"
-	"github.com/fe3dback/go-arch-lint/internal/services/common/yaml/reference"
 	"github.com/fe3dback/go-arch-lint/internal/services/project/holder"
 	"github.com/fe3dback/go-arch-lint/internal/services/project/info"
 	"github.com/fe3dback/go-arch-lint/internal/services/project/resolver"
@@ -17,7 +16,7 @@ import (
 
 func (c *Container) provideSpecAssembler() *specassembler.Assembler {
 	return specassembler.NewAssembler(
-		c.provideYamlSpecProvider(),
+		c.provideGoSpecProvider(),
 		c.provideSpecValidator(),
 		c.providePathResolver(),
 	)
@@ -29,19 +28,12 @@ func (c *Container) provideSpecValidator() *specvalidator.Validator {
 	)
 }
 
-func (c *Container) provideYamlSpecProvider() *decoder.Decoder {
-	return decoder.NewDecoder(
-		c.provideSourceCodeReferenceResolver(),
-		c.provideJsonSchemaProvider(),
-	)
+func (c *Container) provideGoSpecProvider() *decoder.GoDecoder {
+	return decoder.NewGoDecoder()
 }
 
 func (c *Container) providePathResolver() *path.Resolver {
 	return path.NewResolver()
-}
-
-func (c *Container) provideSourceCodeReferenceResolver() *reference.Resolver {
-	return reference.NewResolver()
 }
 
 func (c *Container) provideReferenceRender() *code.Render {
