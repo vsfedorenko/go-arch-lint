@@ -157,5 +157,5 @@ or run `go doc github.com/fe3dback/go-arch-lint/dsl` for the exact signatures.
 
 **Slow first run:** The first `go-arch-lint check` compiles your config. This
 takes 1 to 3 seconds. Subsequent runs are cached by `$GOCACHE` and drop to a
-few hundred milliseconds. Use `go-arch-lint check --no-cache` to force a
-rebuild.
+few hundred milliseconds. To force a rebuild, run `go clean -cache` in the
+`.go-arch-lint/` directory, or delete `.go-arch-lint/go.sum` and re-run.
