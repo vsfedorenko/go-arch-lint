@@ -13,7 +13,7 @@ func (c *Container) commandCheck() (*cobra.Command, runner) {
 	cmd := &cobra.Command{
 		Use:     "check",
 		Aliases: []string{"c"},
-		Short:   "check project architecture by yaml file",
+		Short:   "check project architecture against arch rules",
 		Long:    "compare project *.go files with arch defined in spec file",
 	}
 

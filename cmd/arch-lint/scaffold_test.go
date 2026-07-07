@@ -27,7 +27,7 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	_, cleanup := chdirTemp(t)
 	defer cleanup()
 
-	code := cmdInit()
+	code := cmdInit(nil)
 	if code != 0 {
 		t.Fatalf("cmdInit returned %d, want 0", code)
 	}
@@ -45,13 +45,13 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 		}
 	}
 
-	// Verify go.mod content references the module
+	// Verify go.mod has the local module declaration (require line is added by 'go mod tidy')
 	gomod, err := os.ReadFile(filepath.Join(archDir, "go.mod"))
 	if err != nil {
 		t.Fatalf("read go.mod: %v", err)
 	}
-	if !strings.Contains(string(gomod), "github.com/fe3dback/go-arch-lint") {
-		t.Errorf("go.mod missing module require: %s", gomod)
+	if !strings.Contains(string(gomod), "module arch-lint-local") {
+		t.Errorf("go.mod missing module declaration: %s", gomod)
 	}
 
 	// Verify main.go imports archlint
@@ -78,12 +78,12 @@ func TestCmdInit_AlreadyExists(t *testing.T) {
 	defer cleanup()
 
 	// First init succeeds
-	if code := cmdInit(); code != 0 {
+	if code := cmdInit(nil); code != 0 {
 		t.Fatalf("first cmdInit returned %d, want 0", code)
 	}
 
 	// Second init must fail with code 1
-	code := cmdInit()
+	code := cmdInit(nil)
 	if code != 1 {
 		t.Errorf("second cmdInit returned %d, want 1", code)
 	}
