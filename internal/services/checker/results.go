@@ -1,7 +1,8 @@
 package checker
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
@@ -26,12 +27,12 @@ func (res *results) addDependencyWarning(warn models.CheckArchWarningDependency)
 }
 
 func (res *results) assembleSortedResults() models.CheckResult {
-	sort.Slice(res.DependencyWarnings, func(i, j int) bool {
-		return res.DependencyWarnings[i].FileRelativePath < res.DependencyWarnings[j].FileRelativePath
+	slices.SortFunc(res.DependencyWarnings, func(a, b models.CheckArchWarningDependency) int {
+		return cmp.Compare(a.FileRelativePath, b.FileRelativePath)
 	})
 
-	sort.Slice(res.MatchWarnings, func(i, j int) bool {
-		return res.MatchWarnings[i].FileRelativePath < res.MatchWarnings[j].FileRelativePath
+	slices.SortFunc(res.MatchWarnings, func(a, b models.CheckArchWarningMatch) int {
+		return cmp.Compare(a.FileRelativePath, b.FileRelativePath)
 	})
 
 	return models.CheckResult{
