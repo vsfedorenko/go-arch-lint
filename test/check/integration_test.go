@@ -35,16 +35,7 @@ func testProjectDir(t *testing.T) string {
 	return abs
 }
 
-const scaffoldMainGo = `package main
-
-import "github.com/fe3dback/go-arch-lint"
-
-func main() {
-	archlint.MustRunCLI()
-}
-`
-
-func scaffoldArch(t *testing.T, repoRoot, archGo string) string {
+func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 	t.Helper()
 	dir := t.TempDir()
 
@@ -59,8 +50,7 @@ replace github.com/fe3dback/go-arch-lint => %s
 
 	files := map[string]string{
 		"go.mod":  goMod,
-		"main.go": scaffoldMainGo,
-		"arch.go": archGo,
+		"main.go": mainGo,
 	}
 	for name, content := range files {
 		path := filepath.Join(dir, name)
@@ -101,7 +91,10 @@ func runArchLint(t *testing.T, dir string, args ...string) (stdout, stderr strin
 
 const archOK = `package main
 
-import . "github.com/fe3dback/go-arch-lint/dsl"
+import (
+	"github.com/fe3dback/go-arch-lint"
+	. "github.com/fe3dback/go-arch-lint/dsl"
+)
 
 var _ = Spec(func() {
 	Version(1)
@@ -121,11 +114,18 @@ var _ = Spec(func() {
 	Deps("allowb", func() { MayDependOn("b") })
 	Deps("e", func() { AnyVendorDeps(true) })
 })
+
+func main() {
+	archlint.MustRunCLI()
+}
 `
 
 const archWarnings = `package main
 
-import . "github.com/fe3dback/go-arch-lint/dsl"
+import (
+	"github.com/fe3dback/go-arch-lint"
+	. "github.com/fe3dback/go-arch-lint/dsl"
+)
 
 var _ = Spec(func() {
 	Version(1)
@@ -147,11 +147,18 @@ var _ = Spec(func() {
 	})
 	Deps("allowb", func() { MayDependOn("b") })
 })
+
+func main() {
+	archlint.MustRunCLI()
+}
 `
 
 const archInvalidSpec = `package main
 
-import . "github.com/fe3dback/go-arch-lint/dsl"
+import (
+	"github.com/fe3dback/go-arch-lint"
+	. "github.com/fe3dback/go-arch-lint/dsl"
+)
 
 var _ = Spec(func() {
 	Version(1)
@@ -164,6 +171,10 @@ var _ = Spec(func() {
 		MayDependOn("not_exist_too_rnd_order")
 	})
 })
+
+func main() {
+	archlint.MustRunCLI()
+}
 `
 
 func TestCheckCommands(t *testing.T) {
