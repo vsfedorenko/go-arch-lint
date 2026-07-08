@@ -62,8 +62,8 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	if !strings.Contains(string(maingo), "Spec(func()") {
 		t.Errorf("main.go missing Spec entry: %s", maingo)
 	}
-	if !strings.Contains(string(maingo), "archlint.MustRunCLI()") {
-		t.Errorf("main.go missing archlint.MustRunCLI(): %s", maingo)
+	if !strings.Contains(string(maingo), "archlint.MustRun(spec)") {
+		t.Errorf("main.go missing archlint.MustRun(spec): %s", maingo)
 	}
 }
 
