@@ -5,7 +5,7 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
-var _ = Spec(func() {
+var spec = Spec(func() {
 	Version(1)
 	Workdir("internal")
 
@@ -36,5 +36,5 @@ var _ = Spec(func() {
 })
 
 func main() {
-	archlint.MustRunCLI()
+	archlint.MustRun(spec)
 }
