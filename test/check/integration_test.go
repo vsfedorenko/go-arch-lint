@@ -43,9 +43,9 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 
 go 1.25
 
-require github.com/fe3dback/go-arch-lint v0.0.0
+require github.com/vsfedorenko/go-arch-lint v0.0.0
 
-replace github.com/fe3dback/go-arch-lint => %s
+replace github.com/vsfedorenko/go-arch-lint => %s
 `, repoRoot)
 
 	files := map[string]string{
@@ -92,8 +92,8 @@ func runArchLint(t *testing.T, dir string, args ...string) (stdout, stderr strin
 const archOK = `package main
 
 import (
-	"github.com/fe3dback/go-arch-lint"
-	. "github.com/fe3dback/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 var _ = Spec(func() {
@@ -123,8 +123,8 @@ func main() {
 const archWarnings = `package main
 
 import (
-	"github.com/fe3dback/go-arch-lint"
-	. "github.com/fe3dback/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 var _ = Spec(func() {
@@ -156,8 +156,8 @@ func main() {
 const archInvalidSpec = `package main
 
 import (
-	"github.com/fe3dback/go-arch-lint"
-	. "github.com/fe3dback/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 var _ = Spec(func() {

@@ -14,8 +14,8 @@ go 1.25
 const scaffoldMainGo = `package main
 
 import (
-	"github.com/fe3dback/go-arch-lint"
-	. "github.com/fe3dback/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 var _ = Spec(func() {
@@ -80,7 +80,7 @@ func cmdInit(args []string) int {
 
 	fmt.Printf("\nNext steps:\n")
 	fmt.Printf("  1. Edit %s/main.go to describe your architecture\n", archDir)
-	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/fe3dback/go-arch-lint dependency\n", archDir)
+	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint dependency\n", archDir)
 	fmt.Printf("  3. Run 'go-arch-lint check' to lint your project\n")
 
 	return 0

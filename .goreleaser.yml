@@ -12,9 +12,9 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X 'github.com/fe3dback/{{.ProjectName}}/internal/app.Version={{.Version}}'
-      - -X 'github.com/fe3dback/{{.ProjectName}}/internal/app.CommitHash={{.Commit}}'
-      - -X 'github.com/fe3dback/{{.ProjectName}}/internal/app.BuildTime={{.Date}}'
+      - -X 'github.com/vsfedorenko/{{.ProjectName}}/internal/app.Version={{.Version}}'
+      - -X 'github.com/vsfedorenko/{{.ProjectName}}/internal/app.CommitHash={{.Commit}}'
+      - -X 'github.com/vsfedorenko/{{.ProjectName}}/internal/app.BuildTime={{.Date}}'
 archives:
   - format_overrides:
       - goos: windows
@@ -24,11 +24,11 @@ dockers:
   - ids:
       - binary
     image_templates:
-      - fe3dback/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.RawVersion}}{{else}}dev-v{{.RawVersion}}-{{.Prerelease}}{{end}}
-      - fe3dback/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.Major}}.{{.Minor}}{{else}}dev-v{{.Major}}.{{.Minor}}-{{.Prerelease}}{{end}}
-      - fe3dback/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.Major}}{{else}}dev-v{{.Major}}-{{.Prerelease}}{{end}}
-      - fe3dback/{{.ProjectName}}:{{if eq .Prerelease ""}}latest-stable-release{{else}}dev-{{.Version}}{{end}}
-      - fe3dback/{{.ProjectName}}:latest
+      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.RawVersion}}{{else}}dev-v{{.RawVersion}}-{{.Prerelease}}{{end}}
+      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.Major}}.{{.Minor}}{{else}}dev-v{{.Major}}.{{.Minor}}-{{.Prerelease}}{{end}}
+      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.Major}}{{else}}dev-v{{.Major}}-{{.Prerelease}}{{end}}
+      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}latest-stable-release{{else}}dev-{{.Version}}{{end}}
+      - vsfedorenko/{{.ProjectName}}:latest
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"

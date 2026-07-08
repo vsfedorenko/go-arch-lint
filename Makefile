@@ -12,11 +12,11 @@ arch-next:
 
 arch-prev:
 	@echo "-version:"
-	docker run --rm fe3dback/go-arch-lint:latest-stable-release version
+	docker run --rm vsfedorenko/go-arch-lint:latest-stable-release version
 	@echo "-status:"
 	docker run --rm \
 		-v ${PWD}:/app \
-		fe3dback/go-arch-lint:latest-stable-release check --project-path /app
+		vsfedorenko/go-arch-lint:latest-stable-release check --project-path /app
 
 release-dry:
 	@echo "check config.."

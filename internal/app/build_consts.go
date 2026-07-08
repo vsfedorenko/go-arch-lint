@@ -1,6 +1,6 @@
 package app
 
-import "github.com/fe3dback/go-arch-lint/internal/models"
+import "github.com/vsfedorenko/go-arch-lint/internal/models"
 
 var (
 	Version    = models.UnknownVersion

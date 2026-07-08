@@ -7,22 +7,22 @@
 
 ### Справка по DSL API
 
-Схема конфигурации определяется пакетом `github.com/fe3dback/go-arch-lint/dsl`.
+Схема конфигурации определяется пакетом `github.com/vsfedorenko/go-arch-lint/dsl`.
 Поскольку конфигурация теперь чистый Go, компилятор и автодополнение IDE
 заменяют старый слой JSON Schema.
 
 Чтобы посмотреть полное API с сигнатурами и документацией, выполните:
 
 ```bash
-go doc github.com/fe3dback/go-arch-lint/dsl
+go doc github.com/vsfedorenko/go-arch-lint/dsl
 ```
 
 Или посмотрите конкретную функцию:
 
 ```bash
-go doc github.com/fe3dback/go-arch-lint/dsl.Spec
-go doc github.com/fe3dback/go-arch-lint/dsl.Component
-go doc github.com/fe3dback/go-arch-lint/dsl.Deps
+go doc github.com/vsfedorenko/go-arch-lint/dsl.Spec
+go doc github.com/vsfedorenko/go-arch-lint/dsl.Component
+go doc github.com/vsfedorenko/go-arch-lint/dsl.Deps
 ```
 
 Описание с примерами см. в [syntax/README.md](syntax/README.md).
@@ -38,7 +38,7 @@ go doc github.com/fe3dback/go-arch-lint/dsl.Deps
 ```bash
 go-arch-lint mapping
 
-module: github.com/fe3dback/go-arch-lint
+module: github.com/vsfedorenko/go-arch-lint
 Project Packages:
    app                 /internal/app
    container           /internal/app/internal/container
@@ -50,7 +50,7 @@ Project Packages:
 ```bash
 go-arch-lint mapping --scheme grouped
 
-module: github.com/fe3dback/go-arch-lint
+module: github.com/vsfedorenko/go-arch-lint
 Project Packages:
    app:
      /internal/app

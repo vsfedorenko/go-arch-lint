@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/fe3dback/go-arch-lint"
-	. "github.com/fe3dback/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 var _ = Spec(func() {
