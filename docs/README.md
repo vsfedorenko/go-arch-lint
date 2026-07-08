@@ -1,23 +1,23 @@
-# Docs
+# Документация
 
-- [syntax](syntax/README.md)
+- [синтаксис](syntax/README.md)
 - [migration-v2](migration-v2.md)
 
-## Advanced usages
+## Расширенное использование
 
-### DSL API reference
+### Справка по DSL API
 
-The config schema is defined by the `github.com/fe3dback/go-arch-lint/dsl`
-package. Since the config is now pure Go, the compiler and IDE autocomplete
-replace the old JSON Schema layer.
+Схема конфигурации определяется пакетом `github.com/fe3dback/go-arch-lint/dsl`.
+Поскольку конфигурация теперь чистый Go, компилятор и автодополнение IDE
+заменяют старый слой JSON Schema.
 
-To browse the full API with signatures and docs, run:
+Чтобы посмотреть полное API с сигнатурами и документацией, выполните:
 
 ```bash
 go doc github.com/fe3dback/go-arch-lint/dsl
 ```
 
-Or view a specific function:
+Или посмотрите конкретную функцию:
 
 ```bash
 go doc github.com/fe3dback/go-arch-lint/dsl.Spec
@@ -25,15 +25,15 @@ go doc github.com/fe3dback/go-arch-lint/dsl.Component
 go doc github.com/fe3dback/go-arch-lint/dsl.Deps
 ```
 
-See [syntax/README.md](syntax/README.md) for a prose reference with examples.
+Описание с примерами см. в [syntax/README.md](syntax/README.md).
 
 ### mapping
 
-you can see archfile mapping to source files wia `mapping` command
+Сопоставление archfile с исходными файлами можно посмотреть через команду `mapping`.
 
-two modes available:
-- list (default)
-- grouped by component
+Доступно два режима:
+- список (по умолчанию)
+- группировка по компонентам
 
 ```bash
 go-arch-lint mapping
@@ -60,4 +60,4 @@ Project Packages:
    ...
 ```
 
-same data available in json format, with `--json` option
+Те же данные доступны в формате json с опцией `--json`.

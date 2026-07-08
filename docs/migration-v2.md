@@ -1,49 +1,49 @@
-# Migrating to v2.0 (Go DSL Config)
+# Миграция на v2.0 (конфигурация Go DSL)
 
-go-arch-lint v2.0 replaces the YAML config file (`.go-arch-lint.yml`) with a
-pure Go DSL. The config is now a `.go-arch-lint/arch.go` file that imports the
-`github.com/fe3dback/go-arch-lint/dsl` package. This gives you type checking,
-IDE autocomplete, and the full power of Go (variables, loops, helper functions)
-inside your config.
+go-arch-lint v2.0 заменяет файл конфигурации YAML (`.go-arch-lint.yml`)
+на чистый Go DSL. Конфигурация теперь это файл `.go-arch-lint/arch.go`, который
+импортирует пакет `github.com/fe3dback/go-arch-lint/dsl`. Это даёт проверку
+типов, автодополнение в IDE и всю мощь Go (переменные, циклы, вспомогательные
+функции) внутри вашей конфигурации.
 
-This is a hard cutover. The YAML reader is removed. You must migrate your
-config to the Go DSL format.
+Это жёсткий переход. YAML reader удалён. Вы должны мигрировать конфигурацию
+на формат Go DSL.
 
-## Migration steps
+## Шаги миграции
 
-1. Install the v2.0 binary:
+1. Установите бинарник v2.0:
    ```bash
    go install github.com/fe3dback/go-arch-lint@latest
    ```
 
-2. Scaffold the new config directory in your project root:
+2. Создайте каркас новой директории конфигурации в корне проекта:
    ```bash
    cd ~/code/my-project
    go-arch-lint init
    ```
-   This creates a `.go-arch-lint/` directory containing:
-   - `go.mod` (pins the linter version)
-   - `main.go` (generated, do not edit)
-   - `arch.go` (you edit this)
+   Это создаст директорию `.go-arch-lint/`, содержащую:
+   - `go.mod` (фиксирует версию линтера)
+   - `main.go` (сгенерированный, не редактируйте)
+   - `arch.go` (вы редактируете этот файл)
 
-3. Translate your `.go-arch-lint.yml` into `.go-arch-lint/arch.go` using the
-   mapping table below.
+3. Переведите ваш `.go-arch-lint.yml` в `.go-arch-lint/arch.go`, используя
+   таблицу соответствия ниже.
 
-4. Delete the old `.go-arch-lint.yml`.
+4. Удалите старый `.go-arch-lint.yml`.
 
-5. Run `go-arch-lint check` to verify. The first run compiles your `arch.go`,
-   which takes 1 to 3 seconds. Subsequent runs use the Go build cache and are
-   much faster.
+5. Запустите `go-arch-lint check` для проверки. Первый запуск компилирует ваш
+   `arch.go`, что занимает от 1 до 3 секунд. Последующие запуски используют
+   кэш сборки Go и работают значительно быстрее.
 
-## YAML to DSL mapping
+## Соответствие YAML и DSL
 
 | YAML | Go DSL |
 |---|---|
-| `version: 3` | `Version(1)` (DSL schema version, always 1 for v2.0) |
+| `version: 3` | `Version(1)` (версия схемы DSL, всегда 1 для v2.0) |
 | `workdir: internal` | `Workdir("internal")` |
 | `allow: { depOnAnyVendor: false }` | `Allow(func() { DepOnAnyVendor(false) })` |
-| `allow: { deepScan: true }` | `DeepScan(true)` inside `Allow` callback |
-| `allow: { ignoreNotFoundComponents: true }` | `IgnoreNotFoundComponents(true)` inside `Allow` callback |
+| `allow: { deepScan: true }` | `DeepScan(true)` внутри callback `Allow` |
+| `allow: { ignoreNotFoundComponents: true }` | `IgnoreNotFoundComponents(true)` внутри callback `Allow` |
 | `exclude: [a, b]` | `Exclude("a", "b")` |
 | `excludeFiles: [regex]` | `ExcludeFiles("regex")` |
 | `vendors: { name: { in: x } }` | `Vendor("name", "x")` |
@@ -52,17 +52,17 @@ config to the Go DSL format.
 | `commonComponents: [a, b]` | `CommonComponents("a", "b")` |
 | `commonVendors: [a, b]` | `CommonVendors("a", "b")` |
 | `deps: { name: { mayDependOn: [...] } }` | `Deps("name", func() { MayDependOn("...") })` |
-| `deps.name.canUse: [...]` | `CanUse("...")` inside `Deps` callback |
-| `deps.name.anyVendorDeps: true` | `AnyVendorDeps(true)` inside `Deps` callback |
-| `deps.name.anyProjectDeps: true` | `AnyProjectDeps(true)` inside `Deps` callback |
-| `deps.name.deepScan: true` | `DeepScan(true)` inside `Deps` callback (overrides global) |
+| `deps.name.canUse: [...]` | `CanUse("...")` внутри callback `Deps` |
+| `deps.name.anyVendorDeps: true` | `AnyVendorDeps(true)` внутри callback `Deps` |
+| `deps.name.anyProjectDeps: true` | `AnyProjectDeps(true)` внутри callback `Deps` |
+| `deps.name.deepScan: true` | `DeepScan(true)` внутри callback `Deps` (переопределяет глобальное) |
 
-If you are on YAML schema V1 or V2, first upgrade to V3 using the existing
-docs, then translate to the DSL.
+Если вы используете YAML схему V1 или V2, сначала обновитесь до V3 по существующей
+документации, затем переведите в DSL.
 
-## Worked example
+## Рабочий пример
 
-### Before (YAML, `.go-arch-lint.yml`)
+### До (YAML, `.go-arch-lint.yml`)
 
 ```yaml
 version: 3
@@ -90,7 +90,7 @@ deps:
       - cobra
 ```
 
-### After (Go DSL, `.go-arch-lint/arch.go`)
+### После (Go DSL, `.go-arch-lint/arch.go`)
 
 ```go
 package main
@@ -126,36 +126,37 @@ var _ = Spec(func() {
 })
 ```
 
-## What changed beyond the config
+## Что изменилось помимо конфигурации
 
-- The `schema` command is removed. JSON Schema export no longer exists. Use
-  `go doc github.com/fe3dback/go-arch-lint/dsl` for API reference.
-- The `--arch-file` flag is vestigial. The config always lives at
-  `.go-arch-lint/arch.go` inside your project.
-- The `.go-arch-lint/` directory is a separate Go module. If your project uses
-  `go.work`, do not add `.go-arch-lint/` to the workspace. It is a tool module,
-  not project code.
+- Команда `schema` удалена. Экспорт JSON Schema больше не существует. Используйте
+  `go doc github.com/fe3dback/go-arch-lint/dsl` для справки по API.
+- Флаг `--arch-file` устарел. Конфигурация всегда находится в
+  `.go-arch-lint/arch.go` внутри вашего проекта.
+- Директория `.go-arch-lint/` это отдельный Go модуль. Если ваш проект использует
+  `go.work`, не добавляйте `.go-arch-lint/` в workspace. Это инструментальный
+  модуль, а не код проекта.
 
-## What stays the same
+## Что осталось без изменений
 
-- The `check`, `mapping`, `graph`, and `selfInspect` commands work the same way.
-- Flags like `--project-path`, `--max-warnings`, `--json`, and `--output-type`
-  are preserved.
-- The linter logic (assembler, checker, renderer) is unchanged. Only the config
-  format changed.
-- Exit codes: `0` for clean, `1` for warnings.
+- Команды `check`, `mapping`, `graph` и `selfInspect` работают так же.
+- Флаги вроде `--project-path`, `--max-warnings`, `--json` и `--output-type`
+  сохранены.
+- Логика линтера (assembler, checker, renderer) не изменилась. Изменился только
+  формат конфигурации.
+- Коды возврата: `0` для чистого результата, `1` для предупреждений.
 
-## Troubleshooting
+## Устранение неполадок
 
-**"Spec() was not called":** Your `arch.go` must contain
-`var _ = Spec(func() { ... })` at package level. The `var _ =` part ensures it
-runs at init time.
+**«Spec() was not called»:** Ваш `arch.go` должен содержать
+`var _ = Spec(func() { ... })` на уровне пакета. Часть `var _ =` гарантирует,
+что код выполнится при инициализации.
 
-**Go compiler errors in `arch.go`:** The DSL function signatures ARE the
-schema. If the compiler complains, check the [syntax reference](syntax/README.md)
-or run `go doc github.com/fe3dback/go-arch-lint/dsl` for the exact signatures.
+**Ошибки компилятора Go в `arch.go`:** Сигнатуры функций DSL и есть
+схема. Если компилятор ругается, проверьте [справочник по синтаксису](syntax/README.md)
+или выполните `go doc github.com/fe3dback/go-arch-lint/dsl` для точных сигнатур.
 
-**Slow first run:** The first `go-arch-lint check` compiles your config. This
-takes 1 to 3 seconds. Subsequent runs are cached by `$GOCACHE` and drop to a
-few hundred milliseconds. To force a rebuild, run `go clean -cache` in the
-`.go-arch-lint/` directory, or delete `.go-arch-lint/go.sum` and re-run.
+**Медленный первый запуск:** Первый `go-arch-lint check` компилирует вашу
+конфигурацию. Это занимает от 1 до 3 секунд. Последующие запуски кэшируются
+через `$GOCACHE` и занимают несколько сотен миллисекунд. Чтобы принудительно
+пересобрать, выполните `go clean -cache` в директории `.go-arch-lint/` или
+удалите `.go-arch-lint/go.sum` и запустите снова.

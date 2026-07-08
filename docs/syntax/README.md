@@ -1,18 +1,18 @@
-# Arch DSL Reference
+# Справочник Arch DSL
 
-The arch config is a Go file (`.go-arch-lint/arch.go`) that uses the
-`github.com/fe3dback/go-arch-lint/dsl` package. Each DSL function captures its
-source position via `runtime.Caller`, so error messages point back to the exact
-line in your `arch.go`.
+Arch конфигурация это Go файл (`.go-arch-lint/arch.go`), использующий пакет
+`github.com/fe3dback/go-arch-lint/dsl`. Каждая функция DSL фиксирует свою
+позицию в исходнике через `runtime.Caller`, поэтому сообщения об ошибках
+указывают на точную строку в вашем `arch.go`.
 
-## Entry point
+## Точка входа
 
 ### `func Spec(fn func()) struct{}`
 
-Registers a new spec builder, sets it as the current context, and executes `fn`.
-DSL functions called inside `fn` populate the builder. Returns a zero-value
-`struct{}` so the `var _ = Spec(...)` pattern runs at package init time, before
-`main()`.
+Регистрирует новый построитель спецификации, устанавливает его как текущий контекст и выполняет `fn`.
+Функции DSL, вызванные внутри `fn`, заполняют построитель. Возвращает нулевое
+значение `struct{}`, чтобы паттерн `var _ = Spec(...)` срабатывал при инициализации
+пакета, до `main()`.
 
 ```go
 var _ = Spec(func() {
@@ -22,11 +22,11 @@ var _ = Spec(func() {
 })
 ```
 
-## Top-level attributes
+## Атрибуты верхнего уровня
 
 ### `func Version(v int)`
 
-Sets the DSL schema version. Always `1` for v2.0.
+Устанавливает версию схемы DSL. Для v2.0 всегда `1`.
 
 ```go
 Version(1)
@@ -34,19 +34,19 @@ Version(1)
 
 ### `func Workdir(path string)`
 
-Sets the relative working directory for analysis. The linter only checks Go
-packages under this directory.
+Устанавливает относительную рабочую директорию для анализа. Линтер проверяет
+только Go пакеты внутри этой директории.
 
 ```go
 Workdir("internal")
 ```
 
-## Global rules
+## Глобальные правила
 
 ### `func Allow(fn func())`
 
-Opens a callback block for global allow rules. Call `DepOnAnyVendor`,
-`DeepScan`, and `IgnoreNotFoundComponents` inside `fn`.
+Открывает блок обратного вызова для глобальных правил разрешения. Вызывайте
+`DepOnAnyVendor`, `DeepScan` и `IgnoreNotFoundComponents` внутри `fn`.
 
 ```go
 Allow(func() {
@@ -58,27 +58,27 @@ Allow(func() {
 
 ### `func DepOnAnyVendor(b bool)`
 
-Sets whether any project code may import any vendor library. Default `false`.
-Call inside `Allow`.
+Определяет, может ли любой код проекта импортировать любые vendor библиотеки. По умолчанию `false`.
+Вызывать внутри `Allow`.
 
 ### `func DeepScan(b bool)`
 
-Enables or disables advanced AST analysis (constructor injection tracking).
-Default `true`.
+Включает или отключает расширенный AST анализ (отслеживание инъекций через конструкторы).
+По умолчанию `true`.
 
-Inside `Allow`: sets the global default. Inside `Deps`: overrides the setting
-for a single component.
+Внутри `Allow`: задаёт глобальное значение по умолчанию. Внутри `Deps`: переопределяет
+настройку для отдельного компонента.
 
 ### `func IgnoreNotFoundComponents(b bool)`
 
-When `true`, components whose glob matches no packages are silently skipped
-instead of producing an error. Default `false`. Call inside `Allow`.
+Когда `true`, компоненты, чей glob не сопоставлен ни с одним пакетом, тихо пропускаются
+вместо выдачи ошибки. По умолчанию `false`. Вызывать внутри `Allow`.
 
-## Exclusions
+## Исключения
 
 ### `func Exclude(paths ...string)`
 
-Adds directories (relative paths) to exclude from analysis.
+Добавляет директории (относительные пути) для исключения из анализа.
 
 ```go
 Exclude("vendor", "testdata")
@@ -86,22 +86,22 @@ Exclude("vendor", "testdata")
 
 ### `func ExcludeFiles(patterns ...string)`
 
-Adds regular expression patterns for filenames to exclude. Matching files and
-their packages are skipped during analysis.
+Добавляет шаблоны регулярных выражений для имён файлов, которые нужно исключить.
+Совпадающие файлы и их пакеты пропускаются во время анализа.
 
 ```go
 ExcludeFiles(`^.*_test\.go$`, `^.*\/mock\/.*$`)
 ```
 
-## Components
+## Компоненты
 
-A component is an abstraction over one or more Go packages. One component can
-map to many packages via glob patterns.
+Компонент это абстракция над одним или несколькими Go пакетами. Один компонент может
+сопоставляться с множеством пакетов через glob шаблоны.
 
 ### `func Component(name string, paths ...string)`
 
-Defines a named component mapping to one or more relative package paths. Supports
-glob masking (`src/*/engine/**`).
+Определяет именованный компонент, сопоставленный с одним или несколькими относительными
+путями пакетов. Поддерживает glob маски (`src/*/engine/**`).
 
 ```go
 Component("handler", "handlers/*")
@@ -110,24 +110,24 @@ Component("services", "services/**", "lib/svc")
 
 ## Vendors
 
-Vendors are external libraries from `go.mod`.
+Vendors это внешние библиотеки из `go.mod`.
 
 ### `func Vendor(name string, importPaths ...string)`
 
-Defines a named vendor mapping to one or more import paths. Supports glob
-masking (`github.com/abc/*/engine/**`).
+Определяет именованный vendor, сопоставленный с одним или несколькими import путями.
+Поддерживает glob маски (`github.com/abc/*/engine/**`).
 
 ```go
 Vendor("cobra", "github.com/spf13/cobra")
 Vendor("yaml", "github.com/goccy/go-yaml", "github.com/goccy/go-yaml/**")
 ```
 
-## Common access lists
+## Общие списки доступа
 
 ### `func CommonComponents(names ...string)`
 
-Marks components as importable by any project package, bypassing dependency
-rules. Useful for shared models or utility packages.
+Помечает компоненты как импортируемые любым пакетом проекта, в обход правил
+зависимостей. Полезно для общих моделей или утилитарных пакетов.
 
 ```go
 CommonComponents("models", "utils")
@@ -135,19 +135,19 @@ CommonComponents("models", "utils")
 
 ### `func CommonVendors(names ...string)`
 
-Marks vendors as importable by any project package.
+Помечает vendors как импортируемые любым пакетом проекта.
 
 ```go
 CommonVendors("go-common")
 ```
 
-## Dependency rules
+## Правила зависимостей
 
 ### `func Deps(component string, fn func())`
 
-Defines dependency rules for a component. Call `MayDependOn`, `CanUse`,
-`AnyProjectDeps`, `AnyVendorDeps`, and `DeepScan` inside `fn`. The component
-name must match one defined via `Component`.
+Определяет правила зависимостей для компонента. Вызывайте `MayDependOn`, `CanUse`,
+`AnyProjectDeps`, `AnyVendorDeps` и `DeepScan` внутри `fn`. Имя компонента
+должно совпадать с одним из определённых через `Component`.
 
 ```go
 Deps("handler", func() {
@@ -158,8 +158,8 @@ Deps("handler", func() {
 
 ### `func MayDependOn(components ...string)`
 
-Lists project components that this component may import. Must be called inside
-`Deps`.
+Перечисляет компоненты проекта, которые этот компонент может импортировать.
+Должна вызываться внутри `Deps`.
 
 ```go
 Deps("handler", func() {
@@ -169,7 +169,8 @@ Deps("handler", func() {
 
 ### `func CanUse(vendors ...string)`
 
-Lists vendor names that this component may import. Must be called inside `Deps`.
+Перечисляет имена vendors, которые этот компонент может импортировать.
+Должна вызываться внутри `Deps`.
 
 ```go
 Deps("services", func() {
@@ -179,8 +180,8 @@ Deps("services", func() {
 
 ### `func AnyProjectDeps(b bool)`
 
-When `true`, allows this component to import any other project package. Useful
-for DI containers or main entry points. Must be called inside `Deps`.
+Когда `true`, разрешает компоненту импортировать любой другой пакет проекта.
+Полезно для DI контейнеров или точек входа. Должна вызываться внутри `Deps`.
 
 ```go
 Deps("container", func() {
@@ -190,8 +191,8 @@ Deps("container", func() {
 
 ### `func AnyVendorDeps(b bool)`
 
-When `true`, allows this component to import any vendor package. Must be called
-inside `Deps`.
+Когда `true`, разрешает компоненту импортировать любой пакет vendor.
+Должна вызываться внутри `Deps`.
 
 ```go
 Deps("container", func() {
@@ -199,7 +200,7 @@ Deps("container", func() {
 })
 ```
 
-## Full example
+## Полный пример
 
 ```go
 // .go-arch-lint/arch.go
@@ -238,7 +239,7 @@ var _ = Spec(func() {
 })
 ```
 
-For the YAML to DSL migration table, see [migration-v2.md](../migration-v2.md).
+Таблицу соответствия YAML и DSL см. в [migration-v2.md](../migration-v2.md).
 
-Examples:
+Примеры:
 - [.go-arch-lint/arch.go](../../.go-arch-lint/arch.go)
