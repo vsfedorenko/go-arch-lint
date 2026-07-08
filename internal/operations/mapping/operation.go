@@ -1,9 +1,10 @@
 package mapping
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
@@ -78,7 +79,7 @@ func assembleMappingByComponent(
 	for _, component := range spec.Components {
 		componentName := component.Name.Value
 		if grouped, exist := tmp[componentName]; exist {
-			sort.Strings(grouped.FileNames)
+			slices.Sort(grouped.FileNames)
 			mapping = append(mapping, *grouped)
 			continue
 		}
@@ -94,7 +95,7 @@ func assembleMappingByComponent(
 		notAttachedFiles := tmp[emptyComponentID].FileNames
 
 		if len(notAttachedFiles) > 0 {
-			sort.Strings(notAttachedFiles)
+			slices.Sort(notAttachedFiles)
 			mapping = append(mapping, models.CmdMappingOutGrouped{
 				ComponentName: emptyComponentID,
 				FileNames:     notAttachedFiles,
@@ -102,8 +103,8 @@ func assembleMappingByComponent(
 		}
 	}
 
-	sort.Slice(mapping, func(i, j int) bool {
-		return mapping[i].ComponentName < mapping[j].ComponentName
+	slices.SortFunc(mapping, func(a, b models.CmdMappingOutGrouped) int {
+		return cmp.Compare(a.ComponentName, b.ComponentName)
 	})
 
 	return mapping
@@ -128,8 +129,8 @@ func assembleMappingByFile(projectFiles []models.FileHold) []models.CmdMappingOu
 		exist[fileName] = struct{}{}
 	}
 
-	sort.Slice(mapping, func(i, j int) bool {
-		return mapping[i].FileName < mapping[j].FileName
+	slices.SortFunc(mapping, func(a, b models.CmdMappingOutList) int {
+		return cmp.Compare(a.FileName, b.FileName)
 	})
 
 	return mapping

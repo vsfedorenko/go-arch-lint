@@ -1,9 +1,10 @@
 package check
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
@@ -64,7 +65,7 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 	model := models.CmdCheckOut{
 		ModuleName:             spec.ModuleName.Value,
 		DocumentNotices:        o.assembleNotice(spec.Integrity),
-		ArchHasWarnings:        o.resultsHasWarnings(limitedResult.results),
+		ArchHasWarnings:        limitedResult.results.HasNotices(),
 		ArchWarningsDependency: limitedResult.results.DependencyWarnings,
 		ArchWarningsMatch:      limitedResult.results.MatchWarnings,
 		ArchWarningsDeepScan:   limitedResult.results.DeepscanWarnings,
@@ -148,22 +149,6 @@ func (o *Operation) limitResults(result models.CheckResult, maxWarnings int) lim
 	}
 }
 
-func (o *Operation) resultsHasWarnings(result models.CheckResult) bool {
-	if len(result.DependencyWarnings) > 0 {
-		return true
-	}
-
-	if len(result.MatchWarnings) > 0 {
-		return true
-	}
-
-	if len(result.DeepscanWarnings) > 0 {
-		return true
-	}
-
-	return false
-}
-
 func (o *Operation) assembleNotice(integrity arch.Integrity) []models.CheckNotice {
 	notices := make([]arch.Notice, 0)
 	notices = append(notices, integrity.DocumentNotices...)
@@ -183,15 +168,11 @@ func (o *Operation) assembleNotice(integrity arch.Integrity) []models.CheckNotic
 		})
 	}
 
-	sort.Slice(results, func(i, j int) bool {
-		sI := results[i]
-		sJ := results[j]
-
-		if sI.File == sJ.File {
-			return sI.Line < sJ.Line
+	slices.SortFunc(results, func(a, b models.CheckNotice) int {
+		if c := cmp.Compare(a.File, b.File); c != 0 {
+			return c
 		}
-
-		return sI.File < sJ.File
+		return cmp.Compare(a.Line, b.Line)
 	})
 
 	return results
