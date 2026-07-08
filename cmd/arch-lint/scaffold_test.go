@@ -33,7 +33,7 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	}
 
 	archDir := ".go-arch-lint"
-	for _, name := range []string{"go.mod", "main.go", "arch.go"} {
+	for _, name := range []string{"go.mod", "main.go"} {
 		path := filepath.Join(archDir, name)
 		info, err := os.Stat(path)
 		if err != nil {
@@ -54,22 +54,16 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 		t.Errorf("go.mod missing module declaration: %s", gomod)
 	}
 
-	// Verify main.go imports archlint
+	// Verify main.go has Spec entry point
 	maingo, err := os.ReadFile(filepath.Join(archDir, "main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
+	if !strings.Contains(string(maingo), "Spec(func()") {
+		t.Errorf("main.go missing Spec entry: %s", maingo)
+	}
 	if !strings.Contains(string(maingo), "archlint.MustRunCLI()") {
 		t.Errorf("main.go missing archlint.MustRunCLI(): %s", maingo)
-	}
-
-	// Verify arch.go uses DSL Spec
-	archgo, err := os.ReadFile(filepath.Join(archDir, "arch.go"))
-	if err != nil {
-		t.Fatalf("read arch.go: %v", err)
-	}
-	if !strings.Contains(string(archgo), "Spec(func()") {
-		t.Errorf("arch.go missing Spec entry: %s", archgo)
 	}
 }
 
