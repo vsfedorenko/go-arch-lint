@@ -1,19 +1,19 @@
 ![Logo image](./docs/images/logo.png)
 
-Linter used to enforce some good project structure and validate top level architecture (code layers) 
+Линтер для контроля хорошей структуры проекта и проверки архитектуры верхнего уровня (слоёв кода)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/fe3dback/go-arch-lint)](https://goreportcard.com/report/github.com/fe3dback/go-arch-lint)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 
-## Quick start
+## Быстрый старт
 
-### What exactly is project architecture?
+### Что такое архитектура проекта?
 
-You can imagine some simple architecture, for example classic onion part from "clean architecture":
+Можно представить простую архитектуру, например классическую часть из «чистой архитектуры» (clean architecture):
 
 ![Layouts example](./docs/images/layout_example.png)
 
-And describe/declare it as Go DSL config:
+И описать её как конфигурацию Go DSL:
 
 ```go
 // .go-arch-lint/arch.go
@@ -34,17 +34,15 @@ var _ = Spec(func() {
 })
 ```
 
-see [config syntax](docs/syntax/README.md) for details.
+подробности см. в [синтаксисе конфигурации](docs/syntax/README.md).
 
-And now linter will check all project code inside `internal` workdir
-and show warnings, when code violate this rules.
+Теперь линтер проверит весь код проекта внутри workdir `internal` и покажет предупреждения, когда код нарушает эти правила.
 
-For best experience you can add linter into CI workflow
+Для наилучшего результата добавьте линтер в CI workflow.
 
-### Example of broken code
+### Пример проблемного кода
 
-Imagine some `main.go`, when we provide `repository` into `handler` and get some bad
-flow:
+Представьте `main.go`, где мы передаём `repository` в `handler` и получаем проблемный поток:
 
 ```go
 func main() {
@@ -58,60 +56,59 @@ func main() {
 }
 ```
 
-Linter will easily found this issue:
+Линтер легко найдёт эту проблему:
 
 ![Check stdout example](./docs/images/check-example.png)
 
-### Install/Run
+### Установка/Запуск
 
-#### Wia Docker
+#### Через Docker
 
 ```bash
 docker run --rm -v ${PWD}:/app fe3dback/go-arch-lint:latest-stable-release check --project-path /app
 ```
 
-[other docker tags and versions](https://hub.docker.com/r/fe3dback/go-arch-lint/tags)
+[другие docker теги и версии](https://hub.docker.com/r/fe3dback/go-arch-lint/tags)
 
-#### From sources
-It requires go 1.25+
+#### Из исходников
+Требуется go 1.25+
 
 ```bash
 go install github.com/fe3dback/go-arch-lint@latest
 ```
 
-Scaffold the arch config in your project:
+Создайте каркас конфигурации в проекте:
 
 ```bash
 cd ~/code/my-project
 go-arch-lint init
 ```
 
-This creates a `.go-arch-lint/` directory with `go.mod`, a generated `main.go`,
-and a starter `arch.go` for you to edit. Then run the linter:
+Это создаст директорию `.go-arch-lint/` с `go.mod`, сгенерированным `main.go` и стартовым `arch.go` для редактирования. Затем запустите линтер:
 
 ```bash
 go-arch-lint check
 ```
 
-#### Precompiled binaries
+#### Готовые бинарники
 
-[see on releases page](https://github.com/fe3dback/go-arch-lint/releases)
+[см. на странице релизов](https://github.com/fe3dback/go-arch-lint/releases)
 
-## Usage
+## Использование
 
-### How to add linter to existing project?
+### Как добавить линтер в существующий проект?
 
 ![Adding linter steps](./docs/images/add-linter-steps.png)
 
-Adding a linter to a project takes several steps:
+Добавление линтера в проект состоит из нескольких шагов:
 
-1. Current state of the project
-2. Run `go-arch-lint init` to scaffold `.go-arch-lint/`, then edit `arch.go` to describe the ideal project architecture
-3. Linter find some issues in the project. Don't fix them right now, but "legalize" them by adding them to the config and marking `todo` with the label
-4. In your free time, technical debt, etc. fix the code
-5. After fixes, clean up config to target state
+1. Текущее состояние проекта
+2. Запустите `go-arch-lint init` для создания каркаса `.go-arch-lint/`, затем отредактируйте `arch.go`, чтобы описать идеальную архитектуру проекта
+3. Линтер найдёт проблемы в проекте. Не исправляйте их прямо сейчас, а «легализуйте», добавив в конфигурацию и пометив меткой `todo`
+4. В свободное время, при работе с техническим долгом и т.д. исправляйте код
+5. После исправлений очистите конфигурацию до целевого состояния
 
-### Execute
+### Выполнение
 
 ```
 Usage:
@@ -130,35 +127,35 @@ Global Flags:
       --output-type string     type of command output, variants: [ascii, json] (default "default")
 ```
 
-This linter will return:
+Линтер вернёт:
 
-| Status Code | Description                      |
-|-------------|----------------------------------|
-| 0           | Project has correct architecture |
-| 1           | Found warnings                   |
+| Код возврата | Описание                              |
+|--------------|---------------------------------------|
+| 0            | Архитектура проекта корректна         |
+| 1            | Найдены предупреждения                |
 
 
-### How is working?
+### Как это работает?
 
 ![How is working](./docs/images/how-is-working.png)
 
-Linter will:
-- match/mark **go packages** with **components**
-- finds all dependencies between components
-- build a dependency graph
-- compares the actual (code) and desired (config) dependency graph
-- if it got a non-empty DIFF, then project has some issues
+Линтер:
+- сопоставляет/помечает **go пакеты** с **компонентами**
+- находит все зависимости между компонентами
+- строит граф зависимостей
+- сравнивает фактический (из кода) и желаемый (из конфигурации) граф зависимостей
+- если получен непустой DIFF, значит в проекте есть проблемы
 
-## Graph
+## Граф
 
-Example config of this repository: [.go-arch-lint/arch.go](.go-arch-lint/arch.go)
+Пример конфигурации этого репозитория: [.go-arch-lint/arch.go](.go-arch-lint/arch.go)
 
 ![graph](./docs/images/graph-example.png)
 
-You can generate dependencies graph with command `graph`:
+Граф зависимостей можно сгенерировать командой `graph`:
 
 ```bash
 go-arch-lint graph
 ```
 
-See full [graph documentation](docs/graph/README.md) for details.
+Подробности см. в полной [документации графа](docs/graph/README.md).
