@@ -1,6 +1,9 @@
+version: 2
+
 before:
   hooks:
     - go mod download
+
 builds:
   - id: "binary"
     binary: go-arch-lint
@@ -12,9 +15,10 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X 'github.com/vsfedorenko/{{.ProjectName}}/internal/app.Version={{.Version}}'
-      - -X 'github.com/vsfedorenko/{{.ProjectName}}/internal/app.CommitHash={{.Commit}}'
-      - -X 'github.com/vsfedorenko/{{.ProjectName}}/internal/app.BuildTime={{.Date}}'
+      - -X 'github.com/vsfedorenko/go-arch-lint/internal/app.Version={{.Version}}'
+      - -X 'github.com/vsfedorenko/go-arch-lint/internal/app.CommitHash={{.Commit}}'
+      - -X 'github.com/vsfedorenko/go-arch-lint/internal/app.BuildTime={{.Date}}'
+
 archives:
   - format_overrides:
       - goos: windows
@@ -24,24 +28,27 @@ dockers:
   - ids:
       - binary
     image_templates:
-      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.RawVersion}}{{else}}dev-v{{.RawVersion}}-{{.Prerelease}}{{end}}
-      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.Major}}.{{.Minor}}{{else}}dev-v{{.Major}}.{{.Minor}}-{{.Prerelease}}{{end}}
-      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}release-v{{.Major}}{{else}}dev-v{{.Major}}-{{.Prerelease}}{{end}}
-      - vsfedorenko/{{.ProjectName}}:{{if eq .Prerelease ""}}latest-stable-release{{else}}dev-{{.Version}}{{end}}
-      - vsfedorenko/{{.ProjectName}}:latest
+      - "ghcr.io/vsfedorenko/{{.ProjectName}}:{{.Version}}"
+      - "ghcr.io/vsfedorenko/{{.ProjectName}}:{{.Major}}.{{.Minor}}"
+      - "ghcr.io/vsfedorenko/{{.ProjectName}}:{{.Major}}"
+      - "ghcr.io/vsfedorenko/{{.ProjectName}}:latest"
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
+
 checksum:
   name_template: 'checksums.txt'
+
 snapshot:
   name_template: "{{ .Tag }}"
+
 changelog:
   sort: asc
   filters:
     exclude:
       - '^docs:'
       - '^test:'
+      - '^chore:'

@@ -3,50 +3,37 @@ name: release
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Check Tag
-        id: check-tag
-        run: | #
-          if [[ ${{ github.event.ref }} =~ ^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+(\-rc[0-9]*)?$ ]]; then
-              echo "match=true" >> $GITHUB_OUTPUT
-          fi
-      -
-        name: Checkout
-        if: steps.check-tag.outputs.match == 'true'
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      -
-        name: Set up Go
-        if: steps.check-tag.outputs.match == 'true'
-        uses: actions/setup-go@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.24
-      -
-        name: Docker Login
-        if: success() && steps.check-tag.outputs.match == 'true'
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
-      -
-        name: Release
-        if: steps.check-tag.outputs.match == 'true'
-        uses: goreleaser/goreleaser-action@v2
+          go-version: '1.25'
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
-      -
-        name: Clear
-        if: always() && steps.check-tag.outputs.match == 'true'
-        run: |
-          rm -f ${HOME}/.docker/config.json
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
