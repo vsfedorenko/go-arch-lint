@@ -2,7 +2,7 @@
 
 ---
 
-![Logo image](./docs/images/logo.png)
+![Logo image](docs/images/logo.png)
 
 Линтер архитектуры для Go: описываете слои и зависимости на Go DSL — линтер находит нарушения в импортах и инъекциях зависимостей.
 
@@ -77,7 +77,7 @@ go-arch-lint check
 
 Линтер строит граф импортов из реального кода, сравнивает с графом из конфигурации и выводит нарушения:
 
-![Check output](./docs/images/check-example.png)
+![Check output](docs/images/check-example.png)
 
 | Код возврата | Значение                     |
 |--------------|------------------------------|
@@ -163,7 +163,7 @@ func runArchCheck() error {
 
 ## Принцип работы
 
-![How is working](./docs/images/how-is-working.png)
+![How is working](docs/images/how-is-working.png)
 
 Линтер сопоставляет Go-пакеты с компонентами по glob-шаблонам, извлекает импорты из AST, строит фактический граф зависимостей и сравнивает его с желаемым графом из конфигурации. Несовпадения — это нарушения архитектуры.
 
