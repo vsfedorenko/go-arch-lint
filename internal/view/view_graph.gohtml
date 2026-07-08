@@ -1,7 +1,7 @@
 {{- /*gotype: github.com/vsfedorenko/go-arch-lint/internal/models.CmdGraphOut*/ -}}
 
-{{ if .ExportD2 -}}
-	{{ .D2Definitions -}}
+{{ if .IsTextOutput -}}
+	{{ .GraphSource -}}
 {{ else -}}
 	Graph outputted to:
 	{{ .OutFile | colorize "blue" }}
