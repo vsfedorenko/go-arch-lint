@@ -96,27 +96,26 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
-var _ = Spec(func() {
-	Version(1)
-	Allow(func() { DepOnAnyVendor(false) })
-	Exclude("internal/excluded", "vendor", "variadic")
-	ExcludeFiles("^.*_test\\.go$")
-	Component("main", "internal")
-	Component("a", "internal/a")
-	Component("allowb", "internal/a/allowb")
-	Component("b", "internal/b")
-	Component("c", "internal/c/**")
-	Component("d", "internal/d/**")
-	Component("e", "internal/e/**")
-	Component("nc", "internal/not_covered")
-	Component("common", "internal/common/**")
-	CommonComponents("common", "a", "c", "d", "e")
-	Deps("allowb", func() { MayDependOn("b") })
-	Deps("e", func() { AnyVendorDeps(true) })
-})
-
 func main() {
-	archlint.MustRunCLI()
+	spec := Spec(func() {
+		Version(1)
+		Allow(func() { DepOnAnyVendor(false) })
+		Exclude("internal/excluded", "vendor", "variadic")
+		ExcludeFiles("^.*_test\\.go$")
+		Component("main", "internal")
+		Component("a", "internal/a")
+		Component("allowb", "internal/a/allowb")
+		Component("b", "internal/b")
+		Component("c", "internal/c/**")
+		Component("d", "internal/d/**")
+		Component("e", "internal/e/**")
+		Component("nc", "internal/not_covered")
+		Component("common", "internal/common/**")
+		CommonComponents("common", "a", "c", "d", "e")
+		Deps("allowb", func() { MayDependOn("b") })
+		Deps("e", func() { AnyVendorDeps(true) })
+	})
+	archlint.MustRun(spec)
 }
 `
 
@@ -127,29 +126,28 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
-var _ = Spec(func() {
-	Version(1)
-	Allow(func() { DepOnAnyVendor(false) })
-	Exclude("internal/excluded", "vendor", "variadic")
-	ExcludeFiles("^.*_test\\.go$")
-	Component("main", "internal/.")
-	Component("a", "internal/a")
-	Component("allowb", "internal/a/allowb")
-	Component("b", "internal/b")
-	Component("c", "internal/c")
-	Component("e", "internal/e")
-	Component("common", "internal/common/**")
-	Component("models", "internal/d/models/*/model")
-	CommonComponents("common")
-	Deps("e", func() {
-		MayDependOn("models")
-		AnyVendorDeps(true)
-	})
-	Deps("allowb", func() { MayDependOn("b") })
-})
-
 func main() {
-	archlint.MustRunCLI()
+	spec := Spec(func() {
+		Version(1)
+		Allow(func() { DepOnAnyVendor(false) })
+		Exclude("internal/excluded", "vendor", "variadic")
+		ExcludeFiles("^.*_test\\.go$")
+		Component("main", "internal/.")
+		Component("a", "internal/a")
+		Component("allowb", "internal/a/allowb")
+		Component("b", "internal/b")
+		Component("c", "internal/c")
+		Component("e", "internal/e")
+		Component("common", "internal/common/**")
+		Component("models", "internal/d/models/*/model")
+		CommonComponents("common")
+		Deps("e", func() {
+			MayDependOn("models")
+			AnyVendorDeps(true)
+		})
+		Deps("allowb", func() { MayDependOn("b") })
+	})
+	archlint.MustRun(spec)
 }
 `
 
@@ -160,20 +158,19 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
-var _ = Spec(func() {
-	Version(1)
-	Allow(func() { DepOnAnyVendor(false) })
-	Component("main", "internal")
-	Component("a", "internal/a")
-	Component("not_exist", "internal/not_exist")
-	CommonComponents("models")
-	Deps("main", func() {
-		MayDependOn("not_exist_too_rnd_order")
-	})
-})
-
 func main() {
-	archlint.MustRunCLI()
+	spec := Spec(func() {
+		Version(1)
+		Allow(func() { DepOnAnyVendor(false) })
+		Component("main", "internal")
+		Component("a", "internal/a")
+		Component("not_exist", "internal/not_exist")
+		CommonComponents("models")
+		Deps("main", func() {
+			MayDependOn("not_exist_too_rnd_order")
+		})
+	})
+	archlint.MustRun(spec)
 }
 `
 
