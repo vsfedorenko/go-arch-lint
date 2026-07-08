@@ -3,7 +3,7 @@ package dsl
 import (
 	"fmt"
 
-	"github.com/fe3dback/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
 )
 
 // Version sets the DSL schema version (always 1 for v2.0).

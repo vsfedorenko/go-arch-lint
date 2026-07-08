@@ -3,9 +3,9 @@ package container
 import (
 	"github.com/logrusorgru/aurora/v3"
 
-	"github.com/fe3dback/go-arch-lint/internal/services/render"
-	"github.com/fe3dback/go-arch-lint/internal/services/render/printer"
-	"github.com/fe3dback/go-arch-lint/internal/view"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/render"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/render/printer"
+	"github.com/vsfedorenko/go-arch-lint/internal/view"
 )
 
 func (c *Container) provideColorPrinter() *printer.ColorPrinter {

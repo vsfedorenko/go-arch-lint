@@ -3,11 +3,11 @@ package decoder
 import (
 	"testing"
 
-	"github.com/fe3dback/go-arch-lint/internal/models"
-	"github.com/fe3dback/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/fe3dback/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 func buildTestSpec() *dsl.SpecBuilder {

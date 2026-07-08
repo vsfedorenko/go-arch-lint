@@ -3,7 +3,7 @@ package ast
 import (
 	"go/token"
 
-	"github.com/fe3dback/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
 )
 
 func PositionFromToken(pos token.Position) common.Reference {

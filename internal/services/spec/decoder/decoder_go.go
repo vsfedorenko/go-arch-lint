@@ -3,11 +3,11 @@ package decoder
 import (
 	"fmt"
 
-	"github.com/fe3dback/go-arch-lint/dsl"
-	"github.com/fe3dback/go-arch-lint/internal/models"
-	"github.com/fe3dback/go-arch-lint/internal/models/arch"
-	"github.com/fe3dback/go-arch-lint/internal/models/common"
-	"github.com/fe3dback/go-arch-lint/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
 // GoSpecDocument implements spec.Document by wrapping a dsl.SpecBuilder.

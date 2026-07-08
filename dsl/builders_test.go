@@ -3,7 +3,7 @@ package dsl
 import (
 	"testing"
 
-	"github.com/fe3dback/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,7 +2,7 @@ module arch-lint-local
 
 go 1.25.0
 
-require github.com/fe3dback/go-arch-lint v0.0.0
+require github.com/vsfedorenko/go-arch-lint v0.0.0
 
 require (
 	cdr.dev/slog v1.4.2-0.20221206192828-e4803b10ae17 // indirect
@@ -43,4 +43,4 @@ require (
 	oss.terrastruct.com/util-go v0.0.0-20230604222829-11c3c60fec14 // indirect
 )
 
-replace github.com/fe3dback/go-arch-lint => ..
+replace github.com/vsfedorenko/go-arch-lint => ..

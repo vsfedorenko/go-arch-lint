@@ -1,16 +1,16 @@
 package container
 
 import (
-	"github.com/fe3dback/go-arch-lint/internal/services/checker"
-	"github.com/fe3dback/go-arch-lint/internal/services/common/path"
-	"github.com/fe3dback/go-arch-lint/internal/services/project/holder"
-	"github.com/fe3dback/go-arch-lint/internal/services/project/info"
-	"github.com/fe3dback/go-arch-lint/internal/services/project/resolver"
-	"github.com/fe3dback/go-arch-lint/internal/services/project/scanner"
-	"github.com/fe3dback/go-arch-lint/internal/services/render/code"
-	specassembler "github.com/fe3dback/go-arch-lint/internal/services/spec/assembler"
-	"github.com/fe3dback/go-arch-lint/internal/services/spec/decoder"
-	specvalidator "github.com/fe3dback/go-arch-lint/internal/services/spec/validator"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/checker"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/common/path"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/project/holder"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/project/info"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/project/resolver"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/project/scanner"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/render/code"
+	specassembler "github.com/vsfedorenko/go-arch-lint/internal/services/spec/assembler"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/spec/decoder"
+	specvalidator "github.com/vsfedorenko/go-arch-lint/internal/services/spec/validator"
 )
 
 func (c *Container) provideSpecAssembler() *specassembler.Assembler {

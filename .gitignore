@@ -532,7 +532,9 @@ $RECYCLE.BIN/
 # ==============================================================================
 
 .claude/
+.opencode/
 .rulesync/
+.serena/
 opencode.jsonc
 rulesync.jsonc
 

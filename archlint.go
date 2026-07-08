@@ -3,7 +3,7 @@ package archlint
 import (
 	"os"
 
-	"github.com/fe3dback/go-arch-lint/internal/app"
+	"github.com/vsfedorenko/go-arch-lint/internal/app"
 )
 
 // RunCLI executes the arch-lint CLI. It is the entry point called by

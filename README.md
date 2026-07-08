@@ -2,7 +2,7 @@
 
 Линтер для контроля хорошей структуры проекта и проверки архитектуры верхнего уровня (слоёв кода)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/fe3dback/go-arch-lint)](https://goreportcard.com/report/github.com/fe3dback/go-arch-lint)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vsfedorenko/go-arch-lint)](https://goreportcard.com/report/github.com/vsfedorenko/go-arch-lint)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 
 ## Быстрый старт
@@ -19,7 +19,7 @@
 // .go-arch-lint/arch.go
 package main
 
-import . "github.com/fe3dback/go-arch-lint/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
 var _ = Spec(func() {
     Version(1)
@@ -65,16 +65,16 @@ func main() {
 #### Через Docker
 
 ```bash
-docker run --rm -v ${PWD}:/app fe3dback/go-arch-lint:latest-stable-release check --project-path /app
+docker run --rm -v ${PWD}:/app vsfedorenko/go-arch-lint:latest-stable-release check --project-path /app
 ```
 
-[другие docker теги и версии](https://hub.docker.com/r/fe3dback/go-arch-lint/tags)
+[другие docker теги и версии](https://hub.docker.com/r/vsfedorenko/go-arch-lint/tags)
 
 #### Из исходников
 Требуется go 1.25+
 
 ```bash
-go install github.com/fe3dback/go-arch-lint@latest
+go install github.com/vsfedorenko/go-arch-lint@latest
 ```
 
 Создайте каркас конфигурации в проекте:
@@ -92,7 +92,7 @@ go-arch-lint check
 
 #### Готовые бинарники
 
-[см. на странице релизов](https://github.com/fe3dback/go-arch-lint/releases)
+[см. на странице релизов](https://github.com/vsfedorenko/go-arch-lint/releases)
 
 ## Использование
 

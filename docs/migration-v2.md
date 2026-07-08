@@ -2,7 +2,7 @@
 
 go-arch-lint v2.0 заменяет файл конфигурации YAML (`.go-arch-lint.yml`)
 на чистый Go DSL. Конфигурация теперь это файл `.go-arch-lint/arch.go`, который
-импортирует пакет `github.com/fe3dback/go-arch-lint/dsl`. Это даёт проверку
+импортирует пакет `github.com/vsfedorenko/go-arch-lint/dsl`. Это даёт проверку
 типов, автодополнение в IDE и всю мощь Go (переменные, циклы, вспомогательные
 функции) внутри вашей конфигурации.
 
@@ -13,7 +13,7 @@ go-arch-lint v2.0 заменяет файл конфигурации YAML (`.go-
 
 1. Установите бинарник v2.0:
    ```bash
-   go install github.com/fe3dback/go-arch-lint@latest
+   go install github.com/vsfedorenko/go-arch-lint@latest
    ```
 
 2. Создайте каркас новой директории конфигурации в корне проекта:
@@ -95,7 +95,7 @@ deps:
 ```go
 package main
 
-import . "github.com/fe3dback/go-arch-lint/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
 var _ = Spec(func() {
     Version(1)
@@ -129,7 +129,7 @@ var _ = Spec(func() {
 ## Что изменилось помимо конфигурации
 
 - Команда `schema` удалена. Экспорт JSON Schema больше не существует. Используйте
-  `go doc github.com/fe3dback/go-arch-lint/dsl` для справки по API.
+  `go doc github.com/vsfedorenko/go-arch-lint/dsl` для справки по API.
 - Флаг `--arch-file` устарел. Конфигурация всегда находится в
   `.go-arch-lint/arch.go` внутри вашего проекта.
 - Директория `.go-arch-lint/` это отдельный Go модуль. Если ваш проект использует
@@ -153,7 +153,7 @@ var _ = Spec(func() {
 
 **Ошибки компилятора Go в `arch.go`:** Сигнатуры функций DSL и есть
 схема. Если компилятор ругается, проверьте [справочник по синтаксису](syntax/README.md)
-или выполните `go doc github.com/fe3dback/go-arch-lint/dsl` для точных сигнатур.
+или выполните `go doc github.com/vsfedorenko/go-arch-lint/dsl` для точных сигнатур.
 
 **Медленный первый запуск:** Первый `go-arch-lint check` компилирует вашу
 конфигурацию. Это занимает от 1 до 3 секунд. Последующие запуски кэшируются
