@@ -8,14 +8,6 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/app"
 )
 
-func RunCLI() int {
-	return app.Execute()
-}
-
-func MustRunCLI() {
-	os.Exit(RunCLI())
-}
-
 func Run(specs ...dsl.SpecDef) error {
 	if len(specs) == 0 {
 		return fmt.Errorf("no specs provided — ensure Spec() was called")
