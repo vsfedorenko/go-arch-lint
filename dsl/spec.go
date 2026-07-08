@@ -1,47 +1,31 @@
 package dsl
 
 import (
-	"fmt"
 	"path/filepath"
 	"runtime"
 )
 
-// SpecDef is a populated spec definition returned by Spec.
-// Multiple SpecDefs can be merged and passed to archlint.Run / archlint.MustRun.
 type SpecDef struct {
 	builder *SpecBuilder
 }
 
-// Spec is the entry point for the DSL. It creates a new SpecBuilder,
-// sets it as the current context, executes fn, and returns a SpecDef.
-//
-// Multiple Spec calls are supported — pass all returned SpecDefs to
-// archlint.Run / archlint.MustRun and they are merged into one spec.
-// Scalar fields (Version, Workdir, Allow*) use first-set-wins; slices
-// accumulate; maps (Components, Vendors, Deps) use last-write-per-key.
+func (s SpecDef) Builder() *SpecBuilder {
+	return s.builder
+}
+
 func Spec(fn func()) SpecDef {
-	globalBuilder = newSpecBuilder()
-	current = contextStack{spec: globalBuilder}
+	builder := newSpecBuilder()
+	current = contextStack{spec: builder}
 
 	fn()
 
 	current = contextStack{}
-	return SpecDef{builder: globalBuilder}
+	return SpecDef{builder: builder}
 }
 
-// SetSpec injects a builder into the global slot so that FlushSpec
-// (called by the decoder) can retrieve it. Used by archlint.Run after
-// merging multiple SpecDefs.
-func SetSpec(builder *SpecBuilder) {
-	globalBuilder = builder
-	current = contextStack{}
-}
-
-// MergeSpecs combines multiple SpecDefs into a single SpecBuilder.
-// Returns nil if no specs are provided.
-func MergeSpecs(specs ...SpecDef) *SpecBuilder {
+func MergeSpecs(specs ...SpecDef) SpecDef {
 	if len(specs) == 0 {
-		return nil
+		return SpecDef{}
 	}
 
 	merged := newSpecBuilder()
@@ -86,22 +70,9 @@ func MergeSpecs(specs ...SpecDef) *SpecBuilder {
 	}
 
 	if !mergedAny {
-		return nil
+		return SpecDef{}
 	}
-	return merged
-}
-
-// FlushSpec returns the populated SpecBuilder and resets the global state.
-func FlushSpec() (*SpecBuilder, error) {
-	if globalBuilder == nil {
-		return nil, fmt.Errorf("Spec() was not called — ensure your arch.go contains 'var _ = Spec(func() { ... })'")
-	}
-
-	builder := globalBuilder
-	globalBuilder = nil
-	current = contextStack{}
-
-	return builder, nil
+	return SpecDef{builder: merged}
 }
 
 func callerRef(skip int) (file string, line int) {

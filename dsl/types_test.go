@@ -7,54 +7,35 @@ import (
 )
 
 func TestSpecCapturesVersion(t *testing.T) {
-	resetSpecBuilder()
-	Spec(func() {
+	b := Spec(func() {
 		Version(1)
-	})
+	}).Builder()
 
-	builder, err := FlushSpec()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, builder.Version.Value)
+	assert.Equal(t, 1, b.Version.Value)
+	assert.True(t, b.Version.Reference.Valid)
 }
 
 func TestSpecCapturesWorkdir(t *testing.T) {
-	resetSpecBuilder()
-	Spec(func() {
+	b := Spec(func() {
 		Workdir("internal")
-	})
+	}).Builder()
 
-	builder, err := FlushSpec()
-	assert.NoError(t, err)
-	assert.Equal(t, "internal", builder.Workdir.Value)
-}
-
-func TestFlushSpecReturnsErrorWhenNotInitialized(t *testing.T) {
-	resetSpecBuilder()
-	_, err := FlushSpec()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Spec() was not called")
+	assert.Equal(t, "internal", b.Workdir.Value)
 }
 
 func TestSpecReturnsSpecDef(t *testing.T) {
-	resetSpecBuilder()
 	spec := Spec(func() {
 		Version(1)
 		Workdir("internal")
 	})
 
-	b, err := FlushSpec()
-	assert.NoError(t, err)
+	b := spec.Builder()
+	assert.NotNil(t, b)
 	assert.Equal(t, 1, b.Version.Value)
 	assert.Equal(t, "internal", b.Workdir.Value)
-
-	merged := MergeSpecs(spec)
-	assert.NotNil(t, merged)
-	assert.Equal(t, 1, merged.Version.Value)
-	assert.Equal(t, "internal", merged.Workdir.Value)
 }
 
 func TestMergeSpecsAccumulatesSlices(t *testing.T) {
-	resetSpecBuilder()
 	s1 := Spec(func() {
 		Exclude("dir1")
 		ExcludeFiles("^.*_test\\.go$")
@@ -66,15 +47,14 @@ func TestMergeSpecsAccumulatesSlices(t *testing.T) {
 		CommonComponents("utils")
 	})
 
-	merged := MergeSpecs(s1, s2)
-	assert.Len(t, merged.Exclude, 2)
-	assert.Len(t, merged.ExcludeFiles, 1)
-	assert.Len(t, merged.CommonComponents, 2)
-	assert.Len(t, merged.CommonVendors, 1)
+	b := MergeSpecs(s1, s2).Builder()
+	assert.Len(t, b.Exclude, 2)
+	assert.Len(t, b.ExcludeFiles, 1)
+	assert.Len(t, b.CommonComponents, 2)
+	assert.Len(t, b.CommonVendors, 1)
 }
 
 func TestMergeSpecsMergesMaps(t *testing.T) {
-	resetSpecBuilder()
 	s1 := Spec(func() {
 		Component("a", "internal/a")
 		Component("shared", "v1")
@@ -84,14 +64,13 @@ func TestMergeSpecsMergesMaps(t *testing.T) {
 		Component("shared", "v2")
 	})
 
-	merged := MergeSpecs(s1, s2)
-	assert.Contains(t, merged.Components, "a")
-	assert.Contains(t, merged.Components, "b")
-	assert.Equal(t, []string{"v2"}, merged.Components["shared"].RelativePaths)
+	b := MergeSpecs(s1, s2).Builder()
+	assert.Contains(t, b.Components, "a")
+	assert.Contains(t, b.Components, "b")
+	assert.Equal(t, []string{"v2"}, b.Components["shared"].RelativePaths)
 }
 
 func TestMergeSpecsScalarFirstSetWins(t *testing.T) {
-	resetSpecBuilder()
 	s1 := Spec(func() {
 		Version(1)
 		Workdir("internal")
@@ -100,24 +79,20 @@ func TestMergeSpecsScalarFirstSetWins(t *testing.T) {
 		Version(2)
 	})
 
-	merged := MergeSpecs(s1, s2)
-	assert.Equal(t, 1, merged.Version.Value)
-	assert.Equal(t, "internal", merged.Workdir.Value)
+	b := MergeSpecs(s1, s2).Builder()
+	assert.Equal(t, 1, b.Version.Value)
+	assert.Equal(t, "internal", b.Workdir.Value)
 }
 
-func TestMergeSpecsEmptyReturnsNil(t *testing.T) {
-	merged := MergeSpecs()
-	assert.Nil(t, merged)
+func TestMergeSpecsEmptyReturnsNilBuilder(t *testing.T) {
+	assert.Nil(t, MergeSpecs().Builder())
 }
 
 func TestSpecBuilderPosition(t *testing.T) {
-	resetSpecBuilder()
-	Spec(func() {
-		Version(1) // line 28 in this test file
-	})
+	b := Spec(func() {
+		Version(1)
+	}).Builder()
 
-	builder, _ := FlushSpec()
-	// The Reference should point to the test file
-	assert.True(t, builder.Version.Reference.Valid)
-	assert.Equal(t, "types_test.go", builder.Version.Reference.File)
+	assert.True(t, b.Version.Reference.Valid)
+	assert.Equal(t, "types_test.go", b.Version.Reference.File)
 }
