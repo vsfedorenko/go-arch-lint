@@ -71,16 +71,15 @@ func (r *Render) annotate(opt annotateOpts) []byte {
 		}
 
 		// draw line
-		resultBuffer.WriteString(fmt.Sprintf("%s %s\n",
+		fmt.Fprintf(&resultBuffer, "%s %s\n",
 			prefixLine,
-			r.replaceTabsToSpaces(sc.Bytes()),
-		))
+			r.replaceTabsToSpaces(sc.Bytes()))
 
 		// add offset pointer
 		if opt.showColumnPointer {
 			if currentLine == opt.ref.Line {
 				spaces := strings.Repeat(" ", int(math.Max(0, float64(opt.ref.Column-1))))
-				resultBuffer.WriteString(fmt.Sprintf("%s %s^\n", prefixEmpty, spaces))
+				fmt.Fprintf(&resultBuffer, "%s %s^\n", prefixEmpty, spaces)
 			}
 		}
 

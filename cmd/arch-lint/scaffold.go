@@ -58,19 +58,19 @@ func cmdInit(args []string) int {
 		return 1
 	}
 
-	if err := os.MkdirAll(archDir, 0755); err != nil {
+	if err := os.MkdirAll(archDir, 0o755); err != nil { //nolint:gosec // intentional: creates scaffold dir at user-specified path
 		fmt.Fprintf(os.Stderr, "Error: failed to create %s: %v\n", archDir, err)
 		return 1
 	}
 
 	files := map[string]string{
-		"go.mod":   scaffoldGoMod,
-		"main.go":  scaffoldMainGo,
+		"go.mod":  scaffoldGoMod,
+		"main.go": scaffoldMainGo,
 	}
 
 	for name, content := range files {
 		path := filepath.Join(archDir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil { //nolint:gosec // intentional: generated source files use standard 0644 permissions
 			fmt.Fprintf(os.Stderr, "Error: failed to write %s: %v\n", path, err)
 			return 1
 		}

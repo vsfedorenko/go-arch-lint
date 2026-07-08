@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
+
+const flagProjectPath = "--project-path"
 
 func main() {
 	os.Exit(run())
@@ -38,7 +41,7 @@ func run() int {
 func cmdDelegate(command string, args []string) int {
 	projectPath := "."
 	for i, a := range args {
-		if (a == "--project-path" || a == "-p") && i+1 < len(args) {
+		if (a == flagProjectPath || a == "-p") && i+1 < len(args) {
 			projectPath = args[i+1]
 			break
 		}
@@ -60,7 +63,7 @@ func cmdDelegate(command string, args []string) int {
 	delegatedArgs := make([]string, 0, len(args)+2)
 	projectPathSet := false
 	for i := 0; i < len(args); i++ {
-		if (args[i] == "--project-path" || args[i] == "-p") && i+1 < len(args) {
+		if (args[i] == flagProjectPath || args[i] == "-p") && i+1 < len(args) {
 			delegatedArgs = append(delegatedArgs, args[i], absProjectPath)
 			projectPathSet = true
 			i++
@@ -69,18 +72,19 @@ func cmdDelegate(command string, args []string) int {
 		}
 	}
 	if !projectPathSet {
-		delegatedArgs = append(delegatedArgs, "--project-path", absProjectPath)
+		delegatedArgs = append(delegatedArgs, flagProjectPath, absProjectPath)
 	}
 
 	// .go-arch-lint/ has its own go.mod; -C runs go from that directory.
 	goArgs := append([]string{"-C", archDir, "run", ".", command}, delegatedArgs...)
-	cmd := exec.Command("go", goArgs...)
+	cmd := exec.Command("go", goArgs...) //nolint:gosec // intentional: CLI delegates to 'go run .go-arch-lint/' per documented design
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		exitErr := &exec.ExitError{}
+		if errors.As(err, &exitErr) {
 			return exitErr.ExitCode()
 		}
 		fmt.Fprintf(os.Stderr, "Error: failed to run arch-lint: %v\n", err)
@@ -91,7 +95,7 @@ func cmdDelegate(command string, args []string) int {
 }
 
 func dirExists(path string) bool {
-	info, err := os.Stat(path)
+	info, err := os.Stat(path) //nolint:gosec // intentional: user-provided project path is the tool's purpose
 	return err == nil && info.IsDir()
 }
 
@@ -120,4 +124,3 @@ Global flags (passed through to delegated commands):
   --output-color          use ANSI colors (default true)
 `)
 }
-
