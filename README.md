@@ -1,161 +1,174 @@
+[**Русский**](README.md) | [English](README.en.md)
+
+---
+
 ![Logo image](./docs/images/logo.png)
 
-Линтер для контроля хорошей структуры проекта и проверки архитектуры верхнего уровня (слоёв кода)
+Линтер архитектуры для Go: описываете слои и зависимости на Go DSL — линтер находит нарушения в импортах и инъекциях зависимостей.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vsfedorenko/go-arch-lint)](https://goreportcard.com/report/github.com/vsfedorenko/go-arch-lint)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 
-## Быстрый старт
-
-### Что такое архитектура проекта?
-
-Можно представить простую архитектуру, например классическую часть из «чистой архитектуры» (clean architecture):
-
-![Layouts example](./docs/images/layout_example.png)
-
-И описать её как конфигурацию Go DSL:
-
-```go
-// .go-arch-lint/arch.go
-package main
-
-import . "github.com/vsfedorenko/go-arch-lint/dsl"
-
-var _ = Spec(func() {
-    Version(1)
-    Workdir("internal")
-    Component("handler", "handlers/*")
-    Component("service", "services/**")
-    Component("repository", "domain/*/repository")
-    Component("model", "models")
-    CommonComponents("model")
-    Deps("handler", func() { MayDependOn("service") })
-    Deps("service", func() { MayDependOn("repository") })
-})
-```
-
-подробности см. в [синтаксисе конфигурации](docs/syntax/README.md).
-
-Теперь линтер проверит весь код проекта внутри workdir `internal` и покажет предупреждения, когда код нарушает эти правила.
-
-Для наилучшего результата добавьте линтер в CI workflow.
-
-### Пример проблемного кода
-
-Представьте `main.go`, где мы передаём `repository` в `handler` и получаем проблемный поток:
-
-```go
-func main() {
-  // ..
-  repository := booksRepository.NewRepository()
-  handler := booksHandler.NewHandler(
-    service,
-    repository, // !!!
-  )
-  // ..
-}
-```
-
-Линтер легко найдёт эту проблему:
-
-![Check stdout example](./docs/images/check-example.png)
-
-### Установка/Запуск
-
-#### Через Docker
-
-```bash
-docker run --rm -v ${PWD}:/app vsfedorenko/go-arch-lint:latest-stable-release check --project-path /app
-```
-
-[другие docker теги и версии](https://hub.docker.com/r/vsfedorenko/go-arch-lint/tags)
-
-#### Из исходников
-Требуется go 1.25+
+## Установка
 
 ```bash
 go install github.com/vsfedorenko/go-arch-lint@latest
 ```
 
-Создайте каркас конфигурации в проекте:
+Или [Docker](https://hub.docker.com/r/vsfedorenko/go-arch-lint/tags), или [бинарник из релизов](https://github.com/vsfedorenko/go-arch-lint/releases).
+
+## Конфигурация
+
+Конфигурация — это Go-файл. Не YAML, не JSON — обычный Go-код с типобезопасностью и автодополнением в IDE.
 
 ```bash
 cd ~/code/my-project
 go-arch-lint init
 ```
 
-Это создаст директорию `.go-arch-lint/` с `go.mod`, сгенерированным `main.go` и стартовым `arch.go` для редактирования. Затем запустите линтер:
+Создаёт `.go-arch-lint/` с `go.mod` и `main.go`:
+
+```go
+package main
+
+import (
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
+)
+
+var spec = Spec(func() {
+	Version(1)
+	Workdir("internal")
+
+	Component("handler", "handlers/*")
+	Component("service", "services/**")
+	Component("repository", "domain/*/repository")
+
+	CommonComponents("model")
+
+	Deps("handler", func() {
+		MayDependOn("service")
+	})
+	Deps("service", func() {
+		MayDependOn("repository")
+	})
+})
+
+func main() {
+	archlint.MustRun(spec)
+}
+```
+
+Что здесь происходит:
+
+— `Workdir` задаёт корень, ниже которого линтер ищет Go-пакеты.
+— `Component` связывает имя компонента с glob-шаблоном путей.
+— `Deps` описывает, на какие компоненты разрешено зависеть.
+— `CommonComponents` — компоненты, доступные всем (утилиты, модели).
+— `Vendor` и `CanUse` — сторонние библиотеки, разрешённые конкретному компоненту.
+
+Полный список функций DSL — в [документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/dsl`.
+
+## Проверка
 
 ```bash
 go-arch-lint check
 ```
 
-#### Готовые бинарники
+Линтер строит граф импортов из реального кода, сравнивает с графом из конфигурации и выводит нарушения:
 
-[см. на странице релизов](https://github.com/vsfedorenko/go-arch-lint/releases)
+![Check output](./docs/images/check-example.png)
 
-## Использование
+| Код возврата | Значение                     |
+|--------------|------------------------------|
+| 0            | Нарушений нет                |
+| 1            | Найдены нарушения            |
 
-### Как добавить линтер в существующий проект?
+Флаг `--json` переключает вывод в машиночитаемый формат для CI.
 
-![Adding linter steps](./docs/images/add-linter-steps.png)
+## Граф зависимостей
 
-Добавление линтера в проект состоит из нескольких шагов:
-
-1. Текущее состояние проекта
-2. Запустите `go-arch-lint init` для создания каркаса `.go-arch-lint/`, затем отредактируйте `arch.go`, чтобы описать идеальную архитектуру проекта
-3. Линтер найдёт проблемы в проекте. Не исправляйте их прямо сейчас, а «легализуйте», добавив в конфигурацию и пометив меткой `todo`
-4. В свободное время, при работе с техническим долгом и т.д. исправляйте код
-5. После исправлений очистите конфигурацию до целевого состояния
-
-### Выполнение
-
-```
-Usage:
-  go-arch-lint check [flags]
-
-Flags:
-      --arch-file string      arch file path (default ".go-arch-lint/arch.go")
-  -h, --help                  help for check
-      --max-warnings int      max number of warnings to output (default 512)
-      --project-path string   absolute path to project directory (where '.go-arch-lint/' is located) (default "./")
-
-Global Flags:
-      --json                   (alias for --output-type=json)
-      --output-color           use ANSI colors in terminal output (default true)
-      --output-json-one-line   format JSON as single line payload (without line breaks), only for json output type
-      --output-type string     type of command output, variants: [ascii, json] (default "default")
+```bash
+go-arch-lint graph --format=mermaid
 ```
 
-Линтер вернёт:
+```
+graph LR
+  handler --> service
+  service --> repository
+  handler -.-> n0["3rd-cobra"]
+```
 
-| Код возврата | Описание                              |
-|--------------|---------------------------------------|
-| 0            | Архитектура проекта корректна         |
-| 1            | Найдены предупреждения                |
+Четыре формата вывода:
 
+| `--format`  | Куда                         | Зачем                                |
+|-------------|------------------------------|--------------------------------------|
+| `svg`       | файл (по умолчанию)          | готовое изображение                  |
+| `d2`        | stdout                       | исходник d2 для ручной доработки     |
+| `plantuml`  | stdout                       | рендер через PlantUML или CI         |
+| `mermaid`   | stdout                       | Markdown, GitHub, GitLab             |
 
-### Как это работает?
+Дополнительно: `--type=di` (обратный граф, DI), `--focus=handler` (только один компонент), `--include-vendors` (показать сторонние библиотеки).
+
+## Программный API
+
+go-arch-lint — не только CLI, но и библиотека. Вызов проверки из Go-кода:
+
+```go
+import (
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
+)
+
+func runArchCheck() error {
+	spec := Spec(func() {
+		Version(1)
+		Workdir("internal")
+		Component("handler", "handlers/*")
+		Component("service", "services/**")
+		Deps("handler", func() { MayDependOn("service") })
+	})
+
+	return archlint.Run(spec,
+		archlint.WithProjectPath("."),
+		archlint.WithMaxWarnings(100),
+	)
+}
+```
+
+`archlint.MustRun(spec)` — то же самое, но вызывает `os.Exit(1)` при ошибке.
+
+## Команды
+
+| Команда       | Назначение                                        |
+|---------------|---------------------------------------------------|
+| `init`        | Создать каркас `.go-arch-lint/`                   |
+| `check`       | Проверить архитектуру                             |
+| `graph`       | Сгенерировать граф зависимостей                   |
+| `mapping`     | Показать соответствие пакетов и компонентов       |
+| `selfInspect` | Проверить архитектуру самого go-arch-lint         |
+| `version`     | Вывести версию                                    |
+
+Глобальные флаги: `--project-path`, `--output-type` (`ascii`/`json`), `--json`, `--output-color`.
+
+## Примеры
+
+В каталоге [`examples/`](examples/) — три демонстрационных проекта:
+
+- **[basic](examples/basic/)** — слоистая архитектура (handler → service → repository).
+- **[ddd](examples/ddd/)** — domain-driven design (domain → application → infrastructure → interfaces).
+- **[hexagonal](examples/hexagonal/)** — ports and adapters (core → adapters → domain).
+
+Каждый пример содержит `.go-arch-lint/main.go` с конфигурацией arch-lint.
+
+## Принцип работы
 
 ![How is working](./docs/images/how-is-working.png)
 
-Линтер:
-- сопоставляет/помечает **go пакеты** с **компонентами**
-- находит все зависимости между компонентами
-- строит граф зависимостей
-- сравнивает фактический (из кода) и желаемый (из конфигурации) граф зависимостей
-- если получен непустой DIFF, значит в проекте есть проблемы
+Линтер сопоставляет Go-пакеты с компонентами по glob-шаблонам, извлекает импорты из AST, строит фактический граф зависимостей и сравнивает его с желаемым графом из конфигурации. Несовпадения — это нарушения архитектуры.
 
-## Граф
+Режим deep scan анализирует вызовы методов и инъекции зависимостей — не только импорты, но и структурное использование типов между компонентами.
 
-Пример конфигурации этого репозитория: [.go-arch-lint/arch.go](.go-arch-lint/arch.go)
+## Лицензия
 
-![graph](./docs/images/graph-example.png)
-
-Граф зависимостей можно сгенерировать командой `graph`:
-
-```bash
-go-arch-lint graph
-```
-
-Подробности см. в полной [документации графа](docs/graph/README.md).
+[MIT](LICENSE). Форк проекта [go-arch-lint](https://github.com/fe3dback/go-arch-lint) © [fe3dback](https://github.com/fe3dback).
