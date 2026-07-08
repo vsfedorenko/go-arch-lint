@@ -1,6 +1,7 @@
 package check_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -54,7 +55,7 @@ replace github.com/vsfedorenko/go-arch-lint => %s
 	}
 	for name, content := range files {
 		path := filepath.Join(dir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil { //nolint:gosec // test fixture: generated source files use 0644
 			t.Fatalf("write %s: %v", path, err)
 		}
 	}
@@ -62,11 +63,10 @@ replace github.com/vsfedorenko/go-arch-lint => %s
 	return dir
 }
 
-func runArchLint(t *testing.T, dir string, args ...string) (stdout, stderr string, exitCode int) {
+func runArchLint(t *testing.T, dir string) (stdout, stderr string, exitCode int) {
 	t.Helper()
 
-	cmdArgs := append([]string{"run", "."}, args...)
-	cmd := exec.Command("go", cmdArgs...)
+	cmd := exec.Command("go", "run", ".")
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(),
 		"GOFLAGS=-mod=mod",
@@ -80,7 +80,8 @@ func runArchLint(t *testing.T, dir string, args ...string) (stdout, stderr strin
 
 	err := cmd.Run()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		exitErr := &exec.ExitError{}
+		if errors.As(err, &exitErr) {
 			exitCode = exitErr.ExitCode()
 		} else {
 			t.Fatalf("failed to run go run: %v\nstderr: %s", err, errb.String())
@@ -89,7 +90,7 @@ func runArchLint(t *testing.T, dir string, args ...string) (stdout, stderr strin
 	return out.String(), errb.String(), exitCode
 }
 
-const archOK = `package main
+const archOKTpl = `package main
 
 import (
 	"github.com/vsfedorenko/go-arch-lint"
@@ -115,11 +116,14 @@ func main() {
 		Deps("allowb", func() { MayDependOn("b") })
 		Deps("e", func() { AnyVendorDeps(true) })
 	})
-	archlint.MustRun(spec)
+	archlint.MustRun(spec,
+		archlint.WithProjectPath("%s"),
+		archlint.WithColors(false),
+	)
 }
 `
 
-const archWarnings = `package main
+const archWarningsTpl = `package main
 
 import (
 	"github.com/vsfedorenko/go-arch-lint"
@@ -147,11 +151,14 @@ func main() {
 		})
 		Deps("allowb", func() { MayDependOn("b") })
 	})
-	archlint.MustRun(spec)
+	archlint.MustRun(spec,
+		archlint.WithProjectPath("%s"),
+		archlint.WithColors(false),
+	)
 }
 `
 
-const archInvalidSpec = `package main
+const archInvalidSpecTpl = `package main
 
 import (
 	"github.com/vsfedorenko/go-arch-lint"
@@ -170,56 +177,48 @@ func main() {
 			MayDependOn("not_exist_too_rnd_order")
 		})
 	})
-	archlint.MustRun(spec)
+	archlint.MustRun(spec,
+		archlint.WithProjectPath("%s"),
+		archlint.WithColors(false),
+	)
 }
 `
 
 func TestCheckCommands(t *testing.T) {
 	project := testProjectDir(t)
+	root := repoRoot(t)
 
 	tests := []struct {
 		name       string
 		archGo     string
-		args       []string
 		wantExit   int
 		wantOutput string
 	}{
 		{
 			name:       "ok",
-			archGo:     archOK,
-			args:       []string{"check", "--project-path", project, "--output-color=false"},
+			archGo:     fmt.Sprintf(archOKTpl, project),
 			wantExit:   0,
 			wantOutput: "OK - No warnings found",
 		},
 		{
 			name:       "warnings",
-			archGo:     archWarnings,
-			args:       []string{"check", "--project-path", project, "--output-color=false"},
+			archGo:     fmt.Sprintf(archWarningsTpl, project),
 			wantExit:   1,
 			wantOutput: "Component c shouldn't depend on",
 		},
 		{
 			name:       "invalid_spec",
-			archGo:     archInvalidSpec,
-			args:       []string{"check", "--project-path", project, "--output-color=false"},
+			archGo:     fmt.Sprintf(archInvalidSpecTpl, project),
 			wantExit:   1,
 			wantOutput: "not found directories",
-		},
-		{
-			name:       "help",
-			archGo:     archOK,
-			args:       []string{"check", "--help"},
-			wantExit:   0,
-			wantOutput: "compare project *.go files with arch defined in spec file",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			root := repoRoot(t)
 			dir := scaffoldArch(t, root, tt.archGo)
 
-			stdout, stderr, exitCode := runArchLint(t, dir, tt.args...)
+			stdout, stderr, exitCode := runArchLint(t, dir)
 
 			combined := stdout + stderr
 			if exitCode != tt.wantExit {
