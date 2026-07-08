@@ -18,26 +18,27 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
-func main() {
-	spec := Spec(func() {
-		Version(1)
-		Workdir("internal")
+var spec = Spec(func() {
+	Version(1)
+	Workdir("internal")
 
-		Allow(func() {
-			DepOnAnyVendor(false)
-		})
-
-		ExcludeFiles(` + "`^.*_test\\.go$`" + `)
-
-		// Define your components:
-		// Component("main", "app")
-		// Component("services", "services/**")
-
-		// Define dependency rules:
-		// Deps("main", func() {
-		//     MayDependOn("services")
-		// })
+	Allow(func() {
+		DepOnAnyVendor(false)
 	})
+
+	ExcludeFiles(` + "`^.*_test\\.go$`" + `)
+
+	// Define your components:
+	// Component("handler", "handlers/*")
+	// Component("service", "services/**")
+
+	// Define dependency rules:
+	// Deps("handler", func() {
+	//     MayDependOn("service")
+	// })
+})
+
+func main() {
 	archlint.MustRun(spec)
 }
 `
