@@ -66,14 +66,14 @@ type (
 		ComponentName     string           `json:"ComponentName"` // repository
 		Name              string           `json:"Name"`          // micro.ViewRepository
 		InjectionAST      string           `json:"InjectionAST"`  // c.provideMicroViewRepository()
-		Injection         common.Reference `json:"Injection"`     // internal/app/internal/container/cmd_mapping.go:15
-		InjectionPath     string           `json:"-"`             // internal/app/internal/container/cmd_mapping.go:15
+		Injection         common.Reference `json:"Injection"`     // internal/app/container/container_cmd_mapping.go:15
+		InjectionPath     string           `json:"-"`             // internal/app/container/container_cmd_mapping.go:15
 		SourceCodePreview []byte           `json:"-"`
 	}
 
 	DeepscanWarningTarget struct {
 		Definition   common.Reference `json:"Definition"`
-		RelativePath string           `json:"-"` // internal/app/internal/container/cmd_mapping.go:15
+		RelativePath string           `json:"-"` // internal/app/container/container_cmd_mapping.go:15
 	}
 
 	CheckResult struct {

@@ -28,7 +28,7 @@ func (c *Container) provideSpecValidator() *specvalidator.Validator {
 }
 
 func (c *Container) provideGoSpecProvider() *decoder.GoDecoder {
-	return decoder.NewGoDecoder()
+	return decoder.NewGoDecoder(c.specBuilder)
 }
 
 func (c *Container) providePathResolver() *path.Resolver {
