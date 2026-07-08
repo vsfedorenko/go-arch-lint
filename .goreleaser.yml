@@ -6,6 +6,7 @@ before:
 
 builds:
   - id: "binary"
+    main: ./cmd/arch-lint
     binary: go-arch-lint
     env:
       - CGO_ENABLED=0
@@ -22,7 +23,7 @@ builds:
 archives:
   - format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 dockers:
   - ids:
@@ -41,9 +42,6 @@ dockers:
 
 checksum:
   name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ .Tag }}"
 
 changelog:
   sort: asc
