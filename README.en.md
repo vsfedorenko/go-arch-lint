@@ -2,7 +2,7 @@
 
 ---
 
-![Logo image](./docs/images/logo.png)
+![Logo image](docs/images/logo.png)
 
 Architecture linter for Go: describe your layers and dependency rules in a Go DSL — the linter finds import and dependency injection violations.
 
@@ -77,7 +77,7 @@ go-arch-lint check
 
 The linter builds an import graph from the actual code, compares it to the configured dependency graph, and reports violations:
 
-![Check output](./docs/images/check-example.png)
+![Check output](docs/images/check-example.png)
 
 | Exit code | Meaning                    |
 |-----------|----------------------------|
@@ -163,7 +163,7 @@ Each example includes a `.go-arch-lint/main.go` with an arch-lint configuration 
 
 ## How it works
 
-![How is working](./docs/images/how-is-working.png)
+![How is working](docs/images/how-is-working.png)
 
 The linter maps Go packages to components via glob patterns, extracts imports from AST, builds the actual dependency graph, and compares it to the desired graph from the configuration. Mismatches are architecture violations.
 
