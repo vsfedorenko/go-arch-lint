@@ -5,8 +5,7 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
-func main() {
-	spec := Spec(func() {
+var spec = Spec(func() {
 	Version(1)
 	Workdir("internal")
 
@@ -32,7 +31,7 @@ func main() {
 	)
 
 	Component("main", "app")
-	Component("container", "app/internal/container/**")
+	Component("container", "app/container/**")
 	Component("operations", "operations/*")
 	Component("services", "services/**")
 	Component("view", "view")
@@ -60,6 +59,8 @@ func main() {
 		MayDependOn("services", "dsl")
 		CanUse("go-ast", "3rd-yaml", "3rd-color-fmt", "3rd-code-highlight", "3rd-json-scheme")
 	})
-	})
+})
+
+func main() {
 	archlint.MustRun(spec)
 }

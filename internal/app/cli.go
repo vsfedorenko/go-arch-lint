@@ -2,36 +2,17 @@ package app
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"os"
-
-	"github.com/vsfedorenko/go-arch-lint/internal/app/internal/container"
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
 
 func Execute() int {
-	mainCtx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// -- build DI
-	di := container.NewContainer(
-		Version,
-		BuildTime,
-		CommitHash,
-	)
+	di := newContainer()
 
-	// -- process
-	err := di.CommandRoot().ExecuteContext(mainCtx)
-	// -- handle errors
+	err := di.CommandRoot().ExecuteContext(ctx)
 	if err != nil {
-		if errors.Is(err, models.UserSpaceError{}) {
-			// do not display user space errors (usually explain will be in ascii/json output)
-			return 1
-		}
-
-		// system error, not possible to output this in json, so just dump to stdout
-		_, _ = fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		reportSystemError(err)
 		return 1
 	}
 

@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
 
@@ -9,7 +10,8 @@ type Container struct {
 	buildTime  string
 	commitHash string
 
-	flags models.FlagsRoot
+	flags       models.FlagsRoot
+	specBuilder *dsl.SpecBuilder
 }
 
 func NewContainer(
