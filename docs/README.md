@@ -41,7 +41,7 @@ go-arch-lint mapping
 module: github.com/vsfedorenko/go-arch-lint
 Project Packages:
    app                 /internal/app
-   container           /internal/app/internal/container
+   container           /internal/app/container
    commands            /internal/commands/check
    commands            /internal/commands/mapping
    ...
