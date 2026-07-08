@@ -102,7 +102,7 @@ Usage:
   go-arch-lint <command> [flags]
 
 Commands:
-  init          Create .go-arch-lint/ scaffold (go.mod, main.go, arch.go)
+	init          Create .go-arch-lint/ scaffold (go.mod, main.go)
   check         Check project architecture against arch rules
   mapping       Show package-to-component mapping
   graph         Generate dependency graph
