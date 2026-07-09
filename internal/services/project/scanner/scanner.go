@@ -82,11 +82,30 @@ func (r *Scanner) resolveFile(ctx *resolveContext, path string, info os.FileInfo
 		return err
 	}
 
-	if info.IsDir() || !r.inScope(ctx, path) {
+	if info.IsDir() {
+		// Skip descending into excluded directories entirely.
+		if r.isExcludedDir(ctx, path) {
+			return filepath.SkipDir
+		}
+		return nil
+	}
+
+	if !r.inScope(ctx, path) {
 		return nil
 	}
 
 	return r.parse(ctx, path)
+}
+
+func (r *Scanner) isExcludedDir(ctx *resolveContext, path string) bool {
+	for _, excludePath := range ctx.excludePaths {
+		if path == excludePath.AbsPath ||
+			strings.HasPrefix(path, excludePath.AbsPath+string(os.PathSeparator)) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *Scanner) inScope(ctx *resolveContext, path string) bool {
