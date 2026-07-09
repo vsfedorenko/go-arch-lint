@@ -15,7 +15,13 @@ Architecture linter for Go: describe your layers and dependency rules in a Go DS
 go install github.com/vsfedorenko/go-arch-lint@latest
 ```
 
-Or use [Docker](https://hub.docker.com/r/vsfedorenko/go-arch-lint/tags), or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/releases).
+Or use [Docker](https://github.com/vsfedorenko/go-arch-lint/pkgs/container/go-arch-lint):
+
+```bash
+docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --project-path /app
+```
+
+Or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/releases).
 
 ## Configuration
 

@@ -15,7 +15,13 @@
 go install github.com/vsfedorenko/go-arch-lint@latest
 ```
 
-Или [Docker](https://hub.docker.com/r/vsfedorenko/go-arch-lint/tags), или [бинарник из релизов](https://github.com/vsfedorenko/go-arch-lint/releases).
+Или через [Docker](https://github.com/vsfedorenko/go-arch-lint/pkgs/container/go-arch-lint):
+
+```bash
+docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --project-path /app
+```
+
+Или [бинарник из релизов](https://github.com/vsfedorenko/go-arch-lint/releases).
 
 ## Конфигурация
 
