@@ -47,3 +47,21 @@ func test1Expected() []deepscan.InjectionMethod {
 		},
 	}
 }
+
+func TestIssue85MultiReturnTuple(t *testing.T) {
+	// Regression for issue #85: a multi-value return spread as a single
+	// argument tuple (foo(bar())) gives callExpr.Args fewer entries than the
+	// callee has parameters, which used to panic the deep-scan argument walk.
+	_, callerDir, _, _ := runtime.Caller(0)
+	projectDir := filepath.Join(filepath.Dir(callerDir), "project_issue85")
+
+	searcher := deepscan.NewSearcher()
+	criteria, err := deepscan.NewCriteria(
+		deepscan.WithPackagePath(filepath.Join(projectDir, "internal")),
+		deepscan.WithAnalyseScope(projectDir),
+	)
+	assert.NoError(t, err)
+
+	_, err = searcher.Usages(criteria)
+	assert.NoError(t, err)
+}
