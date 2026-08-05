@@ -133,6 +133,15 @@ func (s *Searcher) applyMethodImplementationsInPackages(method *InjectionMethod,
 					if gate.IsVariadic && len(callExpr.Args) <= gate.Index {
 						continue
 					}
+
+					// a multi-value return passed as a single argument tuple
+					// (foo(bar())) collapses several callee parameters into one
+					// callExpr.Args entry, so a non-variadic gate index can exceed
+					// the available arguments. the tupled argument can't be resolved
+					// to an individual injector, so skip it.
+					if !gate.IsVariadic && len(callExpr.Args) <= gate.Index {
+						continue
+					}
 					maxIdx := gate.Index
 					if gate.IsVariadic {
 						// variadic function arguments are passed as individual elements in callExpr.Args
