@@ -4,7 +4,10 @@
 
 ![Logo image](docs/images/logo.png)
 
-Линтер архитектуры для Go: описываете слои и зависимости на Go DSL — линтер находит нарушения в импортах и инъекциях зависимостей.
+**Линтер архитектуры для Go** (`go-arch-lint`): описываете слои и
+зависимости на type-safe Go DSL — линтер находит нарушения в импортах
+и инъекциях зависимостей. Подходит для **clean architecture**, **hexagonal**,
+**onion** и **DDD**.
 
 [![CI](https://github.com/vsfedorenko/go-arch-lint/actions/workflows/ci.yml/badge.svg)](https://github.com/vsfedorenko/go-arch-lint/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vsfedorenko/go-arch-lint)](https://goreportcard.com/report/github.com/vsfedorenko/go-arch-lint)
