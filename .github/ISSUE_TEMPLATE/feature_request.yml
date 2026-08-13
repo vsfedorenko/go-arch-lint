@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a new feature or improvement for go-arch-lint
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature!
+        Please help us understand your idea by filling out the form below.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this feature solve? What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the solution you'd like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      description: Output of `go version` (helps us target the right toolchain).
+      placeholder: "go version go1.25.0 linux/amd64"
+    validations:
+      required: false
+  - type: input
+    id: archlint-version
+    attributes:
+      label: go-arch-lint version
+      description: Output of `go-arch-lint version`.
+      placeholder: "go-arch-lint vX.Y.Z"
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, examples, links, or anything else that helps explain your request.
