@@ -4,7 +4,10 @@
 
 ![Logo image](docs/images/logo.png)
 
-Architecture linter for Go: describe your layers and dependency rules in a Go DSL — the linter finds import and dependency injection violations.
+**Go architecture linter** — `go-arch-lint` enforces **clean architecture**,
+**hexagonal**, **onion**, and **DDD** dependency rules in Go projects. Describe
+your layers and dependency rules in a type-safe Go DSL; the linter finds import
+and dependency-injection violations automatically.
 
 [![CI](https://github.com/vsfedorenko/go-arch-lint/actions/workflows/ci.yml/badge.svg)](https://github.com/vsfedorenko/go-arch-lint/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vsfedorenko/go-arch-lint)](https://goreportcard.com/report/github.com/vsfedorenko/go-arch-lint)
