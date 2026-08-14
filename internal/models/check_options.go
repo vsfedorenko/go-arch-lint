@@ -4,4 +4,5 @@ type CheckOptions struct {
 	ProjectPath string
 	MaxWarnings int
 	UseColors   bool
+	Format      Format
 }

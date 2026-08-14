@@ -18,5 +18,6 @@ type (
 		UseColors         bool
 		OutputType        OutputType
 		OutputJsonOneLine bool
+		Format            Format
 	}
 )

@@ -26,6 +26,7 @@ func (c *Container) ProvideRenderer() *render.Renderer {
 		c.provideReferenceRender(),
 		c.flags.OutputType,
 		c.flags.OutputJsonOneLine,
+		c.flags.Format,
 		view.Templates,
 	)
 }
