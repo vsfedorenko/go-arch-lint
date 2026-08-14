@@ -31,6 +31,7 @@ type (
 		referenceRender   referenceRender
 		outputType        models.OutputType
 		outputJSONOneLine bool
+		format            models.Format
 		asciiTemplates    map[string]string
 	}
 )
@@ -40,6 +41,7 @@ func NewRenderer(
 	referenceRender referenceRender,
 	outputType models.OutputType,
 	outputJSONOneLine bool,
+	format models.Format,
 	asciiTemplates map[string]string,
 ) *Renderer {
 	return &Renderer{
@@ -47,6 +49,7 @@ func NewRenderer(
 		referenceRender:   referenceRender,
 		outputType:        outputType,
 		outputJSONOneLine: outputJSONOneLine,
+		format:            format,
 		asciiTemplates:    asciiTemplates,
 	}
 }
@@ -61,6 +64,16 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 			fmt.Printf("%s\n", codePreview)
 		}
 
+		return err
+	}
+
+	// Fast path: --format json renders check results as a flat JSON array of
+	// violations (one object per violation), which is easier for CI pipelines
+	// and editor integrations to consume than the wrapped {Type, Payload} model.
+	if r.format == models.FormatJSON {
+		if renderErr := r.renderViolationsJSON(model); renderErr != nil {
+			return fmt.Errorf("failed to render model: %w", renderErr)
+		}
 		return err
 	}
 
@@ -147,6 +160,34 @@ func (r *Renderer) renderJSON(model interface{}) error {
 
 	if marshalErr != nil {
 		return fmt.Errorf("failed to marshal payload '%v' to json: %w", model, marshalErr)
+	}
+
+	fmt.Println(string(jsonBuffer))
+	return nil
+}
+
+// renderViolationsJSON renders check results as a flat JSON array of Violation
+// objects (the --format json output). Non-check models fall back to the
+// generic wrapped JSON so that `--format json` is still safe on other commands.
+func (r *Renderer) renderViolationsJSON(model interface{}) error {
+	checkOut, ok := model.(models.CmdCheckOut)
+	if !ok {
+		return r.renderJSON(model)
+	}
+
+	violations := checkOut.ToViolations()
+
+	var jsonBuffer []byte
+	var marshalErr error
+
+	if r.outputJSONOneLine {
+		jsonBuffer, marshalErr = json.Marshal(violations)
+	} else {
+		jsonBuffer, marshalErr = json.MarshalIndent(violations, "", "  ")
+	}
+
+	if marshalErr != nil {
+		return fmt.Errorf("failed to marshal violations to json: %w", marshalErr)
 	}
 
 	fmt.Println(string(jsonBuffer))
