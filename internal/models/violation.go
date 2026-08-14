@@ -24,7 +24,7 @@ type Violation struct {
 	Line       int    `json:"line"`                 // 1-based line number (0 when unknown)
 	Column     int    `json:"column,omitempty"`     // 1-based column offset (0 when unknown)
 	Component  string `json:"component,omitempty"`  // source component that owns the file
-	Dependency string `json:"dependency,omitempty"`  // target component or import that was used
+	Dependency string `json:"dependency,omitempty"` // target component or import that was used
 	Package    string `json:"package,omitempty"`    // resolved import path (dependency violations)
 	Rule       string `json:"rule"`                 // human-readable description of the violated rule
 	Details    string `json:"details,omitempty"`    // optional extra context (e.g. injection AST)

@@ -86,7 +86,7 @@ func TestRenderModel_FormatJSON_CheckOut(t *testing.T) {
 
 	// Output should be a JSON array (not the wrapped {Type, Payload} object)
 	output = strings.TrimSpace(output)
-	assertTrue(t, strings.HasPrefix(output, "["), "expected JSON array, got: %s", output[:min(len(output), 40)])
+	assertTrue(t, strings.HasPrefix(output, "["), "expected JSON array, got: %s", output[:minInt(len(output), 40)])
 
 	var violations []models.Violation
 	if err := json.Unmarshal([]byte(output), &violations); err != nil {
@@ -158,7 +158,7 @@ func assertContains(t *testing.T, s, substr string) {
 	}
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
