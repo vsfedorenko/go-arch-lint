@@ -16,6 +16,7 @@ type config struct {
 	projectPath string
 	maxWarnings int
 	useColors   bool
+	format      models.Format
 }
 
 func WithProjectPath(path string) Option {
@@ -30,6 +31,13 @@ func WithColors(b bool) Option {
 	return func(c *config) { c.useColors = b }
 }
 
+// WithFormat sets the output format for check results.
+// Use models.FormatJSON for a flat JSON array of violations,
+// or models.FormatText (the default) for human-readable ASCII.
+func WithFormat(format models.Format) Option {
+	return func(c *config) { c.format = format }
+}
+
 func Run(spec dsl.SpecDef, opts ...Option) error {
 	if spec.Builder() == nil {
 		return fmt.Errorf("spec is empty — ensure Spec() was called")
@@ -39,6 +47,7 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 		projectPath: "../",
 		maxWarnings: 512,
 		useColors:   true,
+		format:      models.FormatText,
 	}
 	for _, o := range opts {
 		o(&cfg)
@@ -51,6 +60,7 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 		ProjectPath: cfg.projectPath,
 		MaxWarnings: cfg.maxWarnings,
 		UseColors:   cfg.useColors,
+		Format:      cfg.format,
 	})
 }
 

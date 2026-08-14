@@ -16,6 +16,7 @@ func (c *Container) CommandRoot() *cobra.Command {
 		UseColors:         true,
 		OutputType:        models.OutputTypeDefault,
 		OutputJsonOneLine: false,
+		Format:            models.FormatDefault,
 	}
 	flagAliasOutputTypeJson := false
 
@@ -60,6 +61,26 @@ func (c *Container) CommandRoot() *cobra.Command {
 				return fmt.Errorf("unknown output-type: %s", flags.OutputType)
 			}
 
+			// --format json implies --output-type json (wrapped model), but is
+			// rendered separately as a flat violation array by the renderer.
+			// We do NOT override output-type here: the format flag drives the
+			// check-command renderer directly (see ProvideRenderer).
+			if flags.Format == models.FormatDefault {
+				flags.Format = models.FormatText
+			}
+
+			formatIsValid := false
+			for _, validValue := range models.FormatValues {
+				if flags.Format == validValue {
+					formatIsValid = true
+					break
+				}
+			}
+
+			if !formatIsValid {
+				return fmt.Errorf("unknown format: %s", flags.Format)
+			}
+
 			// save global flags for another child commands
 			c.flags = flags
 			return nil
@@ -74,6 +95,7 @@ func (c *Container) CommandRoot() *cobra.Command {
 		"output-type",
 		models.OutputTypeJSON,
 	))
+	rootCmd.PersistentFlags().StringVar(&flags.Format, "format", flags.Format, fmt.Sprintf("check output format, variants: [%s] (flat JSON array of violations for 'json')", strings.Join(models.FormatValues, ", ")))
 
 	// apply sub commands
 	for _, subCmd := range c.commands() {

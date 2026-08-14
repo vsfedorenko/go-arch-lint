@@ -121,6 +121,8 @@ Global flags (passed through to delegated commands):
   --project-path string   project directory (default "./")
   --output-type string    output format [ascii, json] (default "ascii")
   --json                  alias for --output-type=json
+  --format string         check output format [text, json] — 'json' emits a flat
+                          array of violations for CI pipelines (default "text")
   --output-color          use ANSI colors (default true)
 `)
 }
