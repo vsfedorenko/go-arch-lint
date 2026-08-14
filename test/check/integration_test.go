@@ -40,14 +40,35 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 	t.Helper()
 	dir := t.TempDir()
 
-	goMod := fmt.Sprintf(`module arch-lint-local
+	// Build the scaffolded go.mod from the repo's go.mod. We keep the same
+	// require block (direct + indirect) so Go has a complete module graph and
+	// never needs to look up intermediate versions over the network — which
+	// would fail under GOPROXY=off in CI.
+	repoGoMod, err := os.ReadFile(filepath.Join(repoRoot, "go.mod"))
+	if err != nil {
+		t.Fatalf("read repo go.mod: %v", err)
+	}
 
-go 1.25
+	// Extract everything after the module/require directives we want to
+	// override: take the `go` line and all require/replace/exclude blocks
+	// from the repo, then prepend our own module + replace directive.
+	lines := strings.Split(string(repoGoMod), "\n")
+	var graphLines []string
+	skipping := true
+	for _, ln := range lines {
+		if skipping {
+			// Skip the repo's module line; keep everything from the `go` line on.
+			if strings.HasPrefix(ln, "go ") {
+				skipping = false
+			}
+		}
+		if !skipping {
+			graphLines = append(graphLines, ln)
+		}
+	}
 
-require github.com/vsfedorenko/go-arch-lint v0.0.0
-
-replace github.com/vsfedorenko/go-arch-lint => %s
-`, repoRoot)
+	goMod := fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint v0.0.0\n\nreplace github.com/vsfedorenko/go-arch-lint => %s\n",
+		strings.Join(graphLines, "\n"), repoRoot)
 
 	files := map[string]string{
 		"go.mod":  goMod,
@@ -58,6 +79,14 @@ replace github.com/vsfedorenko/go-arch-lint => %s
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil { //nolint:gosec // test fixture: generated source files use 0644
 			t.Fatalf("write %s: %v", path, err)
 		}
+	}
+
+	// Copy the repo's go.sum so checksum verification passes offline.
+	srcSum := filepath.Join(repoRoot, "go.sum")
+	if data, err := os.ReadFile(srcSum); err != nil {
+		t.Fatalf("read repo go.sum: %v", err)
+	} else if err := os.WriteFile(filepath.Join(dir, "go.sum"), data, 0o644); err != nil { //nolint:gosec // test fixture
+		t.Fatalf("write go.sum: %v", err)
 	}
 
 	return dir

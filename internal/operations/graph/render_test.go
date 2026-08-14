@@ -7,6 +7,13 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
 
+// Component names used across render test cases.
+const (
+	cmpHandler    = "handler"
+	cmpService    = "service"
+	cmpRepository = "repository"
+)
+
 func TestRenderPlantUML(t *testing.T) {
 	t.Parallel()
 
@@ -19,8 +26,8 @@ func TestRenderPlantUML(t *testing.T) {
 		{
 			name: "flow type basic deps",
 			edges: []graphEdge{
-				{from: "handler", to: "service"},
-				{from: "service", to: "repository"},
+				{from: cmpHandler, to: cmpService},
+				{from: cmpService, to: cmpRepository},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeFlow},
 			want: []string{
@@ -36,7 +43,7 @@ func TestRenderPlantUML(t *testing.T) {
 		{
 			name: "di type reverses arrows",
 			edges: []graphEdge{
-				{from: "handler", to: "service"},
+				{from: cmpHandler, to: cmpService},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeDI},
 			want: []string{
@@ -46,8 +53,8 @@ func TestRenderPlantUML(t *testing.T) {
 		{
 			name: "vendor deps use dotted arrow",
 			edges: []graphEdge{
-				{from: "handler", to: "service"},
-				{from: "handler", to: "3rd-cobra", isVendor: true},
+				{from: cmpHandler, to: cmpService},
+				{from: cmpHandler, to: "3rd-cobra", isVendor: true},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeFlow},
 			want: []string{
@@ -86,8 +93,8 @@ func TestRenderMermaid(t *testing.T) {
 		{
 			name: "flow type basic deps",
 			edges: []graphEdge{
-				{from: "handler", to: "service"},
-				{from: "service", to: "repository"},
+				{from: cmpHandler, to: cmpService},
+				{from: cmpService, to: cmpRepository},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeFlow},
 			want: []string{
@@ -99,7 +106,7 @@ func TestRenderMermaid(t *testing.T) {
 		{
 			name: "di type reverses arrows",
 			edges: []graphEdge{
-				{from: "handler", to: "service"},
+				{from: cmpHandler, to: cmpService},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeDI},
 			want: []string{
@@ -109,7 +116,7 @@ func TestRenderMermaid(t *testing.T) {
 		{
 			name: "special chars get bracket notation",
 			edges: []graphEdge{
-				{from: "handler", to: "3rd-cobra"},
+				{from: cmpHandler, to: "3rd-cobra"},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeFlow},
 			want: []string{
@@ -120,8 +127,8 @@ func TestRenderMermaid(t *testing.T) {
 		{
 			name: "vendor deps use dotted arrow",
 			edges: []graphEdge{
-				{from: "handler", to: "service"},
-				{from: "handler", to: "go-common", isVendor: true},
+				{from: cmpHandler, to: cmpService},
+				{from: cmpHandler, to: "go-common", isVendor: true},
 			},
 			opts: models.CmdGraphIn{Type: models.GraphTypeFlow},
 			want: []string{
@@ -153,8 +160,8 @@ func TestRenderD2(t *testing.T) {
 	t.Parallel()
 
 	edges := []graphEdge{
-		{from: "handler", to: "service"},
-		{from: "handler", to: "go-common", isVendor: true},
+		{from: cmpHandler, to: cmpService},
+		{from: cmpHandler, to: "go-common", isVendor: true},
 	}
 
 	op := &Operation{}

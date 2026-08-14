@@ -24,7 +24,7 @@ func TestScan_SkipsUnreadableExcludedDir(t *testing.T) {
 	projectDir := t.TempDir()
 
 	goFile := filepath.Join(projectDir, "main.go")
-	if err := os.WriteFile(goFile, []byte("package main\n"), 0o644); err != nil {
+	if err := os.WriteFile(goFile, []byte("package main\n"), 0o644); err != nil { //nolint:gosec // test fixture: source file needs 0644 to be readable
 		t.Fatalf("write source file: %v", err)
 	}
 
@@ -62,7 +62,7 @@ func TestScan_DoesNotDescendIntoExcludedDir(t *testing.T) {
 	projectDir := t.TempDir()
 
 	kept := filepath.Join(projectDir, "keep.go")
-	if err := os.WriteFile(kept, []byte("package main\n"), 0o644); err != nil {
+	if err := os.WriteFile(kept, []byte("package main\n"), 0o644); err != nil { //nolint:gosec // test fixture: source file needs 0644 to be readable
 		t.Fatalf("write kept file: %v", err)
 	}
 
@@ -70,7 +70,7 @@ func TestScan_DoesNotDescendIntoExcludedDir(t *testing.T) {
 	if err := os.Mkdir(excludedDir, 0o755); err != nil {
 		t.Fatalf("mkdir excluded dir: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(excludedDir, "dep.go"), []byte("package vendor\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(excludedDir, "dep.go"), []byte("package vendor\n"), 0o644); err != nil { //nolint:gosec // test fixture: source file needs 0644 to be readable
 		t.Fatalf("write excluded file: %v", err)
 	}
 
