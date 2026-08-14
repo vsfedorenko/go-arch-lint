@@ -8,6 +8,7 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/app"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/spec/decoder"
 )
 
 type Option func(*config)
@@ -56,7 +57,10 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	return app.RunCheck(ctx, spec, models.CheckOptions{
+	// dsl → services boundary: the public API accepts a dsl.SpecDef, the
+	// internal app layer consumes a services-layer GoDecoder. Converting
+	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
+	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), models.CheckOptions{
 		ProjectPath: cfg.projectPath,
 		MaxWarnings: cfg.maxWarnings,
 		UseColors:   cfg.useColors,

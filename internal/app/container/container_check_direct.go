@@ -3,12 +3,25 @@ package container
 import (
 	"context"
 
-	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
-func (c *Container) RunCheck(ctx context.Context, spec dsl.SpecDef, opts models.CheckOptions) error {
-	c.specBuilder = spec.Builder()
+// SpecDecoder is the port for an in-process arch spec source. The
+// services-layer decoder.GoDecoder satisfies it; the concrete value is
+// injected through RunCheck by the archlint package entry point, which is
+// the single place allowed to touch both the public dsl API and internal
+// services — keeping the app/container layer dsl-free (see
+// .go-arch-lint/main.go dependency rules).
+type SpecDecoder interface {
+	Decode(archFile string) (spec.Document, []arch.Notice, error)
+}
+
+// RunCheck executes a check driven by an in-process spec (spec), applying
+// the CLI-equivalent flags derived from opts.
+func (c *Container) RunCheck(ctx context.Context, spec SpecDecoder, opts models.CheckOptions) error {
+	c.externalDecoder = spec
 
 	format := opts.Format
 	if format == models.FormatDefault || format == "" {
