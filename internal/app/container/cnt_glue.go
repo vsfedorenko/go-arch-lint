@@ -9,7 +9,6 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/services/project/scanner"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/render/code"
 	specassembler "github.com/vsfedorenko/go-arch-lint/internal/services/spec/assembler"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec/decoder"
 	specvalidator "github.com/vsfedorenko/go-arch-lint/internal/services/spec/validator"
 )
 
@@ -27,8 +26,8 @@ func (c *Container) provideSpecValidator() *specvalidator.Validator {
 	)
 }
 
-func (c *Container) provideGoSpecProvider() *decoder.GoDecoder {
-	return decoder.NewGoDecoder(c.specBuilder)
+func (c *Container) provideGoSpecProvider() SpecDecoder {
+	return c.externalDecoder
 }
 
 func (c *Container) providePathResolver() *path.Resolver {
