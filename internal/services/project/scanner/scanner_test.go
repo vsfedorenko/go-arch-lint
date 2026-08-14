@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fe3dback/go-arch-lint/internal/models"
-	"github.com/fe3dback/go-arch-lint/internal/services/project/scanner"
+	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/project/scanner"
 )
 
 // TestScan_SkipsUnreadableExcludedDir reproduces the case where an excluded
