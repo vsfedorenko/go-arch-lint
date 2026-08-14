@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -27,6 +28,10 @@ type DeepScan struct {
 	fileComponents    map[string]string
 	packageComponents map[string]string
 
+	// resultMux protects c.result.DeepscanWarnings from concurrent appends
+	// when multiple workers scan components in parallel.
+	resultMux sync.Mutex
+
 	sync.Mutex
 }
 
@@ -38,35 +43,28 @@ func NewDeepScan(projectFilesResolver projectFilesResolver, sourceCodeRenderer s
 	}
 }
 
-// How cpus available vs workersCount
-// try to utilize CPU, but not all, user
-// can do other work, and linter is background process
-// 1 = 1   4 = 3   7 = 5
-// 2 = 2   5 = 4   8 = 6
-// 3 = 2   6 = 4   ...
+// workersCount returns the number of concurrent workers used to scan
+// project components in parallel.
+//
+// Previously this returned a hard-coded 1 with a TODO noting the scan
+// algorithm serialized on a mutex. The shared deepscan.Searcher is still
+// internally serialized by its own mutex, but the per-component work
+// (AST loading, usage matching, result building) is independent and can
+// overlap across workers. To make that safe, result appends are now
+// protected by resultMux.
+//
+// We cap at 8 to avoid excessive goroutine/cache pressure on machines
+// with many cores while still utilizing available CPU.
 func (c *DeepScan) workersCount() int {
-	// currently scan algorithm can`t do work in ||
-	// because of mux locks
-	// its working, but 8 workers will scan with same speed that have 1
-	//
-	// todo: adapt scan algorithm to concurrent processing
-	// todo: optimize scan speed
-	return 1
-
-	// max := runtime.NumCPU()
-	// if max == 1 {
-	// 	return 1
-	// }
-	// if max == 2 {
-	// 	return 2
-	// }
-	//
-	// half := int(math.Floor(float64(max) / 1.25))
-	// if half < 2 {
-	// 	half = 2
-	// }
-	//
-	// return half
+	const maxWorkers = 8
+	n := runtime.NumCPU()
+	if n < 1 {
+		n = 1
+	}
+	if n > maxWorkers {
+		n = maxWorkers
+	}
+	return n
 }
 
 func (c *DeepScan) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
@@ -285,7 +283,9 @@ func (c *DeepScan) checkImplementation(
 		},
 	}
 
+	c.resultMux.Lock()
 	c.result.DeepscanWarnings = append(c.result.DeepscanWarnings, warn)
+	c.resultMux.Unlock()
 	return nil
 }
 
