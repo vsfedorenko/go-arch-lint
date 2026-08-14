@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -16,9 +15,10 @@ func newContainer() *container.Container {
 }
 
 // reportSystemError writes non-user-space errors to stderr.
-// UserSpaceError is silent: it is already explained in structured (ascii/json) output.
+// UserSpaceError and ConfigError are silent: they are already explained in
+// structured (ascii/json) output.
 func reportSystemError(err error) {
-	if err == nil || errors.Is(err, models.UserSpaceError{}) {
+	if err == nil || models.IsUserSpaceError(err) || models.IsConfigError(err) {
 		return
 	}
 	fmt.Fprintln(os.Stderr, err)

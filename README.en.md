@@ -164,6 +164,16 @@ func runArchCheck() error {
 
 Global flags: `--project-path`, `--output-type` (`ascii`/`json`), `--json`, `--output-color`.
 
+### Exit codes (check)
+
+| Code | Meaning                                                          |
+|------|------------------------------------------------------------------|
+| `0`  | No violations                                                    |
+| `1`  | Architecture violations found                                    |
+| `2`  | Configuration/system error (spec does not compile, project unreadable) |
+
+CI pipelines can branch on this: fail the build on 1, page a maintainer on 2 (a broken config lints nothing).
+
 ## Examples
 
 The [`examples/`](examples/) directory contains three demo projects:
