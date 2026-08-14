@@ -92,9 +92,15 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 		},
 	}
 
-	if model.ArchHasWarnings || len(model.DocumentNotices) > 0 {
-		// normal output with exit code 1
+	if model.ArchHasWarnings {
+		// violations found — exit code 1
 		return model, models.NewUserSpaceError("check not successful")
+	}
+
+	if len(model.DocumentNotices) > 0 {
+		// the spec itself is invalid (bad globs, unknown components, …) —
+		// the check could not run, so this is a config error: exit code 2
+		return model, models.NewConfigError("arch spec is invalid")
 	}
 
 	return model, nil

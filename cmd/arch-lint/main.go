@@ -3,12 +3,51 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 const flagProjectPath = "--project-path"
+
+// `go run` does not propagate the child's exit code: any non-zero child exit
+// becomes go run's exit 1, with the original code mentioned only in the last
+// stderr line ("exit status N"). The launcher parses it back so the
+// linter-conventional codes (0 OK / 1 violations / 2 config error) survive
+// the delegation. Stderr lines that are NOT "exit status N" are build/delegation
+// failures, which map to config-error (2).
+var childExitStatusRe = regexp.MustCompile(`^exit status (\d+)$`)
+
+// delegatedExitCode maps a `go run` invocation result to the launcher's exit
+// code. stderr is the delegated process's captured stderr.
+func delegatedExitCode(err error, stderr string) int {
+	if err == nil {
+		return 0
+	}
+
+	exitErr := &exec.ExitError{}
+	if !errors.As(err, &exitErr) {
+		// go binary missing, signal, etc. — system error
+		return 2
+	}
+
+	for _, line := range strings.Split(stderr, "\n") {
+		if m := childExitStatusRe.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
+			if code, parseErr := strconv.Atoi(m[1]); parseErr == nil {
+				return code
+			}
+		}
+	}
+
+	// Non-zero exit without an "exit status N" line: the spec failed to
+	// compile or `go run` itself failed (module resolution, syntax errors).
+	// That is a configuration error, not an architecture violation.
+	return 2
+}
 
 func main() {
 	os.Exit(run())
@@ -80,18 +119,14 @@ func cmdDelegate(command string, args []string) int {
 	cmd := exec.Command("go", goArgs...) //nolint:gosec // intentional: CLI delegates to 'go run .go-arch-lint/' per documented design
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		exitErr := &exec.ExitError{}
-		if errors.As(err, &exitErr) {
-			return exitErr.ExitCode()
-		}
-		fmt.Fprintf(os.Stderr, "Error: failed to run arch-lint: %v\n", err)
-		return 1
-	}
+	// stderr is teed: shown to the user AND captured, because `go run` only
+	// reports the child's exit code via its last stderr line ("exit status N").
+	var stderrBuf strings.Builder
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 
-	return 0
+	runErr := cmd.Run()
+	return delegatedExitCode(runErr, stderrBuf.String())
 }
 
 func dirExists(path string) bool {
@@ -124,5 +159,10 @@ Global flags (passed through to delegated commands):
   --format string         check output format [text, json] — 'json' emits a flat
                           array of violations for CI pipelines (default "text")
   --output-color          use ANSI colors (default true)
+
+Exit codes (check):
+  0   no violations
+  1   architecture violations found
+  2   configuration/system error (invalid spec, project unreadable)
 `)
 }

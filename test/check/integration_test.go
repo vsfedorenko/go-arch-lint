@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -111,12 +112,29 @@ func runArchLint(t *testing.T, dir string) (stdout, stderr string, exitCode int)
 	if err != nil {
 		exitErr := &exec.ExitError{}
 		if errors.As(err, &exitErr) {
-			exitCode = exitErr.ExitCode()
+			// `go run` exits 1 for ANY child failure; the child's real exit
+			// code only appears in stderr as "exit status N". Parse it back
+			// so the linter-conventional codes (0/1/2) are observable here.
+			exitCode = parseChildExitCode(errb.String(), exitErr.ExitCode())
 		} else {
 			t.Fatalf("failed to run go run: %v\nstderr: %s", err, errb.String())
 		}
 	}
 	return out.String(), errb.String(), exitCode
+}
+
+// parseChildExitCode extracts "exit status N" from go run's stderr. Falls
+// back to the raw go-run exit code when the line is absent (build errors).
+func parseChildExitCode(stderr string, fallback int) int {
+	for _, line := range strings.Split(stderr, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "exit status ") {
+			if n, err := strconv.Atoi(strings.TrimPrefix(line, "exit status ")); err == nil {
+				return n
+			}
+		}
+	}
+	return fallback
 }
 
 const archOKTpl = `package main
@@ -238,7 +256,7 @@ func TestCheckCommands(t *testing.T) {
 		{
 			name:       "invalid_spec",
 			archGo:     fmt.Sprintf(archInvalidSpecTpl, project),
-			wantExit:   1,
+			wantExit:   2, // config error, distinct from violations (linter convention)
 			wantOutput: "not found directories",
 		},
 	}

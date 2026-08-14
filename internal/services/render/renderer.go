@@ -55,7 +55,9 @@ func NewRenderer(
 }
 
 func (r *Renderer) RenderModel(model interface{}, err error) error {
-	if err != nil && !errors.Is(err, models.UserSpaceError{}) {
+	userSpace := models.IsUserSpaceError(err)
+	configErr := models.IsConfigError(err)
+	if err != nil && !userSpace && !configErr {
 		var referableErr models.ReferableError
 		if errors.As(err, &referableErr) {
 			codePreview := r.referenceRender.SourceCode(referableErr.Reference().ExtendRange(1, 1), true, true)
