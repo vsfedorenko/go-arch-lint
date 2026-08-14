@@ -64,8 +64,38 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	})
 }
 
-func MustRun(spec dsl.SpecDef, opts ...Option) {
-	if err := Run(spec, opts...); err != nil {
-		os.Exit(1)
+// Exit codes follow the linter convention (same as golangci-lint):
+//
+//	0 — success, no violations
+//	1 — architecture violations found (or warnings threshold exceeded)
+//	2 — configuration / system error (spec does not compile, unreadable
+//	    project, internal failure)
+//
+// CI pipelines can branch on this: fail the build on 1, page a maintainer
+// on 2 (a broken config lints nothing).
+const (
+	ExitCodeOK          = 0
+	ExitCodeViolations  = 1
+	ExitCodeConfigError = 2
+)
+
+// ExitCode maps a Run error to the process exit code.
+// A nil error means the check passed: 0. UserSpaceError marks "check ran and
+// found violations": 1. ConfigError and anything else is a config/system
+// failure: 2.
+func ExitCode(err error) int {
+	switch {
+	case err == nil:
+		return ExitCodeOK
+	case models.IsUserSpaceError(err):
+		return ExitCodeViolations
+	default:
+		return ExitCodeConfigError
 	}
+}
+
+// MustRun runs the check and exits the process with a conventional exit code
+// (see ExitCode). This is what a scaffolded `.go-arch-lint/main.go` calls.
+func MustRun(spec dsl.SpecDef, opts ...Option) {
+	os.Exit(ExitCode(Run(spec, opts...)))
 }
