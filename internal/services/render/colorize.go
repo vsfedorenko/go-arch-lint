@@ -1,9 +1,8 @@
 package render
 
-import (
-	"fmt"
-)
+import "fmt"
 
+// Color names accepted by the `colorize` template function.
 const (
 	colorRed     colorName = "red"
 	colorGreen   colorName = "green"
@@ -28,23 +27,22 @@ func newColorizer(printer colorPrinter) *colorizer {
 	}
 }
 
+// painters maps each supported color to its printer method.
+var painters = map[colorName]func(colorPrinter, string) string{
+	colorRed:     (colorPrinter).Red,
+	colorGreen:   (colorPrinter).Green,
+	colorYellow:  (colorPrinter).Yellow,
+	colorBlue:    (colorPrinter).Blue,
+	colorMagenta: (colorPrinter).Magenta,
+	colorCyan:    (colorPrinter).Cyan,
+	colorGray:    (colorPrinter).Gray,
+}
+
+// colorize paints input with the named color. Unknown colors are an error —
+// a typo in a template must surface, not silently drop the color.
 func (c *colorizer) colorize(color colorName, input string) (string, error) {
-	switch color {
-	case colorRed:
-		return c.printer.Red(input), nil
-	case colorGreen:
-		return c.printer.Green(input), nil
-	case colorYellow:
-		return c.printer.Yellow(input), nil
-	case colorBlue:
-		return c.printer.Blue(input), nil
-	case colorMagenta:
-		return c.printer.Magenta(input), nil
-	case colorCyan:
-		return c.printer.Cyan(input), nil
-	case colorGray:
-		return c.printer.Gray(input), nil
-	default:
-		return "", fmt.Errorf("invalid color '%s'", color)
+	if paint, ok := painters[color]; ok {
+		return paint(c.printer, input), nil
 	}
+	return "", fmt.Errorf("invalid color '%s'", color)
 }
