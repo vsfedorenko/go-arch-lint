@@ -149,7 +149,9 @@ func runArchCheck() error {
 }
 ```
 
-`archlint.MustRun(spec)` does the same but calls `os.Exit(1)` on error.
+`archlint.MustRun(spec)` does the same but exits the process with the
+conventional exit code: `1` on violations, `2` on a configuration error
+(see `archlint.ExitCode`).
 
 ## Commands
 
