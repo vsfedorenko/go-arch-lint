@@ -1,3 +1,30 @@
+// Package archlint provides the programmatic (library) API of go-arch-lint.
+//
+// Instead of shelling out to the go-arch-lint CLI, embed the check directly
+// in Go code: build a spec with the [dsl] package, then call [Run] (or
+// [MustRun] for CLI-style tools that map results straight to exit codes).
+//
+// A minimal check looks like:
+//
+//	import (
+//		"github.com/vsfedorenko/go-arch-lint"
+//		. "github.com/vsfedorenko/go-arch-lint/dsl"
+//	)
+//
+//	spec := Spec(func() {
+//		Version(1)
+//		Workdir("internal")
+//		Component("handler", "handlers/*")
+//		Component("service", "services/**")
+//		Deps("handler", func() { MayDependOn("service") })
+//	})
+//
+//	if err := archlint.Run(spec, archlint.WithProjectPath(".")); err != nil {
+//		log.Fatal(err)
+//	}
+//
+// Exit codes: [ExitCode] maps a Run error to the conventional linter exit
+// code (0 ok / 1 violations / 2 config error), see [ExitCode] for details.
 package archlint
 
 import (
@@ -11,6 +38,7 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/services/spec/decoder"
 )
 
+// Option customizes a [Run] call.
 type Option func(*config)
 
 type config struct {
@@ -20,14 +48,20 @@ type config struct {
 	format      models.Format
 }
 
+// WithProjectPath sets the absolute or relative path of the project root to
+// lint. Defaults to "../" — the parent of the typical .go-arch-lint/ module
+// (adjust when linting from outside the scaffold layout).
 func WithProjectPath(path string) Option {
 	return func(c *config) { c.projectPath = path }
 }
 
+// WithMaxWarnings caps the number of reported violations; a check that finds
+// more than n violations fails. Defaults to 512.
 func WithMaxWarnings(n int) Option {
 	return func(c *config) { c.maxWarnings = n }
 }
 
+// WithColors toggles ANSI colors in text output. Defaults to true.
 func WithColors(b bool) Option {
 	return func(c *config) { c.useColors = b }
 }
@@ -39,6 +73,16 @@ func WithFormat(format models.Format) Option {
 	return func(c *config) { c.format = format }
 }
 
+// Run lints the project described by spec and returns an error describing
+// the result.
+//
+// A nil return means the architecture check passed. A non-nil error is
+// either a violations error ("check ran and found problems", test with
+// [models.IsUserSpaceError]) or a config/system error (spec does not
+// compile, unreadable project, internal failure). Use [ExitCode] to map the
+// error to a process exit code, or [MustRun] for the common CLI pattern.
+//
+// Run is safe for sequential use; concurrent Run calls are not synchronized.
 func Run(spec dsl.SpecDef, opts ...Option) error {
 	if spec.Builder() == nil {
 		return fmt.Errorf("spec is empty — ensure Spec() was called")
