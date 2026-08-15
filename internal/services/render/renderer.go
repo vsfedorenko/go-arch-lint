@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 	"text/template"
 
@@ -33,9 +35,14 @@ type (
 		outputJSONOneLine bool
 		format            models.Format
 		asciiTemplates    map[string]string
+		// out receives rendered output. Defaults to os.Stdout; injected in
+		// tests so renderers become pure and pipeable without swapping the
+		// process-wide os.Stdout.
+		out io.Writer
 	}
 )
 
+// NewRenderer constructs a Renderer writing to os.Stdout.
 func NewRenderer(
 	colorPrinter colorPrinter,
 	referenceRender referenceRender,
@@ -44,6 +51,32 @@ func NewRenderer(
 	format models.Format,
 	asciiTemplates map[string]string,
 ) *Renderer {
+	return newRenderer(colorPrinter, referenceRender, outputType, outputJSONOneLine, format, asciiTemplates, os.Stdout)
+}
+
+// NewRendererTo is NewRenderer with an explicit output writer (tests,
+// programmatic API embedding).
+func NewRendererTo(
+	out io.Writer,
+	colorPrinter colorPrinter,
+	referenceRender referenceRender,
+	outputType models.OutputType,
+	outputJSONOneLine bool,
+	format models.Format,
+	asciiTemplates map[string]string,
+) *Renderer {
+	return newRenderer(colorPrinter, referenceRender, outputType, outputJSONOneLine, format, asciiTemplates, out)
+}
+
+func newRenderer(
+	colorPrinter colorPrinter,
+	referenceRender referenceRender,
+	outputType models.OutputType,
+	outputJSONOneLine bool,
+	format models.Format,
+	asciiTemplates map[string]string,
+	out io.Writer,
+) *Renderer {
 	return &Renderer{
 		colorPrinter:      colorPrinter,
 		referenceRender:   referenceRender,
@@ -51,7 +84,22 @@ func NewRenderer(
 		outputJSONOneLine: outputJSONOneLine,
 		format:            format,
 		asciiTemplates:    asciiTemplates,
+		out:               out,
 	}
+}
+
+// emit writes one rendered document (ASCII buffer or JSON blob) to the
+// renderer's output writer, newline-terminated.
+func (r *Renderer) emit(doc string) {
+	fmt.Fprintln(r.out, doc)
+}
+
+// marshalJSON serialises v compactly (one-line mode) or indented.
+func (r *Renderer) marshalJSON(v interface{}) ([]byte, error) {
+	if r.outputJSONOneLine {
+		return json.Marshal(v)
+	}
+	return json.MarshalIndent(v, "", "  ")
 }
 
 func (r *Renderer) RenderModel(model interface{}, err error) error {
@@ -133,14 +181,11 @@ func (r *Renderer) renderASCII(model interface{}) error {
 		return fmt.Errorf("failed to execute template '%s': %w", templateName, err)
 	}
 
-	fmt.Println(buffer.String())
+	r.emit(buffer.String())
 	return nil
 }
 
 func (r *Renderer) renderJSON(model interface{}) error {
-	var jsonBuffer []byte
-	var marshalErr error
-
 	modelType, err := r.extractModelType(model)
 	if err != nil {
 		return fmt.Errorf("failed extract model type from '%T' (maybe not matched pattern: 'CmdXXXOut') : %w", model, err)
@@ -154,17 +199,12 @@ func (r *Renderer) renderJSON(model interface{}) error {
 		Payload: model,
 	}
 
-	if r.outputJSONOneLine {
-		jsonBuffer, marshalErr = json.Marshal(wrapperModel)
-	} else {
-		jsonBuffer, marshalErr = json.MarshalIndent(wrapperModel, "", "  ")
-	}
-
+	jsonBuffer, marshalErr := r.marshalJSON(wrapperModel)
 	if marshalErr != nil {
 		return fmt.Errorf("failed to marshal payload '%v' to json: %w", model, marshalErr)
 	}
 
-	fmt.Println(string(jsonBuffer))
+	r.emit(string(jsonBuffer))
 	return nil
 }
 
@@ -179,20 +219,12 @@ func (r *Renderer) renderViolationsJSON(model interface{}) error {
 
 	violations := checkOut.ToViolations()
 
-	var jsonBuffer []byte
-	var marshalErr error
-
-	if r.outputJSONOneLine {
-		jsonBuffer, marshalErr = json.Marshal(violations)
-	} else {
-		jsonBuffer, marshalErr = json.MarshalIndent(violations, "", "  ")
-	}
-
+	jsonBuffer, marshalErr := r.marshalJSON(violations)
 	if marshalErr != nil {
 		return fmt.Errorf("failed to marshal violations to json: %w", marshalErr)
 	}
 
-	fmt.Println(string(jsonBuffer))
+	r.emit(string(jsonBuffer))
 	return nil
 }
 

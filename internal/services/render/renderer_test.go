@@ -3,8 +3,6 @@ package render
 import (
 	"bytes"
 	"encoding/json"
-	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -19,8 +17,13 @@ func (f fakeReferenceRender) SourceCode(_ common.Reference, _, _ bool) []byte {
 	return []byte("// preview\n")
 }
 
-func newTestRenderer(format models.Format) *Renderer {
-	return NewRenderer(
+// newTestRenderer builds a Renderer writing into a caller-owned buffer —
+// no process-wide os.Stdout swapping needed.
+func newTestRenderer(t *testing.T, format models.Format) (*Renderer, *bytes.Buffer) {
+	t.Helper()
+	buf := &bytes.Buffer{}
+	r := NewRendererTo(
+		buf,
 		fakeColorPrinter{},
 		fakeReferenceRender{},
 		models.OutputTypeASCII,
@@ -28,6 +31,7 @@ func newTestRenderer(format models.Format) *Renderer {
 		format,
 		map[string]string{},
 	)
+	return r, buf
 }
 
 // fakeColorPrinter satisfies colorPrinter without real ANSI codes.
@@ -40,27 +44,6 @@ func (fakeColorPrinter) Blue(s string) string    { return s }
 func (fakeColorPrinter) Magenta(s string) string { return s }
 func (fakeColorPrinter) Cyan(s string) string    { return s }
 func (fakeColorPrinter) Gray(s string) string    { return s }
-
-func captureStdout(fn func()) string {
-	// Redirect fmt.Println output by swapping os.Stdout.
-	// Since the renderer uses fmt.Println directly, we capture via a pipe.
-	orig := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	done := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, r)
-		done <- buf.String()
-	}()
-
-	fn()
-
-	_ = w.Close()
-	os.Stdout = orig
-	return <-done
-}
 
 func TestRenderModel_FormatJSON_CheckOut(t *testing.T) {
 	out := models.CmdCheckOut{
@@ -78,15 +61,19 @@ func TestRenderModel_FormatJSON_CheckOut(t *testing.T) {
 		},
 	}
 
-	r := newTestRenderer(models.FormatJSON)
+	r, buf := newTestRenderer(t, models.FormatJSON)
 
-	output := captureStdout(func() {
-		_ = r.RenderModel(out, models.NewUserSpaceError("check not successful"))
-	})
+	// UserSpaceError is expected: it means "violations found". RenderModel
+	// renders the model AND returns the error for exit-code mapping.
+	if err := r.RenderModel(out, models.NewUserSpaceError("check not successful")); err != nil {
+		if !models.IsUserSpaceError(err) {
+			t.Fatalf("RenderModel: unexpected error: %v", err)
+		}
+	}
 
 	// Output should be a JSON array (not the wrapped {Type, Payload} object)
-	output = strings.TrimSpace(output)
-	assertTrue(t, strings.HasPrefix(output, "["), "expected JSON array, got: %s", output[:minInt(len(output), 40)])
+	output := strings.TrimSpace(buf.String())
+	assertTrue(t, strings.HasPrefix(output, "["), "expected JSON array, got: %s", firstRunes(output, 40))
 
 	var violations []models.Violation
 	if err := json.Unmarshal([]byte(output), &violations); err != nil {
@@ -100,28 +87,27 @@ func TestRenderModel_FormatJSON_CheckOut(t *testing.T) {
 
 func TestRenderModel_FormatJSON_EmptyViolations(t *testing.T) {
 	// When there are no violations, the JSON array should be "[]" (not null).
-	r := newTestRenderer(models.FormatJSON)
+	r, buf := newTestRenderer(t, models.FormatJSON)
 
-	output := captureStdout(func() {
-		_ = r.RenderModel(models.CmdCheckOut{}, nil)
-	})
+	if err := r.RenderModel(models.CmdCheckOut{}, nil); err != nil {
+		t.Fatalf("RenderModel: %v", err)
+	}
 
-	output = strings.TrimSpace(output)
-	assertEquals(t, "[]", output)
+	assertEquals(t, "[]", strings.TrimSpace(buf.String()))
 }
 
 func TestRenderModel_FormatText_FallsBackToASCII(t *testing.T) {
 	// With format=text, the renderer should use the ASCII path. Since our test
 	// renderer has no templates, we expect an error about the missing template
 	// — proving it did NOT take the format=json fast path.
-	r := newTestRenderer(models.FormatText)
+	r, _ := newTestRenderer(t, models.FormatText)
 
 	err := r.RenderModel(models.CmdCheckOut{}, nil)
 	assertTrue(t, err != nil, "expected error from missing ASCII template")
 	assertContains(t, err.Error(), "not exist")
 }
 
-func TestNewRenderer_SetsFormat(t *testing.T) {
+func TestNewRenderer_DefaultsToStdout(t *testing.T) {
 	r := NewRenderer(
 		fakeColorPrinter{},
 		fakeReferenceRender{},
@@ -133,6 +119,9 @@ func TestNewRenderer_SetsFormat(t *testing.T) {
 	assertEquals(t, models.FormatJSON, r.format)
 	assertEquals(t, models.OutputTypeJSON, r.outputType)
 	assertTrue(t, r.outputJSONOneLine, "expected one-line JSON to be true")
+	if r.out == nil {
+		t.Error("expected default renderer to write to os.Stdout (non-nil out)")
+	}
 }
 
 // --- minimal assertion helpers (avoid extra deps churn) ---
@@ -158,9 +147,9 @@ func assertContains(t *testing.T, s, substr string) {
 	}
 }
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
+func firstRunes(s string, n int) string {
+	if len(s) < n {
+		return s
 	}
-	return b
+	return s[:n]
 }
