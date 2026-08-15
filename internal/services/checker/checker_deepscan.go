@@ -28,11 +28,14 @@ type DeepScan struct {
 	fileComponents    map[string]string
 	packageComponents map[string]string
 
-	// resultMux protects c.result.DeepscanWarnings from concurrent appends
+	// checkMux serialises concurrent Check() calls on the shared state
+	// below (spec, result, component maps) — the checker is a long-lived
+	// singleton in the container.
+	checkMux sync.Mutex
+
+	// resultMux protects result.DeepscanWarnings from concurrent appends
 	// when multiple workers scan components in parallel.
 	resultMux sync.Mutex
-
-	sync.Mutex
 }
 
 func NewDeepScan(projectFilesResolver projectFilesResolver, sourceCodeRenderer sourceCodeRenderer) *DeepScan {
@@ -70,8 +73,8 @@ func (c *DeepScan) workersCount() int {
 func (c *DeepScan) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
 	maxWorkers := c.workersCount()
 
-	c.Lock()
-	defer c.Unlock()
+	c.checkMux.Lock()
+	defer c.checkMux.Unlock()
 
 	// -- prepare shared objects
 	c.spec = spec
