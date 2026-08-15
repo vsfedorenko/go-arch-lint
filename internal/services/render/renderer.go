@@ -108,9 +108,9 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 		var referableErr models.ReferableError
 		if errors.As(err, &referableErr) {
 			codePreview := r.referenceRender.SourceCode(referableErr.Reference().ExtendRange(1, 1), true, true)
-			fmt.Printf("ERR: %s\n", err.Error())
-			fmt.Printf("------------\n")
-			fmt.Printf("%s\n", codePreview)
+			r.emit("ERR: " + err.Error())
+			r.emit("------------")
+			r.emit(string(codePreview))
 		}
 
 		return err
