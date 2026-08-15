@@ -58,7 +58,7 @@ func highlightContent(filePath string, code []byte) []byte {
 		lexer = lexers.Fallback
 	}
 
-	style := styles.Trac
+	style := styles.Get("trac")
 	formatter := formatters.TTY8
 
 	iterator, err := lexer.Tokenise(nil, string(code))
