@@ -3,7 +3,7 @@ module github.com/vsfedorenko/go-arch-lint
 go 1.25.0
 
 require (
-	github.com/alecthomas/chroma v0.10.0
+	github.com/alecthomas/chroma/v2 v2.27.0
 	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.9.0
@@ -15,11 +15,9 @@ require (
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0 // indirect
-	github.com/alecthomas/chroma/v2 v2.27.0 // indirect
 	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dlclark/regexp2 v1.12.0 // indirect
 	github.com/dlclark/regexp2/v2 v2.2.2 // indirect
 	github.com/dop251/goja v0.0.0-20260701091749-b07b74453ea9 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
