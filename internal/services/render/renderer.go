@@ -23,7 +23,6 @@ const (
 	fnLinePrefix = "linePrefix"
 	fnDir        = "dir"
 	fnPlus       = "plus"
-	fnMinus      = "minus"
 	fnConcat     = "concat"
 )
 
@@ -165,7 +164,6 @@ func (r *Renderer) renderASCII(model interface{}) error {
 			fnLinePrefix: r.asciiLinePrefix,
 			fnDir:        r.asciiPathDirectory,
 			fnPlus:       r.asciiPlus,
-			fnMinus:      r.asciiMinus,
 			fnConcat:     r.asciiConcat,
 		}).
 		Parse(
