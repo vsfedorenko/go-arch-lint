@@ -20,7 +20,7 @@ var spec = Spec(func() {
 	Vendor("go-ast", "golang.org/x/mod/modfile", "golang.org/x/tools/go/packages")
 	Vendor("3rd-cobra", "github.com/spf13/cobra")
 	Vendor("3rd-color-fmt", "github.com/logrusorgru/aurora/v3")
-	Vendor("3rd-code-highlight", "github.com/alecthomas/chroma/*")
+	Vendor("3rd-code-highlight", "github.com/alecthomas/chroma", "github.com/alecthomas/chroma/**")
 	Vendor("3rd-json-scheme", "github.com/xeipuuv/gojsonschema")
 	Vendor("3rd-graph", "oss.terrastruct.com/d2/**")
 	Vendor("3rd-yaml",
