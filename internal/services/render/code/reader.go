@@ -6,9 +6,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/alecthomas/chroma/formatters"
-	"github.com/alecthomas/chroma/lexers"
-	"github.com/alecthomas/chroma/styles"
+	"github.com/alecthomas/chroma/v2/formatters"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
 )
@@ -58,7 +58,7 @@ func highlightContent(filePath string, code []byte) []byte {
 		lexer = lexers.Fallback
 	}
 
-	style := styles.Trac
+	style := styles.Get("trac")
 	formatter := formatters.TTY8
 
 	iterator, err := lexer.Tokenise(nil, string(code))
