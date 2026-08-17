@@ -43,7 +43,14 @@ func (c *Container) provideReferenceRender() *code.Render {
 func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 	return checker.NewCompositeChecker(
 		c.provideSpecImportsChecker(),
+		c.provideSpecCyclesChecker(),
 		c.provideSpecDeepScanChecker(),
+	)
+}
+
+func (c *Container) provideSpecCyclesChecker() *checker.Cycles {
+	return checker.NewCycles(
+		c.provideProjectFilesResolver(),
 	)
 }
 
