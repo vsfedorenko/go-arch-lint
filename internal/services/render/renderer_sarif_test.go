@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // TestRenderModel_FormatSARIF_CheckOut verifies the --format sarif fast
@@ -21,7 +21,7 @@ func TestRenderModel_FormatSARIF_CheckOut(t *testing.T) {
 				ComponentName:      "handler",
 				FileRelativePath:   "internal/handler/user.go",
 				ResolvedImportName: "github.com/x/proj/internal/repository",
-				Reference:          common.NewReferenceSingleLine("internal/handler/user.go", 10, 2),
+				Reference:          domain.NewReferenceSingleLine("internal/handler/user.go", 10, 2),
 			},
 		},
 		ArchWarningsMatch: []models.CheckArchWarningMatch{

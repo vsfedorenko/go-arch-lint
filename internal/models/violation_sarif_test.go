@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // Fixture component names reused across the SARIF tests (goconst-clean).
@@ -23,7 +23,7 @@ func TestToSARIF_FullViolationSurface(t *testing.T) {
 				ComponentName:      sarifFixtureComponent,
 				FileRelativePath:   "/internal/handler/user.go",
 				ResolvedImportName: "github.com/x/proj/internal/repository",
-				Reference:          common.NewReferenceSingleLine("/internal/handler/user.go", 10, 2),
+				Reference:          domain.NewReferenceSingleLine("/internal/handler/user.go", 10, 2),
 			},
 		},
 		ArchWarningsMatch: []CheckArchWarningMatch{
@@ -108,7 +108,7 @@ func TestToSARIF_DeepScanDetails(t *testing.T) {
 				Dependency: DeepscanWarningDependency{
 					ComponentName: "svc",
 					InjectionPath: "/internal/service/order.go",
-					Injection:     common.NewReferenceSingleLine("/internal/service/order.go", 42, 1),
+					Injection:     domain.NewReferenceSingleLine("/internal/service/order.go", 42, 1),
 					InjectionAST:  "NewOrderRepo(repo Repository)",
 				},
 				Gate: DeepscanWarningGate{
