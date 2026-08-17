@@ -16,6 +16,15 @@ Internal directory contain some subdirectories:
 
 ## Development
 
+### Go versions
+
+The module targets `go 1.25.0` (see `go.mod`). We support the **two latest
+major Go releases** (currently 1.25 and 1.26) — CI runs the test suite on
+both. When bumping the `go` directive or adding dependencies, align
+`go.mod`, the CI matrix in `.github/workflows/ci.yml`, and
+`.github/workflows/release.yml` in the same change, and keep the
+`Go >= 1.25` badge in `README.md` / `README.en.md` in sync.
+
 1. Use DI containers for all struct constructors (see app/internal/container)
 2. All other struct/processors should be injected only wia constructor as interface
 3. All injected interfaces should be described in file called "types.go" 

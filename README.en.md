@@ -12,6 +12,7 @@ and dependency-injection violations automatically.
 [![CI](https://github.com/vsfedorenko/go-arch-lint/actions/workflows/ci.yml/badge.svg)](https://github.com/vsfedorenko/go-arch-lint/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vsfedorenko/go-arch-lint)](https://goreportcard.com/report/github.com/vsfedorenko/go-arch-lint)
 [![Go Reference](https://pkg.go.dev/badge/github.com/vsfedorenko/go-arch-lint.svg)](https://pkg.go.dev/github.com/vsfedorenko/go-arch-lint)
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.25-blue)](https://golang.org/dl/)
 [![License: MIT](https://img.shields.io/github/license/vsfedorenko/go-arch-lint)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/vsfedorenko/go-arch-lint)](https://github.com/vsfedorenko/go-arch-lint/releases)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
@@ -29,6 +30,11 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 ```
 
 Or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/releases).
+
+## Requirements
+
+- **Go 1.25+** (the two latest major versions are supported: 1.25 and 1.26; CI tests both).
+- `go` must be on your `PATH` — the CLI compiles `.go-arch-lint/arch.go` via `go run` (cached, steady-state runs take ~2s).
 
 ## Configuration
 
