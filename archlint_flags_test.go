@@ -29,7 +29,6 @@ func TestOptionsFromFlags_full_surface(t *testing.T) {
 	if len(opts) != 4 {
 		t.Fatalf("expected 4 options, got %d", len(opts))
 	}
-
 }
 
 func TestOptionsFromFlags_short_project_path(t *testing.T) {

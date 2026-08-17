@@ -102,7 +102,7 @@ func OptionsFromFlags(args []string) []Option {
 	}
 
 	if format := stringFlag(args, "--format"); format != "" {
-		opts = append(opts, WithFormat(models.Format(format)))
+		opts = append(opts, WithFormat(format))
 	}
 
 	return opts
