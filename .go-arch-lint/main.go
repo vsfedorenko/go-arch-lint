@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/vsfedorenko/go-arch-lint"
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
@@ -73,5 +75,5 @@ var spec = Spec(func() {
 })
 
 func main() {
-	archlint.MustRun(spec)
+	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
 }

@@ -77,3 +77,8 @@ Project Packages:
 Те же данные доступны в формате json с опцией `--json` (поля
 `MappingGrouped[].Coupling`; у компонентов без зависимостей поле
 отсутствует — `omitempty`).
+
+## JSON-вывод для CI
+
+Схема violation-вывода (`check --format json`) и готовые примеры
+интеграции (GitHub Actions, GitLab CI): [json-schema.md](json-schema.md).
