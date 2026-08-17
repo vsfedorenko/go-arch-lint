@@ -61,10 +61,16 @@ func TestLauncher_GoNotOnPath_PrintsHint(t *testing.T) {
 	}
 
 	bin := buildLauncher(t)
-	dir := writeFixture(t, validSpecMain)
+	// The go-missing path fails at exec.Command spawn — before any spec
+	// compilation — so a minimal spec body suffices (no module deps).
+	dir := writeFixture(t, "package main\n\nfunc main() {}\n")
 
 	cmd := exec.Command(bin, "check", "--project-path", dir)
-	cmd.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + os.Getenv("HOME")}
+
+	// Point PATH at a guaranteed-empty directory: CI images often ship a
+	// system go in /usr/bin, so stripping to /usr/bin is not enough.
+	emptyBin := t.TempDir()
+	cmd.Env = []string{"PATH=" + emptyBin, "HOME=" + t.TempDir()}
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -82,6 +88,8 @@ func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
 	}
 
 	bin := buildLauncher(t)
+	// A syntax error fails at parse time — before module resolution, so
+	// the fixture needs no network access.
 	dir := writeFixture(t, "package main\n\nthis does not compile\n")
 
 	cmd := exec.Command(bin, "check", "--project-path", dir)
