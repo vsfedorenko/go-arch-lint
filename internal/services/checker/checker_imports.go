@@ -7,7 +7,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type Imports struct {
@@ -38,7 +38,7 @@ func (c *Imports) Check(ctx context.Context, spec arch.Spec) (models.CheckResult
 	for _, projectFile := range projectFiles {
 		if projectFile.ComponentID == nil {
 			c.result.addNotMatchedWarning(models.CheckArchWarningMatch{
-				Reference:        common.NewEmptyReference(),
+				Reference:        domain.NewEmptyReference(),
 				FileRelativePath: strings.TrimPrefix(projectFile.File.Path, spec.RootDirectory.Value),
 				FileAbsolutePath: projectFile.File.Path,
 			})

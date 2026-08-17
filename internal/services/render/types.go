@@ -1,12 +1,12 @@
 package render
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type (
 	referenceRender interface {
-		SourceCode(ref common.Reference, highlight bool, showPointer bool) []byte
+		SourceCode(ref domain.Reference, highlight bool, showPointer bool) []byte
 	}
 
 	colorPrinter interface {

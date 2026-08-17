@@ -44,7 +44,13 @@ func NewOperation(
 func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.CmdCheckOut, error) {
 	projectInfo, err := o.projectInfoAssembler.ProjectInfo(in.ProjectPath, in.ArchFile)
 	if err != nil {
-		return models.CmdCheckOut{}, fmt.Errorf("failed to assemble project info: %w", err)
+		// An unreadable project (missing go.mod, bad path) is a configuration
+		// error: the check could not run at all. ExitCode maps this to 2 and
+		// IsConfigError(err) must agree — a plain wrap would classify as a
+		// system error and break the documented contract.
+		return models.CmdCheckOut{}, models.NewConfigError(
+			fmt.Sprintf("failed to assemble project info: %s", err),
+		)
 	}
 
 	spec, err := o.specAssembler.Assemble(projectInfo)
@@ -125,6 +131,7 @@ func (o *Operation) limitResults(result models.CheckResult, maxWarnings int) lim
 		DependencyWarnings: []models.CheckArchWarningDependency{},
 		MatchWarnings:      []models.CheckArchWarningMatch{},
 		DeepscanWarnings:   []models.CheckArchWarningDeepscan{},
+		NamingWarnings:     []models.CheckArchWarningNaming{},
 	}
 
 	// append deps
@@ -157,10 +164,21 @@ func (o *Operation) limitResults(result models.CheckResult, maxWarnings int) lim
 		passCount++
 	}
 
+	// append naming
+	for _, notice := range result.NamingWarnings {
+		if passCount >= maxWarnings {
+			break
+		}
+
+		limitedResults.NamingWarnings = append(limitedResults.NamingWarnings, notice)
+		passCount++
+	}
+
 	totalCount := 0 +
 		len(result.DeepscanWarnings) +
 		len(result.DependencyWarnings) +
-		len(result.MatchWarnings)
+		len(result.MatchWarnings) +
+		len(result.NamingWarnings)
 
 	return limiterResult{
 		results:      limitedResults,

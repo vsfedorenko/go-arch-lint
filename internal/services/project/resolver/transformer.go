@@ -4,10 +4,10 @@ import (
 	"regexp"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
-func refPathToList(list []common.Referable[models.ResolvedPath]) []models.ResolvedPath {
+func refPathToList(list []domain.Referable[models.ResolvedPath]) []models.ResolvedPath {
 	result := make([]models.ResolvedPath, 0)
 
 	for _, path := range list {
@@ -17,7 +17,7 @@ func refPathToList(list []common.Referable[models.ResolvedPath]) []models.Resolv
 	return result
 }
 
-func refRegExpToList(list []common.Referable[*regexp.Regexp]) []*regexp.Regexp {
+func refRegExpToList(list []domain.Referable[*regexp.Regexp]) []*regexp.Regexp {
 	result := make([]*regexp.Regexp, 0)
 
 	for _, path := range list {

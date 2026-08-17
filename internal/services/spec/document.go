@@ -2,7 +2,7 @@ package spec
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // spec layout:
@@ -19,16 +19,16 @@ type (
 	// VendorName is abstraction useful for mapping real vendor packages to one Vendor.
 	VendorName = string
 
-	Vendors      = map[VendorName]common.Referable[Vendor]
-	Components   = map[ComponentName]common.Referable[Component]
-	Dependencies = map[ComponentName]common.Referable[DependencyRule]
+	Vendors      = map[VendorName]domain.Referable[Vendor]
+	Components   = map[ComponentName]domain.Referable[Component]
+	Dependencies = map[ComponentName]domain.Referable[DependencyRule]
 
 	Document interface {
 		// Version of spec (scheme of document)
-		Version() common.Referable[int]
+		Version() domain.Referable[int]
 
 		// WorkingDirectory relative to root, prepend this to all path's from spec
-		WorkingDirectory() common.Referable[string]
+		WorkingDirectory() domain.Referable[string]
 
 		// Options is global spec options
 		Options() Options
@@ -39,25 +39,25 @@ type (
 		// 	- internal/test
 		//	- vendor
 		//	- .idea
-		ExcludedDirectories() []common.Referable[string]
+		ExcludedDirectories() []domain.Referable[string]
 
 		// ExcludedFilesRegExp from analyze, each project file will be matched with this regexp rules
 		// List of regexp's
 		// examples:
 		// 	- "^.*_test\\.go$"
-		ExcludedFilesRegExp() []common.Referable[string]
+		ExcludedFilesRegExp() []domain.Referable[string]
 
 		// Vendors (map)
 		Vendors() Vendors
 
 		// CommonVendors is list of Vendors that can be imported to any project package
-		CommonVendors() []common.Referable[string]
+		CommonVendors() []domain.Referable[string]
 
 		// Components (map)
 		Components() Components
 
 		// CommonComponents is List of Components that can be imported to any project package
-		CommonComponents() []common.Referable[string]
+		CommonComponents() []domain.Referable[string]
 
 		// Dependencies map between Components and DependencyRule`s
 		Dependencies() Dependencies
@@ -85,7 +85,7 @@ type (
 	// package names. See Document.Naming.
 	Naming interface {
 		// ForbiddenPackages is the list of banned package names.
-		ForbiddenPackages() []common.Referable[string]
+		ForbiddenPackages() []domain.Referable[string]
 	}
 
 	// Tier is one declared architectural layer: a name plus its member
@@ -93,21 +93,21 @@ type (
 	Tier struct {
 		Name       string
 		Components []string
-		Reference  common.Reference
+		Reference  domain.Reference
 	}
 
 	Options interface {
 		// IsDependOnAnyVendor allows all project code depend on any third party vendor lib
 		// analyze will not check imports with not local namespace's
-		IsDependOnAnyVendor() common.Referable[bool]
+		IsDependOnAnyVendor() domain.Referable[bool]
 
 		// DeepScan turn on usage of advanced AST linter
 		// this is default behavior since v3+ configs
-		DeepScan() common.Referable[bool]
+		DeepScan() domain.Referable[bool]
 
 		// IgnoreNotFoundComponents skips components that are not found by their glob
 		// disabled by default
-		IgnoreNotFoundComponents() common.Referable[bool]
+		IgnoreNotFoundComponents() domain.Referable[bool]
 	}
 
 	Vendor interface {
@@ -129,18 +129,18 @@ type (
 
 	DependencyRule interface {
 		// MayDependOn is list of Component names, that can be imported to described component
-		MayDependOn() []common.Referable[string]
+		MayDependOn() []domain.Referable[string]
 
 		// CanUse is list of Vendor names, that can be imported to described component
-		CanUse() []common.Referable[string]
+		CanUse() []domain.Referable[string]
 
 		// AnyProjectDeps allow component to import any other local namespace packages
-		AnyProjectDeps() common.Referable[bool]
+		AnyProjectDeps() domain.Referable[bool]
 
 		// AnyVendorDeps allow component to import any other vendor namespace packages
-		AnyVendorDeps() common.Referable[bool]
+		AnyVendorDeps() domain.Referable[bool]
 
 		// DeepScan overrides deepScan global option
-		DeepScan() common.Referable[bool]
+		DeepScan() domain.Referable[bool]
 	}
 )

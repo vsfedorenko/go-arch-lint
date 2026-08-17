@@ -7,7 +7,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 func buildTestSpec() *dsl.SpecBuilder {
@@ -16,19 +16,19 @@ func buildTestSpec() *dsl.SpecBuilder {
 		Components: make(map[string]dsl.ComponentEntry),
 		Deps:       make(map[string]dsl.DepEntry),
 	}
-	b.Version = common.NewEmptyReferable(1)
-	b.Workdir = common.NewEmptyReferable("internal")
-	b.Allow.DepOnAnyVendor = common.NewEmptyReferable(false)
-	b.Allow.DeepScan = common.NewEmptyReferable(true)
+	b.Version = domain.NewEmptyReferable(1)
+	b.Workdir = domain.NewEmptyReferable("internal")
+	b.Allow.DepOnAnyVendor = domain.NewEmptyReferable(false)
+	b.Allow.DeepScan = domain.NewEmptyReferable(true)
 	b.Components["main"] = dsl.ComponentEntry{
 		RelativePaths: []string{"app"},
-		Reference:     common.NewReferenceSingleLine("arch.go", 5, 0),
+		Reference:     domain.NewReferenceSingleLine("arch.go", 5, 0),
 	}
 	b.Deps["main"] = dsl.DepEntry{
-		MayDependOn: []common.Referable[string]{
-			{Value: "container", Reference: common.NewReferenceSingleLine("arch.go", 10, 0)},
+		MayDependOn: []domain.Referable[string]{
+			{Value: "container", Reference: domain.NewReferenceSingleLine("arch.go", 10, 0)},
 		},
-		Reference: common.NewReferenceSingleLine("arch.go", 9, 0),
+		Reference: domain.NewReferenceSingleLine("arch.go", 9, 0),
 	}
 	return b
 }

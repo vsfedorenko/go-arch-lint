@@ -1,6 +1,6 @@
 package models
 
-import "github.com/vsfedorenko/go-arch-lint/internal/models/common"
+import "github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 
 type (
 	CmdSelfInspectIn struct {
@@ -18,6 +18,6 @@ type (
 
 	CmdSelfInspectOutAnnotation struct {
 		Text      string           `json:"Text"`
-		Reference common.Reference `json:"Reference"`
+		Reference domain.Reference `json:"Reference"`
 	}
 )

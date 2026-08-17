@@ -1,20 +1,20 @@
 package assembler
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
-func wrap[T any](ref common.Reference, list []T) []common.Referable[T] {
-	res := make([]common.Referable[T], len(list))
+func wrap[T any](ref domain.Reference, list []T) []domain.Referable[T] {
+	res := make([]domain.Referable[T], len(list))
 
 	for ind, path := range list {
-		res[ind] = common.NewReferable(path, ref)
+		res[ind] = domain.NewReferable(path, ref)
 	}
 
 	return res
 }
 
-func unwrap[T any](refList []common.Referable[T]) []T {
+func unwrap[T any](refList []domain.Referable[T]) []T {
 	res := make([]T, len(refList))
 
 	for ind, r := range refList {

@@ -3,7 +3,7 @@ package models
 import (
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 const (
@@ -32,7 +32,7 @@ type (
 	ResolvedImport struct {
 		Name       string
 		ImportType ImportType
-		Reference  common.Reference
+		Reference  domain.Reference
 	}
 )
 

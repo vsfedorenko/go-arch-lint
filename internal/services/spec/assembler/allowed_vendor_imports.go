@@ -2,7 +2,7 @@ package assembler
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
@@ -15,8 +15,8 @@ func newAllowedVendorImportsAssembler() *allowedVendorImportsAssembler {
 func (aia *allowedVendorImportsAssembler) assemble(
 	yamlDocument spec.Document,
 	vendorNames []string,
-) ([]common.Referable[models.Glob], error) {
-	list := make([]common.Referable[models.Glob], 0)
+) ([]domain.Referable[models.Glob], error) {
+	list := make([]domain.Referable[models.Glob], 0)
 
 	allowedVendors := make([]string, 0)
 	allowedVendors = append(allowedVendors, vendorNames...)
@@ -31,7 +31,7 @@ func (aia *allowedVendorImportsAssembler) assemble(
 		}
 
 		for _, vendorIn := range yamlVendor.Value.ImportPaths() {
-			list = append(list, common.NewReferable(vendorIn, yamlVendor.Reference))
+			list = append(list, domain.NewReferable(vendorIn, yamlVendor.Reference))
 		}
 	}
 
