@@ -1,6 +1,7 @@
 package check_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -231,6 +232,42 @@ func main() {
 }
 `
 
+const archSARIFTpl = `package main
+
+import (
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
+)
+
+func main() {
+	spec := Spec(func() {
+		Version(1)
+		Allow(func() { DepOnAnyVendor(false) })
+		Exclude("internal/excluded", "vendor", "variadic")
+		ExcludeFiles("^.*_test\\.go$")
+		Component("main", "internal/.")
+		Component("a", "internal/a")
+		Component("allowb", "internal/a/allowb")
+		Component("b", "internal/b")
+		Component("c", "internal/c")
+		Component("e", "internal/e")
+		Component("common", "internal/common/**")
+		Component("models", "internal/d/models/*/model")
+		CommonComponents("common")
+		Deps("e", func() {
+			MayDependOn("models")
+			AnyVendorDeps(true)
+		})
+		Deps("allowb", func() { MayDependOn("b") })
+	})
+	archlint.MustRun(spec,
+		archlint.WithProjectPath("%s"),
+		archlint.WithColors(false),
+		archlint.WithFormat("sarif"),
+	)
+}
+`
+
 func TestCheckCommands(t *testing.T) {
 	project := testProjectDir(t)
 	root := repoRoot(t)
@@ -276,4 +313,67 @@ func TestCheckCommands(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestCheckSARIFFormat exercises the --format sarif path end-to-end: the
+// scaffolded main() runs with WithFormat("sarif") against the fixture
+// project (which has real violations under this spec), and stdout must be
+// a parseable SARIF 2.1.0 log whose results carry rule IDs, file URIs and
+// positive line numbers. Exit code stays 1 (violations found).
+func TestCheckSARIFFormat(t *testing.T) {
+	project := testProjectDir(t)
+	root := repoRoot(t)
+	dir := scaffoldArch(t, root, fmt.Sprintf(archSARIFTpl, project))
+
+	stdout, stderr, exitCode := runArchLint(t, dir)
+	if exitCode != 1 {
+		t.Fatalf("exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+
+	var log sarifLog
+	if err := json.Unmarshal([]byte(stdout), &log); err != nil {
+		t.Fatalf("stdout is not a SARIF log: %v\nstdout:\n%s", err, stdout)
+	}
+	if log.Version != "2.1.0" {
+		t.Errorf("SARIF version = %q, want 2.1.0", log.Version)
+	}
+	if len(log.Runs) != 1 || len(log.Runs[0].Results) == 0 {
+		t.Fatalf("expected 1 run with results, got %+v\nstdout:\n%s", log.Runs, stdout)
+	}
+
+	for _, res := range log.Runs[0].Results {
+		if res.RuleID == "" {
+			t.Errorf("result without ruleId: %+v", res)
+		}
+		for _, loc := range res.Locations {
+			uri := loc.PhysicalLocation.ArtifactLocation.URI
+			if uri == "" || strings.HasPrefix(uri, "/") {
+				t.Errorf("artifact URI must be relative, got %q", uri)
+			}
+			if line := loc.PhysicalLocation.Region.StartLine; line < 1 {
+				t.Errorf("startLine must be >= 1, got %d (%s)", line, uri)
+			}
+		}
+	}
+}
+
+// sarifLog is the minimal decode target for the integration assertions —
+// only the envelope fields the test reasons about.
+type sarifLog struct {
+	Version string `json:"version"`
+	Runs    []struct {
+		Results []struct {
+			RuleID    string `json:"ruleId"`
+			Locations []struct {
+				PhysicalLocation struct {
+					ArtifactLocation struct {
+						URI string `json:"uri"`
+					} `json:"artifactLocation"`
+					Region struct {
+						StartLine int `json:"startLine"`
+					} `json:"region"`
+				} `json:"physicalLocation"`
+			} `json:"locations"`
+		} `json:"results"`
+	} `json:"runs"`
 }
