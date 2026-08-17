@@ -34,6 +34,7 @@ const (
 	violationTypeDependency = "dependency"
 	violationTypeMatch      = "match"
 	violationTypeDeepscan   = "deepscan"
+	violationTypeNaming     = "naming"
 )
 
 // ToViolations flattens a CmdCheckOut into a sorted slice of Violation.
@@ -55,6 +56,16 @@ func (out CmdCheckOut) ToViolations() []Violation {
 			Package:    w.ResolvedImportName,
 			Rule: fmt.Sprintf("component %q may not depend on %q",
 				w.ComponentName, w.ResolvedImportName),
+		})
+	}
+
+	for _, w := range out.ArchWarningsNaming {
+		violations = append(violations, Violation{
+			Type:    violationTypeNaming,
+			File:    w.FileRelativePath,
+			Package: w.PackageName,
+			Rule: fmt.Sprintf("package name %q is forbidden (package %s, %d file(s))",
+				w.PackageName, w.PackagePath, w.FilesCount),
 		})
 	}
 

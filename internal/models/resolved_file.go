@@ -23,6 +23,10 @@ type (
 	ProjectFile struct {
 		Path    string
 		Imports []ResolvedImport
+
+		// PackageName is the declared `package X` name of the file (used by
+		// naming-convention rules).
+		PackageName string
 	}
 
 	ResolvedImport struct {

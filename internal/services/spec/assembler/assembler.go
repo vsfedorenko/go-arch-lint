@@ -74,6 +74,7 @@ func (sa *Assembler) Assemble(prj common.Project) (arch.Spec, error) {
 		newAllowAssembler(),
 		newWorkdirAssembler(),
 		newTiersAssembler(),
+		newNamingAssembler(),
 	})
 
 	err = assembler.assemble(&spec, document)

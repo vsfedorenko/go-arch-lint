@@ -45,7 +45,14 @@ func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 		c.provideSpecImportsChecker(),
 		c.provideSpecCyclesChecker(),
 		c.provideSpecTiersChecker(),
+		c.provideSpecNamingChecker(),
 		c.provideSpecDeepScanChecker(),
+	)
+}
+
+func (c *Container) provideSpecNamingChecker() *checker.Naming {
+	return checker.NewNaming(
+		c.provideProjectFilesResolver(),
 	)
 }
 

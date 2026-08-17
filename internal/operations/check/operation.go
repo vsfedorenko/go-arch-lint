@@ -69,6 +69,7 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 		ArchWarningsDependency: limitedResult.results.DependencyWarnings,
 		ArchWarningsMatch:      limitedResult.results.MatchWarnings,
 		ArchWarningsDeepScan:   limitedResult.results.DeepscanWarnings,
+		ArchWarningsNaming:     limitedResult.results.NamingWarnings,
 		OmittedCount:           limitedResult.omittedCount,
 		Qualities: []models.CheckQuality{
 			{
@@ -88,6 +89,12 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 				Name: "Advanced: method calls and dependency injections",
 				Used: spec.Allow.DeepScan.Value,
 				Hint: "switch 'allow.deepScan = true' (or delete) to on",
+			},
+			{
+				ID:   "naming",
+				Name: "Base: package naming conventions",
+				Used: spec.Naming != nil,
+				Hint: "declare Naming(func(){ ForbiddenPackages(...) }) to on",
 			},
 		},
 	}

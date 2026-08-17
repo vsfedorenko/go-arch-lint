@@ -165,6 +165,30 @@ func runArchCheck() error {
 
 Глобальные флаги: `--project-path`, `--output-type` (`ascii`/`json`), `--json`, `--output-color`.
 
+### Конвенции именования пакетов
+
+Бесмысленные имена пакетов (`utils`, `helpers`, `common`, …) — свалки, в
+которые со временем утекает весь код. Правило включается одной
+декларацией в спеке:
+
+```go
+Naming(func() {
+	ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
+})
+```
+
+Чекер сверяет имена всех просканированных пакетов проекта (фактические
+`package X` в файлах, не пути) и репортит каждое нарушение один раз на
+пакет с числом файлов:
+
+```
+Package name utils is forbidden internal/utils (3 file(s)): first at internal/utils/a.go
+```
+
+В JSON-выводе (`--format json`) нарушения имеют тип `naming`. Собственная
+спека go-arch-lint уже баннит `utils`, `helpers`, `common`, `misc`,
+`stuff`.
+
 ### Метрики связанности (mapping)
 
 `mapping -s grouped` показывает для каждого компонента метрики по **фактическому** графу импортов:
