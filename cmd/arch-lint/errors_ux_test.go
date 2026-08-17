@@ -115,21 +115,3 @@ func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
 		t.Errorf("expected init hint on stderr, got:\n%s", out)
 	}
 }
-
-const validSpecMain = `package main
-
-import (
-	archlint "github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
-)
-
-var spec = Spec(func() {
-	Version(1)
-	Workdir(".")
-	Component("main", ".")
-})
-
-func main() {
-	archlint.MustRun(spec, archlint.WithProjectPath(".."))
-}
-`
