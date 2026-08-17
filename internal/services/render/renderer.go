@@ -13,6 +13,10 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
 
+// driverVersionDefault is reported as tool.driver.version in SARIF output
+// when no explicit build version was injected (local `go run` builds).
+const driverVersionDefault = "dev"
+
 const (
 	fnColorize   = "colorize"
 	fnTrimPrefix = "trimPrefix"
@@ -34,6 +38,9 @@ type (
 		outputJSONOneLine bool
 		format            models.Format
 		asciiTemplates    map[string]string
+		// driverVersion is reported as tool.driver.version in SARIF
+		// output. Defaults to "dev" (unknown build).
+		driverVersion string
 		// out receives rendered output. Defaults to os.Stdout; injected in
 		// tests so renderers become pure and pipeable without swapping the
 		// process-wide os.Stdout.
@@ -67,6 +74,13 @@ func NewRendererTo(
 	return newRenderer(colorPrinter, referenceRender, outputType, outputJSONOneLine, format, asciiTemplates, out)
 }
 
+// WithDriverVersion sets the tool version reported in SARIF output
+// (tool.driver.version). Call after construction, before RenderModel.
+func (r *Renderer) WithDriverVersion(version string) *Renderer {
+	r.driverVersion = version
+	return r
+}
+
 func newRenderer(
 	colorPrinter colorPrinter,
 	referenceRender referenceRender,
@@ -76,6 +90,7 @@ func newRenderer(
 	asciiTemplates map[string]string,
 	out io.Writer,
 ) *Renderer {
+	version := driverVersionDefault
 	return &Renderer{
 		colorPrinter:      colorPrinter,
 		referenceRender:   referenceRender,
@@ -83,6 +98,7 @@ func newRenderer(
 		outputJSONOneLine: outputJSONOneLine,
 		format:            format,
 		asciiTemplates:    asciiTemplates,
+		driverVersion:     version,
 		out:               out,
 	}
 }
@@ -121,6 +137,15 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 	// and editor integrations to consume than the wrapped {Type, Payload} model.
 	if r.format == models.FormatJSON {
 		if renderErr := r.renderViolationsJSON(model); renderErr != nil {
+			return fmt.Errorf("failed to render model: %w", renderErr)
+		}
+		return err
+	}
+
+	// Fast path: --format sarif renders check results as a SARIF 2.1.0 log
+	// for GitHub Code Scanning / code-scanning tools.
+	if r.format == models.FormatSARIF {
+		if renderErr := r.renderSARIF(model); renderErr != nil {
 			return fmt.Errorf("failed to render model: %w", renderErr)
 		}
 		return err
@@ -220,6 +245,31 @@ func (r *Renderer) renderViolationsJSON(model interface{}) error {
 	jsonBuffer, marshalErr := r.marshalJSON(violations)
 	if marshalErr != nil {
 		return fmt.Errorf("failed to marshal violations to json: %w", marshalErr)
+	}
+
+	r.emit(string(jsonBuffer))
+	return nil
+}
+
+// renderSARIF renders check results as a SARIF 2.1.0 log (the --format
+// sarif output). Non-check models fall back to the generic wrapped JSON
+// so that `--format sarif` is still safe on other commands.
+func (r *Renderer) renderSARIF(model interface{}) error {
+	checkOut, ok := model.(models.CmdCheckOut)
+	if !ok {
+		return r.renderJSON(model)
+	}
+
+	version := r.driverVersion
+	if version == "" {
+		version = driverVersionDefault
+	}
+
+	sarif := checkOut.ToSARIF(version)
+
+	jsonBuffer, marshalErr := r.marshalJSON(sarif)
+	if marshalErr != nil {
+		return fmt.Errorf("failed to marshal SARIF to json: %w", marshalErr)
 	}
 
 	r.emit(string(jsonBuffer))

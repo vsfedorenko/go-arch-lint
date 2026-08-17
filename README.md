@@ -244,6 +244,10 @@ Package name utils is forbidden internal/utils (3 file(s)): first at internal/ut
 порядок, схема и примеры интеграции — в [docs/json-schema.md](docs/json-schema.md)):
 GitHub Actions-аннотации, GitLab CI-artifacts, семантика exit-кодов.
 
+Для сканеров кода (GitHub Code Scanning, DefectDojo, SARIF-дашборды) есть
+`check --format sarif` — лог SARIF 2.1.0 с ruleId, уровнями и координатами
+нарушений: [docs/json-schema.md → SARIF](docs/json-schema.md#sarif-output-for-github-code-scanning).
+
 ### Коды выхода (check)
 
 | Код | Значение                                                        |

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `--format sarif`: check results as a SARIF 2.1.0 log for GitHub Code
+  Scanning and other code-scanning tools — rule IDs (GA001–GA004),
+  severity levels, relative file URIs and line/column regions;
+  `tool.driver.version` reports the build version (roadmap #3).
 - CI workflow with GitHub Actions (build, test, lint).
 - Self-lint job in CI: `go run ./cmd/arch-lint check` verifies the project's
   own architecture on every push and PR.

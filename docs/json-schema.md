@@ -115,10 +115,107 @@ arch-check:
       - arch-violations.json
 ```
 
+## SARIF output for GitHub Code Scanning
+
+`go-arch-lint check --format sarif` prints a [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
+log — the native ingestion format for GitHub Code Scanning, DefectDojo and
+other code-scanning dashboards. The exit-code convention is unchanged
+(`0`/`1`/`2`); only the stdout payload differs.
+
+```bash
+go-arch-lint check --format sarif --project-path . > arch-lint.sarif
+```
+
+Rule IDs are stable across releases:
+
+| Rule ID  | Name           | Level | Violation kind                        |
+|----------|----------------|-------|---------------------------------------|
+| `GA001`  | `ArchDependency` | `error` | disallowed import / cycle / tier break |
+| `GA002`  | `ArchMatch`      | `note`  | file attached to no component          |
+| `GA003`  | `ArchDeepScan`   | `error` | disallowed constructor injection       |
+| `GA004`  | `ArchNaming`     | `error` | forbidden package name                 |
+
+Every result carries `ruleId`, `level`, a `message.text` (the same
+human-readable rule text as `--format json`, plus component/dependency
+context), and a `locations[0].physicalLocation` with a project-relative
+`artifactLocation.uri` and a `region.startLine`/`startColumn` (line `0` is
+clamped to `1` per the SARIF spec). `tool.driver.version` reports the
+build version (`dev` for local `go run` builds).
+
+Upload to GitHub Code Scanning:
+
+```yaml
+name: arch
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # upload-sarif requirement
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Install go-arch-lint
+        run: go install github.com/vsfedorenko/go-arch-lint/cmd/arch-lint@latest
+      - name: Init scaffold (once; commit the .go-arch-lint/ dir)
+        run: arch-lint init && cd .go-arch-lint && go mod tidy && cd ..
+      - name: Architecture check (SARIF)
+        run: arch-lint check --format sarif --project-path . > arch-lint.sarif || [ $? -eq 1 ]
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: arch-lint.sarif
+        if: always()
+```
+
+`|| [ $? -eq 1 ]` keeps the job alive when violations are found (exit 1)
+so the SARIF still uploads; exit 2 (broken config) still fails the job.
+
+Real output (fixture project, one dependency violation + three unattached
+files):
+
+```json
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "go-arch-lint",
+          "version": "dev",
+          "informationUri": "https://github.com/vsfedorenko/go-arch-lint",
+          "rules": [ { "id": "GA001", "name": "ArchDependency", "default": { "level": "error" } } ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "GA001",
+          "level": "error",
+          "message": {
+            "text": "component \"c\" may not depend on \"github.com/x/proj/internal/b\" (component: c, dependency: github.com/x/proj/internal/b)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "internal/c/c1.go" },
+                "region": { "startLine": 3, "startColumn": 8 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
 ## Notes
 
-- `--format json` affects only `check`; other commands keep the
-  `--output-type` (`ascii`/`json`) wrapper format.
+- `--format json` and `--format sarif` affect only `check`; other commands
+  keep the `--output-type` (`ascii`/`json`) wrapper format (both formats
+  fall back to it for non-check models).
 - The scaffold `main()` must pass through CLI flags — the modern scaffold
   (`go-arch-lint init`) calls `archlint.MustRun(spec,
   archlint.OptionsFromFlags(os.Args[1:])...)`. If your scaffold predates
