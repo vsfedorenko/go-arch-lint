@@ -27,6 +27,7 @@ const (
 	tcAlpha    = "alpha"
 	tcBeta     = "beta"
 	tcCore     = "core"
+	tcPkgCore  = "internal"
 	tcPkgAlpha = "internal/alpha"
 	tcPkgBeta  = "internal/beta"
 	tcZeta     = "zeta"
@@ -264,7 +265,7 @@ func TestCycles_Check_longest_prefix_ownership(t *testing.T) {
 	// "internal/alpha/sub" is owned by alpha via the longest prefix even
 	// though a shorter "internal" prefix could belong elsewhere.
 	spec := cyclesSpec(map[string][]string{
-		tcCore:  {"internal"},
+		tcCore:  {tcPkgCore},
 		tcAlpha: {tcPkgAlpha},
 	})
 

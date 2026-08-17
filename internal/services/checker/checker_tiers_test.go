@@ -29,7 +29,7 @@ func tiersSpec(tiers []arch.Tier) arch.Spec {
 	spec := cyclesSpec(map[string][]string{
 		tcAlpha: {tcPkgAlpha},
 		tcBeta:  {tcPkgBeta},
-		tcCore:  {"internal"},
+		tcCore:  {tcPkgCore},
 	})
 	spec.Tiers = tiers
 	return spec

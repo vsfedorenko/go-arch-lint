@@ -30,6 +30,20 @@ type (
 	CmdMappingOutGrouped struct {
 		ComponentName string
 		FileNames     []string
+
+		// Coupling measured on the actual import graph (0 when metrics are
+		// not computed — backward-compatible JSON).
+		Coupling *ComponentCoupling `json:",omitempty"`
+	}
+
+	// ComponentCoupling surfaces dependency metrics per component:
+	// fan-out (efferent), fan-in (afferent) and the Robert C. Martin
+	// stability ratio I = Ce / (Ca + Ce).
+	ComponentCoupling struct {
+		Name         string  `json:"Name"`
+		OutboundDeps int     `json:"OutboundDeps"`
+		InboundDeps  int     `json:"InboundDeps"`
+		Stability    float64 `json:"Stability"`
 	}
 
 	CmdMappingOutList struct {

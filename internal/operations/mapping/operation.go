@@ -8,6 +8,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/checker"
 )
 
 type Operation struct {
@@ -44,13 +45,32 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdMappingIn) (models.
 		return models.CmdMappingOut{}, fmt.Errorf("failed to resolve project files: %w", err)
 	}
 
+	grouped := assembleMappingByComponent(spec, projectFiles)
+	attachCoupling(grouped, checker.ComputeCoupling(spec, projectFiles))
+
 	return models.CmdMappingOut{
 		ProjectDirectory: spec.RootDirectory.Value,
 		ModuleName:       spec.ModuleName.Value,
-		MappingGrouped:   assembleMappingByComponent(spec, projectFiles),
+		MappingGrouped:   grouped,
 		MappingList:      assembleMappingByFile(projectFiles),
 		Scheme:           in.Scheme,
 	}, nil
+}
+
+// attachCoupling fills each grouped entry with its measured coupling by
+// component name.
+func attachCoupling(grouped []models.CmdMappingOutGrouped, coupling []models.ComponentCoupling) {
+	byName := make(map[string]models.ComponentCoupling, len(coupling))
+	for _, c := range coupling {
+		byName[c.Name] = c
+	}
+
+	for i := range grouped {
+		if c, ok := byName[grouped[i].ComponentName]; ok {
+			coupled := c
+			grouped[i].Coupling = &coupled
+		}
+	}
 }
 
 func assembleMappingByComponent(
