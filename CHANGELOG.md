@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SpecDef` type and `MergeSpecs` for multi-spec support.
 - Examples directory with architecture pattern demos.
 - Initial `CHANGELOG.md`.
+- Delegation model audit: `docs/delegation.md` documents flag routing,
+  exit-code survival through `go run`, cache costs (cold ~45 s / steady ~2 s),
+  and every system failure mode.
 
 ### Changed
 - Module renamed to fork `github.com/vsfedorenko/go-arch-lint`.
