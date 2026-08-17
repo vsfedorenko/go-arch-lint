@@ -38,9 +38,9 @@ const (
 func makeGraph(edges map[string][]string) componentGraph {
 	graph := componentGraph{}
 	for from, tos := range edges {
-		graph[from] = map[string]cycleWitness{}
+		graph[from] = map[string]graphWitness{}
 		for _, to := range tos {
-			graph[from][to] = cycleWitness{}
+			graph[from][to] = graphWitness{}
 		}
 	}
 	return graph
