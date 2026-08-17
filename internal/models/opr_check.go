@@ -15,6 +15,7 @@ type (
 		ArchWarningsDependency []CheckArchWarningDependency `json:"ArchWarningsDeps"`
 		ArchWarningsMatch      []CheckArchWarningMatch      `json:"ArchWarningsNotMatched"`
 		ArchWarningsDeepScan   []CheckArchWarningDeepscan   `json:"ArchWarningsDeepScan"`
+		ArchWarningsNaming     []CheckArchWarningNaming     `json:"ArchWarningsNaming"`
 		OmittedCount           int                          `json:"OmittedCount"`
 		ModuleName             string                       `json:"ModuleName"`
 		Qualities              []CheckQuality               `json:"Qualities"`
@@ -41,6 +42,14 @@ type (
 		FileAbsolutePath   string           `json:"FileAbsolutePath"`
 		ResolvedImportName string           `json:"ResolvedImportName"`
 		Reference          common.Reference `json:"Reference"`
+	}
+
+	CheckArchWarningNaming struct {
+		PackageName      string `json:"PackageName"`
+		PackagePath      string `json:"PackagePath"`
+		FileRelativePath string `json:"FileRelativePath"`
+		FileAbsolutePath string `json:"-"`
+		FilesCount       int    `json:"FilesCount"`
 	}
 
 	CheckArchWarningMatch struct {
@@ -80,6 +89,7 @@ type (
 		DependencyWarnings []CheckArchWarningDependency
 		MatchWarnings      []CheckArchWarningMatch
 		DeepscanWarnings   []CheckArchWarningDeepscan
+		NamingWarnings     []CheckArchWarningNaming
 	}
 )
 
@@ -87,6 +97,7 @@ func (cr *CheckResult) Append(another CheckResult) {
 	cr.DependencyWarnings = append(cr.DependencyWarnings, another.DependencyWarnings...)
 	cr.MatchWarnings = append(cr.MatchWarnings, another.MatchWarnings...)
 	cr.DeepscanWarnings = append(cr.DeepscanWarnings, another.DeepscanWarnings...)
+	cr.NamingWarnings = append(cr.NamingWarnings, another.NamingWarnings...)
 }
 
 func (cr *CheckResult) HasNotices() bool {
@@ -97,6 +108,9 @@ func (cr *CheckResult) HasNotices() bool {
 		return true
 	}
 	if len(cr.DeepscanWarnings) > 0 {
+		return true
+	}
+	if len(cr.NamingWarnings) > 0 {
 		return true
 	}
 

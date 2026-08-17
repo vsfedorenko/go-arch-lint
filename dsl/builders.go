@@ -164,6 +164,54 @@ func Tier(name string, components ...string) {
 	)
 }
 
+// Naming declares packaging-name conventions. Inside fn, use
+// ForbiddenPackages to ban non-descriptive package names:
+//
+//	Naming(func() {
+//		ForbiddenPackages("utils", "helpers", "common")
+//	})
+//
+// Rules apply to every scanned project package, regardless of component.
+func Naming(fn func()) {
+	file, line := callerRef(1)
+
+	entry := current.spec.Naming
+	if entry == nil {
+		entry = &NamingEntry{
+			Reference: common.NewReferenceSingleLine(file, line, 0),
+		}
+		current.spec.Naming = entry
+	}
+
+	previous := current.naming
+	current.naming = entry
+	defer func() { current.naming = previous }()
+
+	fn()
+}
+
+// ForbiddenPackages bans the given package names anywhere in the project
+// (must be called inside Naming()).
+func ForbiddenPackages(names ...string) {
+	if len(names) == 0 {
+		panic(fmt.Errorf("ForbiddenPackages requires at least one name"))
+	}
+	if current.naming == nil {
+		panic(fmt.Errorf("ForbiddenPackages must be called inside Naming()"))
+	}
+
+	file, line := callerRef(1)
+	for _, name := range names {
+		if name == "" {
+			panic(fmt.Errorf("ForbiddenPackages name cannot be empty"))
+		}
+		current.naming.ForbiddenPackages = append(
+			current.naming.ForbiddenPackages,
+			common.NewReferable(name, common.NewReferenceSingleLine(file, line, 0)),
+		)
+	}
+}
+
 // Vendor defines a named vendor mapping to one or more import paths.
 func Vendor(name string, importPaths ...string) {
 	if name == "" {

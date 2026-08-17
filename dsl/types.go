@@ -19,6 +19,15 @@ type SpecBuilder struct {
 	// Tiers holds the ordered layer list (see Tiers()/Tier() builders).
 	// Index 0 is the highest layer; dependencies may only flow downward.
 	Tiers []TierEntry
+
+	// Naming holds packaging-convention rules (see Naming()).
+	Naming *NamingEntry
+}
+
+// NamingEntry holds packaging-naming convention rules.
+type NamingEntry struct {
+	ForbiddenPackages []common.Referable[string]
+	Reference         common.Reference
 }
 
 // TierEntry is one ordered layer: a name plus the components in it.

@@ -135,8 +135,9 @@ func (r *Scanner) parse(ctx *resolveContext, path string) error {
 	}
 
 	ctx.results = append(ctx.results, models.ProjectFile{
-		Path:    path,
-		Imports: r.extractImports(ctx, fileAst),
+		Path:        path,
+		PackageName: fileAst.Name.Name,
+		Imports:     r.extractImports(ctx, fileAst),
 	})
 
 	return nil

@@ -65,6 +65,16 @@ type (
 		// Tiers is the ordered list of architectural layers (may be empty).
 		// Index 0 is the highest layer; dependencies may only flow downward.
 		Tiers() []Tier
+
+		// Naming holds packaging-convention rules (nil when absent).
+		Naming() Naming
+	}
+
+	// Naming is the packaging-conventions section of a Document: banned
+	// package names. See Document.Naming.
+	Naming interface {
+		// ForbiddenPackages is the list of banned package names.
+		ForbiddenPackages() []common.Referable[string]
 	}
 
 	// Tier is one declared architectural layer: a name plus its member
