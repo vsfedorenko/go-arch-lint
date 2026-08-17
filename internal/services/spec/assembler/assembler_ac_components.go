@@ -6,7 +6,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
@@ -45,13 +45,13 @@ func (m *componentsAssembler) assemble(spec *arch.Spec, document spec.Document) 
 
 func (m *componentsAssembler) assembleComponent(
 	yamlName string,
-	yamlComponent common.Referable[spec.Component],
+	yamlComponent domain.Referable[spec.Component],
 	yamlDocument spec.Document,
 ) (arch.Component, error) {
 	depMeta, hasDeps := yamlDocument.Dependencies()[yamlName]
 
-	mayDependOn := make([]common.Referable[string], 0)
-	canUse := make([]common.Referable[string], 0)
+	mayDependOn := make([]domain.Referable[string], 0)
+	canUse := make([]domain.Referable[string], 0)
 	deepScan := yamlDocument.Options().DeepScan()
 
 	if hasDeps {
@@ -61,7 +61,7 @@ func (m *componentsAssembler) assembleComponent(
 	}
 
 	cmp := arch.Component{
-		Name:        common.NewReferable(yamlName, yamlComponent.Reference),
+		Name:        domain.NewReferable(yamlName, yamlComponent.Reference),
 		MayDependOn: mayDependOn,
 		CanUse:      canUse,
 		DeepScan:    deepScan,
@@ -91,7 +91,7 @@ func (m *componentsAssembler) assembleComponent(
 
 func (m *componentsAssembler) enrichWithFlags(
 	cmp *arch.Component,
-	yamlComponent common.Referable[spec.Component],
+	yamlComponent domain.Referable[spec.Component],
 	hasDeps bool,
 	depMeta spec.DependencyRule,
 ) error {
@@ -104,8 +104,8 @@ func (m *componentsAssembler) enrichWithFlags(
 	}
 
 	cmp.SpecialFlags = arch.SpecialFlags{
-		AllowAllProjectDeps: common.NewReferable(false, yamlComponent.Reference),
-		AllowAllVendorDeps:  common.NewReferable(false, yamlComponent.Reference),
+		AllowAllProjectDeps: domain.NewReferable(false, yamlComponent.Reference),
+		AllowAllVendorDeps:  domain.NewReferable(false, yamlComponent.Reference),
 	}
 
 	return nil
@@ -115,9 +115,9 @@ func (m *componentsAssembler) enrichWithResolvedPaths(
 	cmp *arch.Component,
 	yamlDocument spec.Document,
 	yamlName string,
-	yamlComponent common.Referable[spec.Component],
+	yamlComponent domain.Referable[spec.Component],
 ) error {
-	resolvedPaths := make([]common.Referable[models.ResolvedPath], 0)
+	resolvedPaths := make([]domain.Referable[models.ResolvedPath], 0)
 
 	for _, componentIn := range yamlComponent.Value.RelativePaths() {
 		tmpResolvedPath, err := m.resolver.resolveLocalGlobPath(
@@ -144,9 +144,9 @@ func (m *componentsAssembler) enrichWithResolvedPaths(
 
 func (m *componentsAssembler) enrichWithProjectImports(
 	cmp *arch.Component,
-	yamlComponent common.Referable[spec.Component],
+	yamlComponent domain.Referable[spec.Component],
 	yamlDocument spec.Document,
-	mayDependOn []common.Referable[string],
+	mayDependOn []domain.Referable[string],
 ) error {
 	projectImports, err := m.allowedProjectImportsAssembler.assemble(yamlDocument, unwrap(mayDependOn))
 	if err != nil {
@@ -160,7 +160,7 @@ func (m *componentsAssembler) enrichWithProjectImports(
 func (m *componentsAssembler) enrichWithVendorGlobs(
 	cmp *arch.Component,
 	yamlDocument spec.Document,
-	canUse []common.Referable[string],
+	canUse []domain.Referable[string],
 ) error {
 	vendorGlobs, err := m.allowedVendorImportsAssembler.assemble(yamlDocument, unwrap(canUse))
 	if err != nil {

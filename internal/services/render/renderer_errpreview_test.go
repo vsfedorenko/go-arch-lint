@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // TestRenderModel_ReferableErrorPreview verifies the code-preview path
@@ -26,7 +26,7 @@ func TestRenderModel_ReferableErrorPreview(t *testing.T) {
 	)
 
 	original := errors.New("boom at line 5")
-	referable := models.NewReferableErr(original, common.Reference{})
+	referable := models.NewReferableErr(original, domain.Reference{})
 	err := r.RenderModel(nil, referable)
 
 	if err == nil {

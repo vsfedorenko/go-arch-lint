@@ -5,13 +5,13 @@ import (
 	"io"
 	"testing"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 func Test_readLines(t *testing.T) {
 	type args struct {
 		r   io.Reader
-		ref common.Reference
+		ref domain.Reference
 	}
 	tests := []struct {
 		name string
@@ -22,7 +22,7 @@ func Test_readLines(t *testing.T) {
 			name: "simple",
 			args: args{
 				r:   bytes.NewReader([]byte("Line1\nLine2\nLine3\nLine4\nLine5\nLine6")),
-				ref: common.NewReferenceRange("/", 2, 3, 4),
+				ref: domain.NewReferenceRange("/", 2, 3, 4),
 			},
 			want: []byte("Line2\nLine3\nLine4"),
 		},

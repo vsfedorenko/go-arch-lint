@@ -3,11 +3,11 @@ package ast
 import (
 	"go/token"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
-func PositionFromToken(pos token.Position) common.Reference {
-	ref := common.NewReferenceSingleLine(
+func PositionFromToken(pos token.Position) domain.Reference {
+	ref := domain.NewReferenceSingleLine(
 		pos.Filename,
 		pos.Line,
 		pos.Column,

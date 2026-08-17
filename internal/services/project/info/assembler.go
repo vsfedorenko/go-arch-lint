@@ -10,7 +10,7 @@ import (
 	"golang.org/x/mod/modfile"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type Assembler struct{}
@@ -19,23 +19,23 @@ func NewAssembler() *Assembler {
 	return &Assembler{}
 }
 
-func (a *Assembler) ProjectInfo(rootDirectory string, archFilePath string) (common.Project, error) {
+func (a *Assembler) ProjectInfo(rootDirectory string, archFilePath string) (domain.Project, error) {
 	projectPath, err := filepath.Abs(rootDirectory)
 	if err != nil {
-		return common.Project{}, fmt.Errorf("failed to resolve abs path '%s'", rootDirectory)
+		return domain.Project{}, fmt.Errorf("failed to resolve abs path '%s'", rootDirectory)
 	}
 
 	// check arch file
 	goArchFilePath, err := resolveArchPath(projectPath, archFilePath)
 	if err != nil {
-		return common.Project{}, err
+		return domain.Project{}, err
 	}
 
 	// check go.mod
 	goModFilePath := filepath.Clean(fmt.Sprintf("%s/%s", projectPath, models.DefaultGoModFileName))
 	_, err = os.Stat(goModFilePath)
 	if os.IsNotExist(err) {
-		return common.Project{}, fmt.Errorf("not found project '%s' in '%s'",
+		return domain.Project{}, fmt.Errorf("not found project '%s' in '%s'",
 			models.DefaultGoModFileName,
 			goModFilePath,
 		)
@@ -44,10 +44,10 @@ func (a *Assembler) ProjectInfo(rootDirectory string, archFilePath string) (comm
 	// parse go.mod
 	moduleName, err := checkCmdExtractModuleName(goModFilePath)
 	if err != nil {
-		return common.Project{}, fmt.Errorf("failed get module name: %w", err)
+		return domain.Project{}, fmt.Errorf("failed get module name: %w", err)
 	}
 
-	return common.Project{
+	return domain.Project{
 		Directory:      projectPath,
 		GoArchFilePath: goArchFilePath,
 		GoModFilePath:  goModFilePath,

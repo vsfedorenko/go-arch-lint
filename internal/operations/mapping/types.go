@@ -5,12 +5,12 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type (
 	specAssembler interface {
-		Assemble(prj common.Project) (arch.Spec, error)
+		Assemble(prj domain.Project) (arch.Spec, error)
 	}
 
 	projectFilesResolver interface {
@@ -18,6 +18,6 @@ type (
 	}
 
 	projectInfoAssembler interface {
-		ProjectInfo(rootDirectory string, archFilePath string) (common.Project, error)
+		ProjectInfo(rootDirectory string, archFilePath string) (domain.Project, error)
 	}
 )

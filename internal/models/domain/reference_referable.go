@@ -1,4 +1,4 @@
-package common
+package domain
 
 type Referable[T any] struct {
 	Value     T

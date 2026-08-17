@@ -14,7 +14,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/checker/deepscan"
 )
 
@@ -292,15 +292,15 @@ func (c *DeepScan) checkImplementation(
 	return nil
 }
 
-func (c *DeepScan) renderCode(pointer, from, to common.Reference) []byte {
+func (c *DeepScan) renderCode(pointer, from, to domain.Reference) []byte {
 	return c.sourceCodeRenderer.SourceCode(
-		common.NewReferenceRange(pointer.File, from.Line, pointer.Line, to.Line),
+		domain.NewReferenceRange(pointer.File, from.Line, pointer.Line, to.Line),
 		false,
 		false,
 	)
 }
 
-func (c *DeepScan) definitionToRelPath(source common.Reference) string {
+func (c *DeepScan) definitionToRelPath(source domain.Reference) string {
 	relativePath := strings.TrimPrefix(source.File, c.spec.RootDirectory.Value)
 	return fmt.Sprintf("%s:%d", relativePath, source.Line)
 }
@@ -331,7 +331,7 @@ func (c *DeepScan) findUsages(_ context.Context, absPackagePath string) ([]deeps
 	return usages, nil
 }
 
-func (c *DeepScan) refPathToList(list []common.Referable[models.ResolvedPath]) []string {
+func (c *DeepScan) refPathToList(list []domain.Referable[models.ResolvedPath]) []string {
 	result := make([]string, 0)
 
 	for _, refPath := range list {
@@ -341,7 +341,7 @@ func (c *DeepScan) refPathToList(list []common.Referable[models.ResolvedPath]) [
 	return result
 }
 
-func (c *DeepScan) refRegexpToList(list []common.Referable[*regexp.Regexp]) []*regexp.Regexp {
+func (c *DeepScan) refRegexpToList(list []domain.Referable[*regexp.Regexp]) []*regexp.Regexp {
 	result := make([]*regexp.Regexp, 0)
 
 	for _, refPath := range list {

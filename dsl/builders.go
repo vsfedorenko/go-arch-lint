@@ -3,19 +3,19 @@ package dsl
 import (
 	"fmt"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // Version sets the DSL schema version (always 1 for v2.0).
 func Version(v int) {
 	file, line := callerRef(1)
-	current.spec.Version = common.NewReferable(v, common.NewReferenceSingleLine(file, line, 0))
+	current.spec.Version = domain.NewReferable(v, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // Workdir sets the relative working directory for analysis.
 func Workdir(path string) {
 	file, line := callerRef(1)
-	current.spec.Workdir = common.NewReferable(path, common.NewReferenceSingleLine(file, line, 0))
+	current.spec.Workdir = domain.NewReferable(path, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // Allow defines global rules. Call DepOnAnyVendor/DeepScan/IgnoreNotFoundComponents inside fn.
@@ -28,14 +28,14 @@ func Allow(fn func()) {
 // DepOnAnyVendor sets whether any project code may import any vendor lib.
 func DepOnAnyVendor(b bool) {
 	file, line := callerRef(1)
-	current.spec.Allow.DepOnAnyVendor = common.NewReferable(b, common.NewReferenceSingleLine(file, line, 0))
+	current.spec.Allow.DepOnAnyVendor = domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // DeepScan enables/disables advanced AST analysis.
 // Inside Allow(): sets global default. Inside Deps(): overrides per-component.
 func DeepScan(b bool) {
 	file, line := callerRef(1)
-	ref := common.NewReferable(b, common.NewReferenceSingleLine(file, line, 0))
+	ref := domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 
 	if current.inAllow {
 		current.spec.Allow.DeepScan = ref
@@ -50,14 +50,14 @@ func DeepScan(b bool) {
 // IgnoreNotFoundComponents skips components not found by their glob.
 func IgnoreNotFoundComponents(b bool) {
 	file, line := callerRef(1)
-	current.spec.Allow.IgnoreNotFoundComponents = common.NewReferable(b, common.NewReferenceSingleLine(file, line, 0))
+	current.spec.Allow.IgnoreNotFoundComponents = domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // Exclude adds directories to exclude from analysis.
 func Exclude(paths ...string) {
 	file, line := callerRef(1)
 	for _, p := range paths {
-		current.spec.Exclude = append(current.spec.Exclude, common.NewReferable(p, common.NewReferenceSingleLine(file, line, 0)))
+		current.spec.Exclude = append(current.spec.Exclude, domain.NewReferable(p, domain.NewReferenceSingleLine(file, line, 0)))
 	}
 }
 
@@ -65,7 +65,7 @@ func Exclude(paths ...string) {
 func ExcludeFiles(patterns ...string) {
 	file, line := callerRef(1)
 	for _, p := range patterns {
-		current.spec.ExcludeFiles = append(current.spec.ExcludeFiles, common.NewReferable(p, common.NewReferenceSingleLine(file, line, 0)))
+		current.spec.ExcludeFiles = append(current.spec.ExcludeFiles, domain.NewReferable(p, domain.NewReferenceSingleLine(file, line, 0)))
 	}
 }
 
@@ -77,7 +77,7 @@ func Component(name string, paths ...string) {
 	file, line := callerRef(1)
 	current.spec.Components[name] = ComponentEntry{
 		RelativePaths: paths,
-		Reference:     common.NewReferenceSingleLine(file, line, 0),
+		Reference:     domain.NewReferenceSingleLine(file, line, 0),
 	}
 }
 
@@ -118,7 +118,7 @@ func Tiers(names ...string) {
 	for _, name := range names {
 		current.spec.Tiers = append(current.spec.Tiers, TierEntry{
 			Name:      name,
-			Reference: common.NewReferenceSingleLine(file, line, 0),
+			Reference: domain.NewReferenceSingleLine(file, line, 0),
 		})
 	}
 }
@@ -178,7 +178,7 @@ func Naming(fn func()) {
 	entry := current.spec.Naming
 	if entry == nil {
 		entry = &NamingEntry{
-			Reference: common.NewReferenceSingleLine(file, line, 0),
+			Reference: domain.NewReferenceSingleLine(file, line, 0),
 		}
 		current.spec.Naming = entry
 	}
@@ -207,7 +207,7 @@ func ForbiddenPackages(names ...string) {
 		}
 		current.naming.ForbiddenPackages = append(
 			current.naming.ForbiddenPackages,
-			common.NewReferable(name, common.NewReferenceSingleLine(file, line, 0)),
+			domain.NewReferable(name, domain.NewReferenceSingleLine(file, line, 0)),
 		)
 	}
 }
@@ -225,7 +225,7 @@ func Interfaces(fn func()) {
 
 	if current.spec.InterfacePlacement == nil {
 		current.spec.InterfacePlacement = &InterfacePlacementEntry{
-			Reference: common.NewReferenceSingleLine(file, line, 0),
+			Reference: domain.NewReferenceSingleLine(file, line, 0),
 		}
 	}
 
@@ -246,7 +246,7 @@ func MustLiveWithConsumer() {
 
 	file, line := callerRef(1)
 	current.interfaces.MustLiveWithConsumer = true
-	current.interfaces.Reference = common.NewReferenceSingleLine(file, line, 0)
+	current.interfaces.Reference = domain.NewReferenceSingleLine(file, line, 0)
 }
 
 // Vendor defines a named vendor mapping to one or more import paths.
@@ -257,7 +257,7 @@ func Vendor(name string, importPaths ...string) {
 	file, line := callerRef(1)
 	current.spec.Vendors[name] = VendorEntry{
 		ImportPaths: importPaths,
-		Reference:   common.NewReferenceSingleLine(file, line, 0),
+		Reference:   domain.NewReferenceSingleLine(file, line, 0),
 	}
 }
 
@@ -265,7 +265,7 @@ func Vendor(name string, importPaths ...string) {
 func CommonComponents(names ...string) {
 	file, line := callerRef(1)
 	for _, n := range names {
-		current.spec.CommonComponents = append(current.spec.CommonComponents, common.NewReferable(n, common.NewReferenceSingleLine(file, line, 0)))
+		current.spec.CommonComponents = append(current.spec.CommonComponents, domain.NewReferable(n, domain.NewReferenceSingleLine(file, line, 0)))
 	}
 }
 
@@ -273,7 +273,7 @@ func CommonComponents(names ...string) {
 func CommonVendors(names ...string) {
 	file, line := callerRef(1)
 	for _, n := range names {
-		current.spec.CommonVendors = append(current.spec.CommonVendors, common.NewReferable(n, common.NewReferenceSingleLine(file, line, 0)))
+		current.spec.CommonVendors = append(current.spec.CommonVendors, domain.NewReferable(n, domain.NewReferenceSingleLine(file, line, 0)))
 	}
 }
 
@@ -285,7 +285,7 @@ func Deps(component string, fn func()) {
 
 	file, line := callerRef(1)
 	dep := DepEntry{
-		Reference: common.NewReferenceSingleLine(file, line, 0),
+		Reference: domain.NewReferenceSingleLine(file, line, 0),
 	}
 
 	prevDep := current.dep
@@ -303,7 +303,7 @@ func MayDependOn(components ...string) {
 		panic(fmt.Errorf("MayDependOn called outside of Deps() callback"))
 	}
 	for _, c := range components {
-		current.dep.MayDependOn = append(current.dep.MayDependOn, common.NewReferable(c, common.NewReferenceSingleLine(file, line, 0)))
+		current.dep.MayDependOn = append(current.dep.MayDependOn, domain.NewReferable(c, domain.NewReferenceSingleLine(file, line, 0)))
 	}
 }
 
@@ -314,7 +314,7 @@ func CanUse(vendors ...string) {
 		panic(fmt.Errorf("CanUse called outside of Deps() callback"))
 	}
 	for _, v := range vendors {
-		current.dep.CanUse = append(current.dep.CanUse, common.NewReferable(v, common.NewReferenceSingleLine(file, line, 0)))
+		current.dep.CanUse = append(current.dep.CanUse, domain.NewReferable(v, domain.NewReferenceSingleLine(file, line, 0)))
 	}
 }
 
@@ -324,7 +324,7 @@ func AnyProjectDeps(b bool) {
 	if current.dep == nil {
 		panic(fmt.Errorf("AnyProjectDeps called outside of Deps() callback"))
 	}
-	current.dep.AnyProjectDeps = common.NewReferable(b, common.NewReferenceSingleLine(file, line, 0))
+	current.dep.AnyProjectDeps = domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // AnyVendorDeps allows this component to import any vendor package.
@@ -333,5 +333,5 @@ func AnyVendorDeps(b bool) {
 	if current.dep == nil {
 		panic(fmt.Errorf("AnyVendorDeps called outside of Deps() callback"))
 	}
-	current.dep.AnyVendorDeps = common.NewReferable(b, common.NewReferenceSingleLine(file, line, 0))
+	current.dep.AnyVendorDeps = domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 }

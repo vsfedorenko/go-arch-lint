@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type (
@@ -27,10 +27,10 @@ func NewAssembler(
 	}
 }
 
-func (sa *Assembler) Assemble(prj common.Project) (arch.Spec, error) {
+func (sa *Assembler) Assemble(prj domain.Project) (arch.Spec, error) {
 	spec := arch.Spec{
-		RootDirectory: common.NewEmptyReferable(prj.Directory),
-		ModuleName:    common.NewEmptyReferable(prj.ModuleName),
+		RootDirectory: domain.NewEmptyReferable(prj.Directory),
+		ModuleName:    domain.NewEmptyReferable(prj.ModuleName),
 		Integrity: arch.Integrity{
 			DocumentNotices: []arch.Notice{},
 			Suggestions:     []arch.Notice{},

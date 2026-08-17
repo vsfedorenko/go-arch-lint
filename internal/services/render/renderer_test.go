@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // fakeReferenceRender is a minimal referenceRender for tests.
 type fakeReferenceRender struct{}
 
-func (f fakeReferenceRender) SourceCode(_ common.Reference, _, _ bool) []byte {
+func (f fakeReferenceRender) SourceCode(_ domain.Reference, _, _ bool) []byte {
 	return []byte("// preview\n")
 }
 
@@ -53,7 +53,7 @@ func TestRenderModel_FormatJSON_CheckOut(t *testing.T) {
 				ComponentName:      "handler",
 				FileRelativePath:   "internal/handler/user.go",
 				ResolvedImportName: "github.com/x/proj/internal/repository",
-				Reference:          common.NewReferenceSingleLine("internal/handler/user.go", 10, 2),
+				Reference:          domain.NewReferenceSingleLine("internal/handler/user.go", 10, 2),
 			},
 		},
 		ArchWarningsMatch: []models.CheckArchWarningMatch{

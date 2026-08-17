@@ -70,12 +70,18 @@ func (c *InterfacePlacement) Check(ctx context.Context, spec arch.Spec) (models.
 	consumers := map[ifaceKey]map[string]string{}
 
 	for _, usage := range usages {
-		declOwner, okDecl := pkgOwner[usage.iface.pkg]
+		_, okDecl := pkgOwner[usage.iface.pkg]
 		consOwner, okCons := pkgOwner[packagePathOf(usage.file)]
-		if !okDecl || !okCons || declOwner == consOwner {
-			continue // unknown ownership or same-component usage
+		if !okDecl || !okCons {
+			continue // unknown ownership
 		}
 
+		// Count EVERY consuming component — including the declaring one.
+		// A same-component cross-package usage (validator importing the
+		// package that declares Document) means the interface serves its
+		// own component too, so it is not a pure port for one external
+		// consumer; the violation condition below requires the single
+		// consumer to differ from the declaring component.
 		key := ifaceKey{pkg: usage.iface.pkg, name: usage.iface.name}
 		if consumers[key] == nil {
 			consumers[key] = map[string]string{}
@@ -91,12 +97,18 @@ func (c *InterfacePlacement) Check(ctx context.Context, spec arch.Spec) (models.
 
 	for key, comps := range consumers {
 		if len(comps) != 1 {
-			continue // 0 cross-component consumers or genuinely shared — allowed
+			continue // 0 consumers or genuinely shared — allowed
 		}
 
 		var consumer string
 		for comp := range comps {
 			consumer = comp
+		}
+
+		if consumer == pkgOwner[key.pkg] {
+			// The only consumer is the declaring component itself
+			// (same component, other package) — internal interface.
+			continue
 		}
 
 		violations = append(violations, violation{
@@ -215,25 +227,40 @@ func scanInterfaceUsage(spec arch.Spec, projectFiles []models.FileHold) ([]inter
 		ownPkg := packagePathOf(pf.path)
 
 		ast.Inspect(pf.ast, func(n ast.Node) bool {
-			sel, ok := n.(*ast.SelectorExpr)
-			if !ok {
-				return true
-			}
-			ident, ok := sel.X.(*ast.Ident)
-			if !ok {
-				return true
-			}
+			switch node := n.(type) {
+			case *ast.SelectorExpr:
+				ident, ok := node.X.(*ast.Ident)
+				if !ok {
+					return true
+				}
 
-			dir, imported := selectorDirs[ident.Name]
-			if !imported || dir == ownPkg {
-				return true
-			}
+				dir, imported := selectorDirs[ident.Name]
+				if !imported || dir == ownPkg {
+					return true
+				}
 
-			if ifacesByPkg[dir] != nil && ifacesByPkg[dir][sel.Sel.Name] {
-				usages = append(usages, interfaceUsage{
-					file:  pf.path,
-					iface: interfaceDecl{name: sel.Sel.Name, pkg: dir},
-				})
+				if ifacesByPkg[dir] != nil && ifacesByPkg[dir][node.Sel.Name] {
+					usages = append(usages, interfaceUsage{
+						file:  pf.path,
+						iface: interfaceDecl{name: node.Sel.Name, pkg: dir},
+					})
+				}
+			case *ast.TypeSpec:
+				// The interface's own declaration — not a usage.
+				return false
+			case *ast.Ident:
+				// Bare identifier referencing an interface declared in the
+				// SAME package: the declaring component consumes its own
+				// interface (e.g. container's RunCheck taking SpecDecoder).
+				// Recorded so the declaring component counts as a consumer
+				// — a port must serve ONLY the external consumer to require
+				// relocation.
+				if ifacesByPkg[ownPkg] != nil && ifacesByPkg[ownPkg][node.Name] {
+					usages = append(usages, interfaceUsage{
+						file:  pf.path,
+						iface: interfaceDecl{name: node.Name, pkg: ownPkg},
+					})
+				}
 			}
 			return true
 		})

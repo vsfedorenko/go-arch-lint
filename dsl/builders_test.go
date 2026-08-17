@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 func TestVersion(t *testing.T) {
@@ -180,4 +180,4 @@ func TestMultipleDeps(t *testing.T) {
 }
 
 // Ensure unused import doesn't cause issues
-var _ = common.NewEmptyReferable[int]
+var _ = domain.NewEmptyReferable[int]

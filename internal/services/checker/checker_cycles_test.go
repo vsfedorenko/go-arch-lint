@@ -12,7 +12,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 /**
@@ -157,22 +157,22 @@ func (r fakeProjectFilesResolver) ProjectFiles(_ context.Context, _ arch.Spec) (
 
 func cyclesSpec(components map[string][]string) arch.Spec {
 	spec := arch.Spec{
-		RootDirectory: common.NewReferable("/project", common.NewEmptyReference()),
-		ModuleName:    common.NewReferable(cyclesTestModule, common.NewEmptyReference()),
+		RootDirectory: domain.NewReferable("/project", domain.NewEmptyReference()),
+		ModuleName:    domain.NewReferable(cyclesTestModule, domain.NewEmptyReference()),
 	}
 
 	for name, pkgs := range components {
 		component := arch.Component{
-			Name: common.NewReferable(name, common.NewEmptyReference()),
+			Name: domain.NewReferable(name, domain.NewEmptyReference()),
 		}
 		for _, pkg := range pkgs {
-			component.ResolvedPaths = append(component.ResolvedPaths, common.NewReferable(
+			component.ResolvedPaths = append(component.ResolvedPaths, domain.NewReferable(
 				models.ResolvedPath{
 					ImportPath: cyclesTestModule + "/" + pkg,
 					LocalPath:  pkg,
 					AbsPath:    "/project/" + pkg,
 				},
-				common.NewEmptyReference(),
+				domain.NewEmptyReference(),
 			))
 		}
 		spec.Components = append(spec.Components, component)

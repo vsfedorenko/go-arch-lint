@@ -2,7 +2,7 @@ package deepscan
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type (
@@ -49,6 +49,6 @@ type (
 		Pkg    string                // package name (example: "a")
 		Import models.ResolvedImport // package full import path with type
 		Path   string                // package full abs path (example: "/home/user/go/src/myProject/internal/a")
-		Place  common.Reference      // exactly place in source code
+		Place  domain.Reference      // exactly place in source code
 	}
 )

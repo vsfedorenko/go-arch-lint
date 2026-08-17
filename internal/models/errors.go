@@ -3,7 +3,7 @@ package models
 import (
 	"errors"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type (
@@ -22,7 +22,7 @@ type (
 
 	ReferableError struct {
 		original  error
-		reference common.Reference
+		reference domain.Reference
 	}
 )
 
@@ -38,7 +38,7 @@ func (r ReferableError) Error() string {
 	return r.original.Error()
 }
 
-func (r ReferableError) Reference() common.Reference {
+func (r ReferableError) Reference() domain.Reference {
 	return r.reference
 }
 
@@ -132,7 +132,7 @@ func IsUserSpaceError(err error) bool {
 	return false
 }
 
-func NewReferableErr(err error, ref common.Reference) ReferableError {
+func NewReferableErr(err error, ref domain.Reference) ReferableError {
 	return ReferableError{
 		original:  err,
 		reference: ref,

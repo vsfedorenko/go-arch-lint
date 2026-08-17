@@ -19,10 +19,13 @@ linters:
 	{{ end -}}
 {{ else -}}
 	{{ if .ArchHasWarnings -}}
-		{{ $warnCount := (plus (plus (len .ArchWarningsDependency) (len .ArchWarningsMatch)) (len .ArchWarningsDeepScan) ) -}}
+		{{ $warnCount := (plus (plus (plus (len .ArchWarningsDependency) (len .ArchWarningsMatch)) (len .ArchWarningsDeepScan)) (len .ArchWarningsNaming) ) -}}
 		{{ range .ArchWarningsDependency -}}
 			Component {{.ComponentName | colorize "magenta"}} shouldn't depend on {{ .ResolvedImportName | colorize "blue"}} in {{ .Reference | colorize "gray"}}
 		{{ end -}}
+		{{ range .ArchWarningsNaming -}}
+			Package name {{.PackageName | colorize "magenta"}} is forbidden {{ .PackagePath | colorize "cyan" }} ({{ .FilesCount }} file(s)): first at {{.FileRelativePath | colorize "gray"}}
+		{{ end }}
 		{{ range .ArchWarningsMatch -}}
 			File {{.FileRelativePath | colorize "cyan"}} not attached to any component in archfile
 		{{ end }}
