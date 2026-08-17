@@ -44,7 +44,13 @@ func NewOperation(
 func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.CmdCheckOut, error) {
 	projectInfo, err := o.projectInfoAssembler.ProjectInfo(in.ProjectPath, in.ArchFile)
 	if err != nil {
-		return models.CmdCheckOut{}, fmt.Errorf("failed to assemble project info: %w", err)
+		// An unreadable project (missing go.mod, bad path) is a configuration
+		// error: the check could not run at all. ExitCode maps this to 2 and
+		// IsConfigError(err) must agree — a plain wrap would classify as a
+		// system error and break the documented contract.
+		return models.CmdCheckOut{}, models.NewConfigError(
+			fmt.Sprintf("failed to assemble project info: %s", err),
+		)
 	}
 
 	spec, err := o.specAssembler.Assemble(projectInfo)
