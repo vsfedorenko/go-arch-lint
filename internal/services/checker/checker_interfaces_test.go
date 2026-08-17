@@ -80,7 +80,7 @@ func TestInterfacePlacement_same_component_usage_ok(t *testing.T) {
 	writeFile(t, root, "internal/alpha/alpha.go", "package alpha\n")
 
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go":  &tcBetaOwner,
+		tcIfBetaIface:             &tcBetaOwner,
 		"internal/beta/use.go":    &tcBetaOwner,
 		"internal/alpha/alpha.go": &tcAlphaOwner,
 	})
@@ -98,9 +98,9 @@ func TestInterfacePlacement_shared_by_two_components_ok(t *testing.T) {
 	writeFile(t, root, "internal/gamma/use.go", "package gamma\n\nimport \"example.com/proj/internal/beta\"\n\nfunc G(x beta.Iface) error { return x.Do() }\n")
 
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go": &tcBetaOwner,
-		"internal/alpha/use.go":  &tcAlphaOwner,
-		"internal/gamma/use.go":  &tcGammaOwner,
+		tcIfBetaIface:           &tcBetaOwner,
+		"internal/alpha/use.go": &tcAlphaOwner,
+		"internal/gamma/use.go": &tcGammaOwner,
 	})
 
 	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
@@ -117,7 +117,7 @@ func TestInterfacePlacement_two_files_same_consumer_one_violation(t *testing.T) 
 	writeFile(t, root, "internal/alpha/use2.go", "package alpha\n\nimport \"example.com/proj/internal/beta\"\n\nfunc A2(x beta.Iface) error { return x.Do() }\n")
 
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go": &tcBetaOwner,
+		tcIfBetaIface:            &tcBetaOwner,
 		"internal/alpha/use1.go": &tcAlphaOwner,
 		"internal/alpha/use2.go": &tcAlphaOwner,
 	})
