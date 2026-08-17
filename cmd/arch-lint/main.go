@@ -126,7 +126,27 @@ func cmdDelegate(command string, args []string) int {
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 
 	runErr := cmd.Run()
-	return delegatedExitCode(runErr, stderrBuf.String())
+	code := delegatedExitCode(runErr, stderrBuf.String())
+
+	// Friendly hints for the two system-level failure modes that otherwise
+	// print nothing (go missing) or raw compiler noise without context
+	// (spec does not compile).
+	if runErr != nil {
+		var execErr *exec.Error
+		if errors.As(runErr, &execErr) && errors.Is(runErr, exec.ErrNotFound) {
+			fmt.Fprintf(os.Stderr, "Error: 'go' is not on PATH — go-arch-lint delegates to 'go run .go-arch-lint/'.\n")
+			fmt.Fprintf(os.Stderr, "Install Go from https://go.dev/dl/ and ensure 'go' is executable.\n")
+			return code
+		}
+
+		exitErr := &exec.ExitError{}
+		if errors.As(runErr, &exitErr) && code == 2 {
+			fmt.Fprintf(os.Stderr, "---\nThe arch spec at %s did not build.\n", filepath.Join(archDir, "main.go"))
+			fmt.Fprintf(os.Stderr, "Fix the compile errors above, or regenerate the scaffold with 'go-arch-lint init'.\n")
+		}
+	}
+
+	return code
 }
 
 func dirExists(path string) bool {
