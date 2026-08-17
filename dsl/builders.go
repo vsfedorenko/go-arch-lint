@@ -81,6 +81,89 @@ func Component(name string, paths ...string) {
 	}
 }
 
+// Tiers declares an ordered list of architectural layers. Dependencies may
+// only flow downward: a component in Tiers("domain", "app", "infra")[0]
+// ("domain") may not depend on anything in a lower tier, "app" may depend
+// on "domain" but not vice versa, and so on. Tier rules are checked
+// against the ACTUAL import graph, independent of mayDependOn permissions.
+//
+//	Tiers("domain", "app", "infra")
+//	Tier("domain", "user", "order")
+//	Tier("app", "handler")
+//	Tier("infra", "postgres", "redis")
+func Tiers(names ...string) {
+	if len(names) == 0 {
+		panic(fmt.Errorf("Tiers requires at least one layer name"))
+	}
+
+	file, line := callerRef(1)
+
+	seen := map[string]struct{}{}
+	for _, name := range names {
+		if name == "" {
+			panic(fmt.Errorf("Tier name cannot be empty"))
+		}
+		if _, dup := seen[name]; dup {
+			panic(fmt.Errorf("Tier '%s' declared twice in Tiers()", name))
+		}
+		seen[name] = struct{}{}
+	}
+
+	for _, existing := range current.spec.Tiers {
+		if _, dup := seen[existing.Name]; dup {
+			panic(fmt.Errorf("Tier '%s' declared twice", existing.Name))
+		}
+	}
+
+	for _, name := range names {
+		current.spec.Tiers = append(current.spec.Tiers, TierEntry{
+			Name:      name,
+			Reference: common.NewReferenceSingleLine(file, line, 0),
+		})
+	}
+}
+
+// Tier assigns components to a layer declared by Tiers(). Must be called
+// after the matching Tiers() call. A component may belong to one tier
+// only; components not mentioned in any tier are unchecked by tier rules.
+func Tier(name string, components ...string) {
+	if name == "" {
+		panic(fmt.Errorf("Tier name cannot be empty"))
+	}
+	if len(components) == 0 {
+		panic(fmt.Errorf("Tier '%s' requires at least one component", name))
+	}
+
+	tierIndex := -1
+	for i, tier := range current.spec.Tiers {
+		if tier.Name == name {
+			tierIndex = i
+			break
+		}
+	}
+	if tierIndex == -1 {
+		panic(fmt.Errorf("Tier '%s' is not declared — call Tiers(..., %q, ...) first", name, name))
+	}
+
+	for _, comp := range components {
+		if _, known := current.spec.Components[comp]; !known {
+			panic(fmt.Errorf("Tier '%s' references unknown component '%s' — declare it with Component() first", name, comp))
+		}
+
+		for _, tier := range current.spec.Tiers {
+			for _, existing := range tier.Components {
+				if existing == comp {
+					panic(fmt.Errorf("Component '%s' is already assigned to tier '%s'", comp, tier.Name))
+				}
+			}
+		}
+	}
+
+	current.spec.Tiers[tierIndex].Components = append(
+		current.spec.Tiers[tierIndex].Components, components...,
+	)
+}
+
 // Vendor defines a named vendor mapping to one or more import paths.
 func Vendor(name string, importPaths ...string) {
 	if name == "" {

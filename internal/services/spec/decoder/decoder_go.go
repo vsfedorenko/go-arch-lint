@@ -66,6 +66,18 @@ func (d *GoSpecDocument) CommonComponents() []common.Referable[string] {
 	return d.builder.CommonComponents
 }
 
+func (d *GoSpecDocument) Tiers() []spec.Tier {
+	result := make([]spec.Tier, len(d.builder.Tiers))
+	for i, tier := range d.builder.Tiers {
+		result[i] = spec.Tier{
+			Name:       tier.Name,
+			Components: append([]string(nil), tier.Components...),
+			Reference:  tier.Reference,
+		}
+	}
+	return result
+}
+
 func (d *GoSpecDocument) Dependencies() spec.Dependencies {
 	result := make(spec.Dependencies, len(d.builder.Deps))
 	for name, dep := range d.builder.Deps {
