@@ -20,6 +20,19 @@ import (
  * syntax-only by design.
  */
 
+const (
+	tcIfBetaIface = "internal/beta/iface.go"
+	tcIfBetaImpl  = "internal/beta/impl.go"
+	tcIfAlphaUse  = "internal/alpha/use.go"
+)
+
+// Addressable owner names for ComponentID pointers.
+var (
+	tcAlphaOwner = "alpha"
+	tcBetaOwner  = "beta"
+	tcGammaOwner = "gamma"
+)
+
 // singleConsumerProject: interface in beta, consumed only by alpha —
 // the violation case.
 func singleConsumerProject(t *testing.T) (arch.Spec, []models.FileHold) {
@@ -29,11 +42,10 @@ func singleConsumerProject(t *testing.T) (arch.Spec, []models.FileHold) {
 	writeFile(t, root, "internal/beta/impl.go", "package beta\n\ntype Impl struct{}\n\nfunc (Impl) Do() error { return nil }\n")
 	writeFile(t, root, "internal/alpha/use.go", "package alpha\n\nimport \"example.com/proj/internal/beta\"\n\nfunc Use(x beta.Iface) error { return x.Do() }\n")
 
-	alpha, beta := "alpha", "beta"
 	return ifSpecFor(root), holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go": &beta,
-		"internal/beta/impl.go":  &beta,
-		"internal/alpha/use.go":  &alpha,
+		tcIfBetaIface: &tcBetaOwner,
+		tcIfBetaImpl:  &tcBetaOwner,
+		tcIfAlphaUse:  &tcAlphaOwner,
 	})
 }
 
@@ -67,11 +79,10 @@ func TestInterfacePlacement_same_component_usage_ok(t *testing.T) {
 	writeFile(t, root, "internal/beta/use.go", "package beta\n\nfunc Use(x Local) error { return x.Do() }\n")
 	writeFile(t, root, "internal/alpha/alpha.go", "package alpha\n")
 
-	alpha, beta := "alpha", "beta"
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go":  &beta,
-		"internal/beta/use.go":    &beta,
-		"internal/alpha/alpha.go": &alpha,
+		"internal/beta/iface.go":  &tcBetaOwner,
+		"internal/beta/use.go":    &tcBetaOwner,
+		"internal/alpha/alpha.go": &tcAlphaOwner,
 	})
 
 	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
@@ -86,11 +97,10 @@ func TestInterfacePlacement_shared_by_two_components_ok(t *testing.T) {
 	writeFile(t, root, "internal/alpha/use.go", "package alpha\n\nimport \"example.com/proj/internal/beta\"\n\nfunc A(x beta.Iface) error { return x.Do() }\n")
 	writeFile(t, root, "internal/gamma/use.go", "package gamma\n\nimport \"example.com/proj/internal/beta\"\n\nfunc G(x beta.Iface) error { return x.Do() }\n")
 
-	alpha, beta, gamma := "alpha", "beta", "gamma"
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go": &beta,
-		"internal/alpha/use.go":  &alpha,
-		"internal/gamma/use.go":  &gamma,
+		"internal/beta/iface.go": &tcBetaOwner,
+		"internal/alpha/use.go":  &tcAlphaOwner,
+		"internal/gamma/use.go":  &tcGammaOwner,
 	})
 
 	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
@@ -106,11 +116,10 @@ func TestInterfacePlacement_two_files_same_consumer_one_violation(t *testing.T) 
 	writeFile(t, root, "internal/alpha/use1.go", "package alpha\n\nimport \"example.com/proj/internal/beta\"\n\nfunc A1(x beta.Iface) error { return x.Do() }\n")
 	writeFile(t, root, "internal/alpha/use2.go", "package alpha\n\nimport \"example.com/proj/internal/beta\"\n\nfunc A2(x beta.Iface) error { return x.Do() }\n")
 
-	alpha, beta := "alpha", "beta"
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/iface.go": &beta,
-		"internal/alpha/use1.go": &alpha,
-		"internal/alpha/use2.go": &alpha,
+		"internal/beta/iface.go": &tcBetaOwner,
+		"internal/alpha/use1.go": &tcAlphaOwner,
+		"internal/alpha/use2.go": &tcAlphaOwner,
 	})
 
 	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
@@ -124,10 +133,9 @@ func TestInterfacePlacement_struct_types_ignored(t *testing.T) {
 	writeFile(t, root, "internal/beta/types.go", "package beta\n\ntype Config struct{ N int }\n")
 	writeFile(t, root, "internal/alpha/use.go", "package alpha\n\nimport \"example.com/proj/internal/beta\"\n\nfunc A(c beta.Config) int { return c.N }\n")
 
-	alpha, beta := "alpha", "beta"
 	holds := holdsFor(t, root, map[string]*string{
-		"internal/beta/types.go": &beta,
-		"internal/alpha/use.go":  &alpha,
+		"internal/beta/types.go": &tcBetaOwner,
+		"internal/alpha/use.go":  &tcAlphaOwner,
 	})
 
 	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))

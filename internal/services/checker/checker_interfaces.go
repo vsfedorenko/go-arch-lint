@@ -39,7 +39,6 @@ func NewInterfacePlacement(
 type interfaceDecl struct {
 	name string
 	pkg  string // declaring package directory (absolute path)
-	file string // declaring file (absolute path)
 }
 
 // one usage of an interface: consumer file + interface declaration.
