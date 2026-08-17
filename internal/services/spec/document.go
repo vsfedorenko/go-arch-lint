@@ -61,6 +61,18 @@ type (
 
 		// Dependencies map between Components and DependencyRule`s
 		Dependencies() Dependencies
+
+		// Tiers is the ordered list of architectural layers (may be empty).
+		// Index 0 is the highest layer; dependencies may only flow downward.
+		Tiers() []Tier
+	}
+
+	// Tier is one declared architectural layer: a name plus its member
+	// components. Part of the Document surface (see Document.Tiers).
+	Tier struct {
+		Name       string
+		Components []string
+		Reference  common.Reference
 	}
 
 	Options interface {

@@ -1,0 +1,33 @@
+package assembler
+
+import (
+	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
+)
+
+// tiersAssembler copies the ordered tier list from the document into the
+// assembled spec. Validation (unknown components, duplicates) happens in
+// the DSL builders at spec-build time; here the values are already sound.
+type tiersAssembler struct{}
+
+func newTiersAssembler() *tiersAssembler {
+	return &tiersAssembler{}
+}
+
+func (a *tiersAssembler) assemble(spec *arch.Spec, document spec.Document) error {
+	tiers := document.Tiers()
+	if len(tiers) == 0 {
+		return nil
+	}
+
+	spec.Tiers = make([]arch.Tier, len(tiers))
+	for i, tier := range tiers {
+		spec.Tiers[i] = arch.Tier{
+			Name:       tier.Name,
+			Components: append([]string(nil), tier.Components...),
+			Reference:  tier.Reference,
+		}
+	}
+
+	return nil
+}
