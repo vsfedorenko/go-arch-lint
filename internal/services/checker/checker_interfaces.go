@@ -58,13 +58,7 @@ func (c *InterfacePlacement) Check(ctx context.Context, spec arch.Spec) (models.
 	}
 
 	// Package dir -> owning component (scanner's ownership rules).
-	pkgOwner := map[string]string{}
-	for _, hold := range projectFiles {
-		if hold.ComponentID == nil {
-			continue
-		}
-		pkgOwner[packagePathOf(hold.File.Path)] = *hold.ComponentID
-	}
+	pkgOwner := buildPackageOwnerMap(projectFiles)
 
 	usages, declFiles, err := scanInterfaceUsage(spec, projectFiles)
 	if err != nil {
