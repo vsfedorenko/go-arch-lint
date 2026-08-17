@@ -569,3 +569,4 @@ rulesync.local.jsonc
 **/.opencode/plugins/
 **/.opencode/memories/
 **/.opencode/package-lock.json
+.codegraph/
