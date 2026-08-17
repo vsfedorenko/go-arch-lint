@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - CI workflow with GitHub Actions (build, test, lint).
+- Self-lint job in CI: `go run ./cmd/arch-lint check` verifies the project's
+  own architecture on every push and PR.
 - Community health files: `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue and PR templates.
 - PlantUML and Mermaid graph output formats.
 - Programmatic entry points `archlint.Run` / `archlint.MustRun` with `CheckOptions`.
