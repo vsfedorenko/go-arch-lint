@@ -59,3 +59,23 @@ func (a *namingAssembler) assemble(spec *arch.Spec, document spec.Document) erro
 
 	return nil
 }
+
+// assembleInterfacePlacement copies interface-location rules into the spec.
+type interfacePlacementAssembler struct{}
+
+func newInterfacePlacementAssembler() *interfacePlacementAssembler {
+	return &interfacePlacementAssembler{}
+}
+
+func (a *interfacePlacementAssembler) assemble(spec *arch.Spec, document spec.Document) error {
+	placement := document.InterfacePlacement()
+	if placement == nil || !placement.MustLiveWithConsumer() {
+		return nil
+	}
+
+	spec.InterfacePlacement = &arch.InterfacePlacement{
+		MustLiveWithConsumer: true,
+	}
+
+	return nil
+}

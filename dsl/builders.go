@@ -212,6 +212,43 @@ func ForbiddenPackages(names ...string) {
 	}
 }
 
+// Interfaces declares interface-placement conventions. Inside fn, use
+// MustLiveWithConsumer to require that an interface used by exactly one
+// other component is declared in that component (hexagonal ports live
+// with the consumer, not the implementation):
+//
+//	Interfaces(func() {
+//		MustLiveWithConsumer()
+//	})
+func Interfaces(fn func()) {
+	file, line := callerRef(1)
+
+	if current.spec.InterfacePlacement == nil {
+		current.spec.InterfacePlacement = &InterfacePlacementEntry{
+			Reference: common.NewReferenceSingleLine(file, line, 0),
+		}
+	}
+
+	previous := current.interfaces
+	current.interfaces = current.spec.InterfacePlacement
+	defer func() { current.interfaces = previous }()
+
+	fn()
+}
+
+// MustLiveWithConsumer bans interfaces declared next to an implementation
+// when a single other component is their only consumer (must be called
+// inside Interfaces()).
+func MustLiveWithConsumer() {
+	if current.interfaces == nil {
+		panic(fmt.Errorf("MustLiveWithConsumer must be called inside Interfaces()"))
+	}
+
+	file, line := callerRef(1)
+	current.interfaces.MustLiveWithConsumer = true
+	current.interfaces.Reference = common.NewReferenceSingleLine(file, line, 0)
+}
+
 // Vendor defines a named vendor mapping to one or more import paths.
 func Vendor(name string, importPaths ...string) {
 	if name == "" {

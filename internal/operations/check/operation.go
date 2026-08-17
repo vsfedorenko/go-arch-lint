@@ -96,6 +96,12 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 				Used: spec.Naming != nil,
 				Hint: "declare Naming(func(){ ForbiddenPackages(...) }) to on",
 			},
+			{
+				ID:   "interface_placement",
+				Name: "Base: interface placement (ports live with consumer)",
+				Used: spec.InterfacePlacement != nil,
+				Hint: "declare Interfaces(func(){ MustLiveWithConsumer() }) to on",
+			},
 		},
 	}
 
