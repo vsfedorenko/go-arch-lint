@@ -50,7 +50,7 @@ func TestTierRules_upward_dependency_is_violation(t *testing.T) {
 		cyclesFile(tcBeta, "internal/beta/b.go", cyclesTestModule+"/"+tcPkgAlpha), // app -> domain: UP
 	}}
 
-	result, err := NewTierRules(resolver).Check(context.Background(), spec)
+	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 1)
 
@@ -71,7 +71,7 @@ func TestTierRules_downward_and_same_tier_allowed(t *testing.T) {
 		cyclesFile(tcAlpha, "internal/alpha/a.go", cyclesTestModule+"/"+tcPkgBeta), // domain -> app: DOWN
 	}}
 
-	result, err := NewTierRules(resolver).Check(context.Background(), spec)
+	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -86,7 +86,7 @@ func TestTierRules_same_tier_allowed(t *testing.T) {
 		cyclesFile(tcAlpha, "internal/alpha/a.go", cyclesTestModule+"/"+tcPkgBeta), // same tier
 	}}
 
-	result, err := NewTierRules(resolver).Check(context.Background(), spec)
+	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -101,7 +101,7 @@ func TestTierRules_unchecked_components_ignored(t *testing.T) {
 		cyclesFile(tcCore, "internal/beta/b.go", cyclesTestModule+"/"+tcPkgAlpha), // core -> alpha
 	}}
 
-	result, err := NewTierRules(resolver).Check(context.Background(), spec)
+	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -113,7 +113,7 @@ func TestTierRules_no_tiers_configured_noop(t *testing.T) {
 		cyclesFile(tcBeta, "internal/beta/b.go", cyclesTestModule+"/"+tcPkgAlpha),
 	}}
 
-	result, err := NewTierRules(resolver).Check(context.Background(), spec)
+	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -129,7 +129,7 @@ func TestTierRules_message_lists_full_tier_chain(t *testing.T) {
 		cyclesFile(tcCore, "internal/beta/b.go", cyclesTestModule+"/"+tcPkgAlpha), // infra -> domain
 	}}
 
-	result, err := NewTierRules(resolver).Check(context.Background(), spec)
+	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 1)
 	assert.True(t, strings.Contains(result.DependencyWarnings[0].ComponentName, "domain -> app -> infra"))

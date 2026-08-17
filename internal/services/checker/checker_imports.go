@@ -11,27 +11,18 @@ import (
 )
 
 type Imports struct {
-	spec                 arch.Spec
-	projectFilesResolver projectFilesResolver
-	result               results
+	spec   arch.Spec
+	result results
 }
 
-func NewImport(
-	projectFilesResolver projectFilesResolver,
-) *Imports {
+func NewImport() *Imports {
 	return &Imports{
-		result:               newResults(),
-		projectFilesResolver: projectFilesResolver,
+		result: newResults(),
 	}
 }
 
-func (c *Imports) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+func (c *Imports) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	c.spec = spec
-
-	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
-	}
 
 	components := c.assembleComponentsMap(spec)
 

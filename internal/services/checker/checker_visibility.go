@@ -15,22 +15,15 @@ import (
 // is not on the allow list. Works on the actual import graph — the only
 // authoritative signal of "consumes the exported API" that is visible
 // without type-checking (symbol-level tracking belongs to DeepScan).
-type Visibility struct {
-	projectFilesResolver projectFilesResolver
+type Visibility struct{}
+
+func NewVisibility() *Visibility {
+	return &Visibility{}
 }
 
-func NewVisibility(projectFilesResolver projectFilesResolver) *Visibility {
-	return &Visibility{projectFilesResolver: projectFilesResolver}
-}
-
-func (c *Visibility) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+func (c *Visibility) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	if spec.Visibility == nil || len(spec.Visibility.Rules) == 0 {
 		return models.CheckResult{}, nil
-	}
-
-	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
 	}
 
 	graph := buildComponentGraph(spec, projectFiles)

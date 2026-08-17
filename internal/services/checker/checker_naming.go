@@ -2,7 +2,6 @@ package checker
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -15,18 +14,13 @@ import (
 // component it belongs to. Non-descriptive package names are a widespread
 // architectural smell — they become dumping grounds.
 type Naming struct {
-	projectFilesResolver projectFilesResolver
 }
 
-func NewNaming(
-	projectFilesResolver projectFilesResolver,
-) *Naming {
-	return &Naming{
-		projectFilesResolver: projectFilesResolver,
-	}
+func NewNaming() *Naming {
+	return &Naming{}
 }
 
-func (c *Naming) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+func (c *Naming) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	if spec.Naming == nil || len(spec.Naming.ForbiddenPackages) == 0 {
 		return models.CheckResult{}, nil
 	}
@@ -34,11 +28,6 @@ func (c *Naming) Check(ctx context.Context, spec arch.Spec) (models.CheckResult,
 	forbidden := make(map[string]struct{}, len(spec.Naming.ForbiddenPackages))
 	for _, name := range spec.Naming.ForbiddenPackages {
 		forbidden[name.Value] = struct{}{}
-	}
-
-	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
 	}
 
 	// Report each (package, name) violation once — not once per file.

@@ -15,18 +15,13 @@ import (
 // ACTUAL import graph (same ownership resolution as the cycles checker),
 // independent of mayDependOn permissions.
 type TierRules struct {
-	projectFilesResolver projectFilesResolver
 }
 
-func NewTierRules(
-	projectFilesResolver projectFilesResolver,
-) *TierRules {
-	return &TierRules{
-		projectFilesResolver: projectFilesResolver,
-	}
+func NewTierRules() *TierRules {
+	return &TierRules{}
 }
 
-func (c *TierRules) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+func (c *TierRules) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	if len(spec.Tiers) == 0 {
 		return models.CheckResult{}, nil
 	}
@@ -37,11 +32,6 @@ func (c *TierRules) Check(ctx context.Context, spec arch.Spec) (models.CheckResu
 		for _, component := range tier.Components {
 			tierOf[component] = i
 		}
-	}
-
-	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
 	}
 
 	graph := buildComponentGraph(spec, projectFiles)

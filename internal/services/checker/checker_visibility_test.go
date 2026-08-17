@@ -57,7 +57,7 @@ func TestVisibility_no_rule_noop(t *testing.T) {
 		cyclesFile(tcBeta, "internal/beta/b.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -71,7 +71,7 @@ func TestVisibility_allowed_consumer_ok(t *testing.T) {
 		cyclesFile(tcBeta, "internal/beta/b.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -86,7 +86,7 @@ func TestVisibility_unlisted_consumer_violation(t *testing.T) {
 		cyclesFile(tcGamma, "internal/gamma/g.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 1)
 
@@ -107,7 +107,7 @@ func TestVisibility_fully_internal_component(t *testing.T) {
 		cyclesFile(tcBeta, "internal/beta/b.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 1)
 	assert.Contains(t, result.DependencyWarnings[0].ComponentName, tcBeta)
@@ -125,7 +125,7 @@ func TestVisibility_self_import_ignored(t *testing.T) {
 		cyclesFile(tcAlpha, "internal/alpha/a.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -142,7 +142,7 @@ func TestVisibility_multiple_rules_accumulate(t *testing.T) {
 		cyclesFile(tcGamma, "internal/gamma/g.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -161,7 +161,7 @@ func TestVisibility_multiple_witnesses_one_violation(t *testing.T) {
 		cyclesFile(tcGamma, "internal/gamma/a.go", visTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewVisibility(resolver).Check(context.Background(), spec)
+	result, err := NewVisibility().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 1)
 	assert.Contains(t, result.DependencyWarnings[0].FileRelativePath, "z.go")

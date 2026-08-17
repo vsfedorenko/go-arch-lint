@@ -174,6 +174,61 @@ conventional exit code: `1` on violations, `2` on a configuration error
 
 Global flags: `--project-path`, `--output-type` (`ascii`/`json`), `--json`, `--output-color`.
 
+### Visibility rules
+
+`Visibility(func(){ VisibleTo(...) })` restricts which components may consume another component's API:
+
+```go
+Visibility(func() {
+    VisibleTo("services")                         // fully internal: nobody may import
+    VisibleTo("models", "services", "container")  // only these consumers
+})
+```
+
+- Checked against the **actual import graph**: importing a restricted component from outside its allow list is a violation
+- The component itself is always implicitly allowed
+- Multiple rules for one component accumulate (allow lists are unioned)
+- Violations point at the first importing file and list the visible set
+
+### Interface placement (ports live with the consumer)
+
+`Interfaces(func(){ MustLiveWithConsumer() })` enforces the hexagonal-ports rule: an interface used by exactly **one other** component must be declared in that component — not next to its implementation:
+
+```
+interface 'UserRepo' must live with its consumer 'service' (declared in component 'repository')
+```
+
+- Shared interfaces (2+ consumers) legitimately stay where they are
+- Same-component usage (including bare identifiers in the declaring package) counts as internal consumption
+- Syntax-only single-pass analysis — fast, no type-checking
+
+### Package naming conventions
+
+`Naming(func(){ ForbiddenPackages(...) })` bans junk-drawer package names:
+
+```go
+Naming(func() {
+    ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
+})
+```
+
+One violation per package (not per file), with file count and the first witness.
+
+### Coupling metrics (mapping)
+
+`mapping -s grouped` reports instability metrics per component (Robert C. Martin):
+
+```
+component 'service'
+    coupling: out 3 | in 2 | stability 0.60
+```
+
+`Ce` (outgoing dependencies), `Ca` (incoming), stability = `Ce/(Ca+Ce)` — closer to 0 means more stable. Also available in JSON via `--format json`.
+
+### JSON output for CI
+
+`check --format json` prints a flat JSON array of violations for CI pipelines; `--format sarif` produces a SARIF 2.1.0 log for GitHub Code Scanning. Schemas and recipes: [docs/json-schema.md](docs/json-schema.md).
+
 ### Exit codes (check)
 
 | Code | Meaning                                                          |

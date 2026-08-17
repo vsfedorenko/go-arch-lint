@@ -9,14 +9,23 @@ import (
 )
 
 type CompositeChecker struct {
-	checkers []checker
+	projectFilesResolver projectFilesResolver
+	checkers             []checker
 }
 
-func NewCompositeChecker(checkers ...checker) *CompositeChecker {
-	return &CompositeChecker{checkers: checkers}
+func NewCompositeChecker(projectFilesResolver projectFilesResolver, checkers ...checker) *CompositeChecker {
+	return &CompositeChecker{
+		projectFilesResolver: projectFilesResolver,
+		checkers:             checkers,
+	}
 }
 
 func (c *CompositeChecker) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
+	if err != nil {
+		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
+	}
+
 	overallResults := models.CheckResult{}
 
 	// Every checker runs: a violation in one category (e.g. imports)
@@ -26,7 +35,7 @@ func (c *CompositeChecker) Check(ctx context.Context, spec arch.Spec) (models.Ch
 	// (The historical early-break predates the multi-category wave and
 	// silently swallowed e.g. naming violations whenever imports failed.)
 	for _, checker := range c.checkers {
-		results, err := checker.Check(ctx, spec)
+		results, err := checker.Check(ctx, spec, projectFiles)
 		if err != nil {
 			return models.CheckResult{}, fmt.Errorf("checker failed '%T': %w", checker, err)
 		}

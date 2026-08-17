@@ -52,7 +52,7 @@ func singleConsumerProject(t *testing.T) (arch.Spec, []models.FileHold) {
 func TestInterfacePlacement_single_consumer_in_other_component(t *testing.T) {
 	spec, holds := singleConsumerProject(t)
 
-	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), spec)
+	result, err := NewInterfacePlacement().Check(context.Background(), spec, holds)
 	require.NoError(t, err)
 
 	require.Len(t, result.DependencyWarnings, 1)
@@ -66,7 +66,7 @@ func TestInterfacePlacement_no_rule_noop(t *testing.T) {
 	spec, holds := singleConsumerProject(t)
 	spec.InterfacePlacement = nil
 
-	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), spec)
+	result, err := NewInterfacePlacement().Check(context.Background(), spec, holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -85,7 +85,7 @@ func TestInterfacePlacement_same_component_usage_ok(t *testing.T) {
 		"internal/alpha/alpha.go": &tcAlphaOwner,
 	})
 
-	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
+	result, err := NewInterfacePlacement().Check(context.Background(), ifSpecFor(root), holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -103,7 +103,7 @@ func TestInterfacePlacement_shared_by_two_components_ok(t *testing.T) {
 		"internal/gamma/use.go": &tcGammaOwner,
 	})
 
-	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
+	result, err := NewInterfacePlacement().Check(context.Background(), ifSpecFor(root), holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -122,7 +122,7 @@ func TestInterfacePlacement_two_files_same_consumer_one_violation(t *testing.T) 
 		"internal/alpha/use2.go": &tcAlphaOwner,
 	})
 
-	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
+	result, err := NewInterfacePlacement().Check(context.Background(), ifSpecFor(root), holds)
 	require.NoError(t, err)
 	assert.Len(t, result.DependencyWarnings, 1)
 }
@@ -138,7 +138,7 @@ func TestInterfacePlacement_struct_types_ignored(t *testing.T) {
 		"internal/alpha/use.go":  &tcAlphaOwner,
 	})
 
-	result, err := NewInterfacePlacement(fakeProjectFilesResolver{holds: holds}).Check(context.Background(), ifSpecFor(root))
+	result, err := NewInterfacePlacement().Check(context.Background(), ifSpecFor(root), holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }

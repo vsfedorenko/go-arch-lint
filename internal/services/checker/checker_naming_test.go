@@ -52,7 +52,7 @@ func TestNaming_Check_flags_forbidden_package(t *testing.T) {
 		namingFile("utils", "internal/alpha/util/a.go"),
 	}}
 
-	result, err := NewNaming(resolver).Check(context.Background(), spec)
+	result, err := NewNaming().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.NamingWarnings, 1)
 
@@ -72,7 +72,7 @@ func TestNaming_Check_aggregates_files_per_package(t *testing.T) {
 		namingFile("common", "internal/alpha/common/c.go"),
 	}}
 
-	result, err := NewNaming(resolver).Check(context.Background(), spec)
+	result, err := NewNaming().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.NamingWarnings, 1)
 	assert.Equal(t, 3, result.NamingWarnings[0].FilesCount)
@@ -86,7 +86,7 @@ func TestNaming_Check_clean_packages_pass(t *testing.T) {
 		namingFile("orders", "internal/alpha/orders/b.go"),
 	}}
 
-	result, err := NewNaming(resolver).Check(context.Background(), spec)
+	result, err := NewNaming().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.NamingWarnings)
 }
@@ -98,7 +98,7 @@ func TestNaming_Check_no_rules_noop(t *testing.T) {
 		namingFile("utils", "internal/alpha/util/a.go"),
 	}}
 
-	result, err := NewNaming(resolver).Check(context.Background(), spec)
+	result, err := NewNaming().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.NamingWarnings)
 }
@@ -111,7 +111,7 @@ func TestNaming_Check_multiple_packages_deterministic_order(t *testing.T) {
 		namingFile("utils", "internal/alpha/a/util.go"),
 	}}
 
-	result, err := NewNaming(resolver).Check(context.Background(), spec)
+	result, err := NewNaming().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.NamingWarnings, 2)
 
@@ -128,7 +128,7 @@ func TestNaming_Check_files_without_package_name_ignored(t *testing.T) {
 		namingFile("", "internal/alpha/odd.go"),
 	}}
 
-	result, err := NewNaming(resolver).Check(context.Background(), spec)
+	result, err := NewNaming().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.NamingWarnings)
 }
