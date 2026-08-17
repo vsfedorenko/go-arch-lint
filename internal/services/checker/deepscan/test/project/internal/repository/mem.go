@@ -1,7 +1,6 @@
 package repository
 
-type Memory struct {
-}
+type Memory struct{}
 
 func NewMemory() *Memory {
 	return &Memory{}

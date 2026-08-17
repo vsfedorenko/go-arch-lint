@@ -42,6 +42,7 @@ func (c *Container) provideReferenceRender() *code.Render {
 
 func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 	return checker.NewCompositeChecker(
+		c.provideProjectFilesResolver(),
 		c.provideSpecImportsChecker(),
 		c.provideSpecCyclesChecker(),
 		c.provideSpecTiersChecker(),
@@ -53,44 +54,31 @@ func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 }
 
 func (c *Container) provideSpecInterfacePlacementChecker() *checker.InterfacePlacement {
-	return checker.NewInterfacePlacement(
-		c.provideProjectFilesResolver(),
-	)
+	return checker.NewInterfacePlacement()
 }
 
 func (c *Container) provideSpecNamingChecker() *checker.Naming {
-	return checker.NewNaming(
-		c.provideProjectFilesResolver(),
-	)
+	return checker.NewNaming()
 }
 
 func (c *Container) provideSpecTiersChecker() *checker.TierRules {
-	return checker.NewTierRules(
-		c.provideProjectFilesResolver(),
-	)
+	return checker.NewTierRules()
 }
 
 func (c *Container) provideSpecCyclesChecker() *checker.Cycles {
-	return checker.NewCycles(
-		c.provideProjectFilesResolver(),
-	)
+	return checker.NewCycles()
 }
 
 func (c *Container) provideSpecImportsChecker() *checker.Imports {
-	return checker.NewImport(
-		c.provideProjectFilesResolver(),
-	)
+	return checker.NewImport()
 }
 
 func (c *Container) provideSpecVisibilityChecker() *checker.Visibility {
-	return checker.NewVisibility(
-		c.provideProjectFilesResolver(),
-	)
+	return checker.NewVisibility()
 }
 
 func (c *Container) provideSpecDeepScanChecker() *checker.DeepScan {
 	return checker.NewDeepScan(
-		c.provideProjectFilesResolver(),
 		c.provideReferenceRender(),
 	)
 }

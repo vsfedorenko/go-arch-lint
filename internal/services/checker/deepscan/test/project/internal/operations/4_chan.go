@@ -12,8 +12,7 @@ type (
 		Fetch()
 	}
 
-	messageImpl struct {
-	}
+	messageImpl struct{}
 )
 
 func InvisibleFetchFrom4() chan message {

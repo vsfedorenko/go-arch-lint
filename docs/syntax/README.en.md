@@ -227,6 +227,60 @@ Deps("container", func() {
 })
 ```
 
+## Layered architecture rules
+
+Beyond permission-based rules (`Deps`/`MayDependOn`), the linter checks
+structural conventions against the actual import graph. All are opt-in.
+
+### `func Tiers(names ...string)` / `func Tier(name string, components ...string)`
+
+Declare ordered layers; dependencies may only flow downward (index 0 is the
+highest layer). Upward edges are violations, independent of `MayDependOn`
+permissions.
+
+```go
+Tiers("domain", "app", "infra")
+Tier("domain", "user", "order")
+Tier("app", "handler")
+Tier("infra", "postgres")
+```
+
+### `func Naming(fn func())` / `func ForbiddenPackages(names ...string)`
+
+Ban junk-drawer package names. One violation per package, with the file
+count and the first witness file.
+
+```go
+Naming(func() {
+    ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
+})
+```
+
+### `func Interfaces(fn func())` / `func MustLiveWithConsumer()`
+
+Hexagonal-ports rule: an interface consumed by exactly one other component
+must be declared in that component — not next to its implementation.
+Shared interfaces (2+ consumers) are allowed to stay. Syntax-only analysis.
+
+```go
+Interfaces(func() {
+    MustLiveWithConsumer()
+})
+```
+
+### `func Visibility(fn func())` / `func VisibleTo(component string, allowed ...string)`
+
+Restrict which components may consume a component's exported API, checked
+against the actual import graph. The component itself is implicitly
+allowed; multiple rules for one component accumulate.
+
+```go
+Visibility(func() {
+    VisibleTo("services")                        // fully internal
+    VisibleTo("models", "services", "container") // only these consumers
+})
+```
+
 ## Function summary
 
 | Function | Scope | Description |

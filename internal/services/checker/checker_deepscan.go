@@ -19,8 +19,7 @@ import (
 )
 
 type DeepScan struct {
-	projectFilesResolver projectFilesResolver
-	sourceCodeRenderer   sourceCodeRenderer
+	sourceCodeRenderer sourceCodeRenderer
 
 	scanner           *deepscan.Searcher
 	spec              arch.Spec
@@ -38,11 +37,10 @@ type DeepScan struct {
 	resultMux sync.Mutex
 }
 
-func NewDeepScan(projectFilesResolver projectFilesResolver, sourceCodeRenderer sourceCodeRenderer) *DeepScan {
+func NewDeepScan(sourceCodeRenderer sourceCodeRenderer) *DeepScan {
 	return &DeepScan{
-		projectFilesResolver: projectFilesResolver,
-		sourceCodeRenderer:   sourceCodeRenderer,
-		scanner:              deepscan.NewSearcher(),
+		sourceCodeRenderer: sourceCodeRenderer,
+		scanner:            deepscan.NewSearcher(),
 	}
 }
 
@@ -70,7 +68,7 @@ func (c *DeepScan) workersCount() int {
 	return n
 }
 
-func (c *DeepScan) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+func (c *DeepScan) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	maxWorkers := c.workersCount()
 
 	c.checkMux.Lock()
@@ -80,16 +78,11 @@ func (c *DeepScan) Check(ctx context.Context, spec arch.Spec) (models.CheckResul
 	c.spec = spec
 	c.result = models.CheckResult{}
 
-	// -- prepare mapping file -> component
-	mapping, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed resolve project files: %w", err)
-	}
-
+	// -- prepare mapping file -> component (resolved once by the composite)
 	c.fileComponents = map[string]string{}
 	c.packageComponents = map[string]string{}
 
-	for _, hold := range mapping {
+	for _, hold := range projectFiles {
 		if hold.ComponentID == nil {
 			continue
 		}
@@ -129,8 +122,7 @@ func (c *DeepScan) Check(ctx context.Context, spec arch.Spec) (models.CheckResul
 		})
 	}
 
-	err = wg.Wait()
-	if err != nil {
+	if err := wg.Wait(); err != nil {
 		return models.CheckResult{}, err
 	}
 

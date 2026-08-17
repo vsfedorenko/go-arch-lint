@@ -213,7 +213,7 @@ func TestCycles_Check_reports_mutual_imports(t *testing.T) {
 		cyclesFile("beta", "internal/beta/b.go", cyclesTestModule+"/internal/alpha"),
 	}}
 
-	result, err := NewCycles(resolver).Check(context.Background(), spec)
+	result, err := NewCycles().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 2) // both hops reported
 
@@ -237,7 +237,7 @@ func TestCycles_Check_clean_graph_no_warnings(t *testing.T) {
 		cyclesFile("alpha", "internal/alpha/a.go", cyclesTestModule+"/internal/beta"), // one-way
 	}}
 
-	result, err := NewCycles(resolver).Check(context.Background(), spec)
+	result, err := NewCycles().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -257,7 +257,7 @@ func TestCycles_Check_self_import_and_vendor_ignored(t *testing.T) {
 		),
 	}}
 
-	result, err := NewCycles(resolver).Check(context.Background(), spec)
+	result, err := NewCycles().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }
@@ -275,7 +275,7 @@ func TestCycles_Check_longest_prefix_ownership(t *testing.T) {
 		cyclesFile("core", "internal/beta/b.go", cyclesTestModule+"/internal/alpha"),  // core -> alpha
 	}}
 
-	result, err := NewCycles(resolver).Check(context.Background(), spec)
+	result, err := NewCycles().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Len(t, result.DependencyWarnings, 2) // core <-> alpha cycle
 }
@@ -290,7 +290,7 @@ func TestCycles_Check_unowned_packages_ignored(t *testing.T) {
 		cyclesFile("alpha", "internal/alpha/a.go", cyclesTestModule+"/internal/beta"),
 	}}
 
-	result, err := NewCycles(resolver).Check(context.Background(), spec)
+	result, err := NewCycles().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	assert.Empty(t, result.DependencyWarnings)
 }

@@ -23,16 +23,10 @@ import (
 // alias or the conventional last-path-segment package name). Interfaces
 // consumed by 0 or 2+ components are allowed where they are; an
 // interface with a single cross-component consumer must move.
-type InterfacePlacement struct {
-	projectFilesResolver projectFilesResolver
-}
+type InterfacePlacement struct{}
 
-func NewInterfacePlacement(
-	projectFilesResolver projectFilesResolver,
-) *InterfacePlacement {
-	return &InterfacePlacement{
-		projectFilesResolver: projectFilesResolver,
-	}
+func NewInterfacePlacement() *InterfacePlacement {
+	return &InterfacePlacement{}
 }
 
 // interfaceDecl is a declared interface.
@@ -47,14 +41,9 @@ type interfaceUsage struct {
 	iface interfaceDecl
 }
 
-func (c *InterfacePlacement) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
+func (c *InterfacePlacement) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	if spec.InterfacePlacement == nil || !spec.InterfacePlacement.MustLiveWithConsumer {
 		return models.CheckResult{}, nil
-	}
-
-	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
 	}
 
 	// Package dir -> owning component (scanner's ownership rules).

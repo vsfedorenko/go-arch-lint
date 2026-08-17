@@ -1,8 +1,7 @@
 package operations
 
 type (
-	rcvProcessor struct {
-	}
+	rcvProcessor struct{}
 
 	rcvRepository interface {
 		SayHello()

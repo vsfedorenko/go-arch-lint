@@ -200,6 +200,61 @@ Deps("container", func() {
 })
 ```
 
+## Правила слоистой архитектуры
+
+Помимо permission-правил (`Deps`/`MayDependOn`) линтер проверяет
+структурные конвенции по фактическому импорт-графу. Все опциональны.
+
+### `func Tiers(names ...string)` / `func Tier(name string, components ...string)`
+
+Объявляют упорядоченные слои; зависимости могут течь только вниз
+(индекс 0 — высший слой). Восходящие рёбра — нарушения, независимо
+от `MayDependOn`-разрешений.
+
+```go
+Tiers("domain", "app", "infra")
+Tier("domain", "user", "order")
+Tier("app", "handler")
+Tier("infra", "postgres")
+```
+
+### `func Naming(fn func())` / `func ForbiddenPackages(names ...string)`
+
+Бан «свалочных» имён пакетов. Одно нарушение на пакет, с количеством
+файлов и первым файлом-свидетелем.
+
+```go
+Naming(func() {
+    ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
+})
+```
+
+### `func Interfaces(fn func())` / `func MustLiveWithConsumer()`
+
+Правило гексагональных портов: интерфейс, потребляемый ровно одной другой
+компонентой, должен быть объявлен у потребителя — а не рядом с реализацией.
+Общие интерфейсы (2+ потребителя) остаются на месте. Синтакс-анализ без
+type-checking.
+
+```go
+Interfaces(func() {
+    MustLiveWithConsumer()
+})
+```
+
+### `func Visibility(fn func())` / `func VisibleTo(component string, allowed ...string)`
+
+Ограничивает, какие компоненты могут потреблять API компоненты; проверка
+по фактическому импорт-графу. Сама компонента неявно разрешена; несколько
+правил на одну компоненту объединяются.
+
+```go
+Visibility(func() {
+    VisibleTo("services")                        // полностью внутренняя
+    VisibleTo("models", "services", "container") // только эти потребители
+})
+```
+
 ## Полный пример
 
 ```go

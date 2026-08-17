@@ -20,24 +20,13 @@ import (
 //
 // Graph construction lives in component_graph.go; the SCC machinery
 // lives in scc.go. This file is the checker only.
-type Cycles struct {
-	projectFilesResolver projectFilesResolver
+type Cycles struct{}
+
+func NewCycles() *Cycles {
+	return &Cycles{}
 }
 
-func NewCycles(
-	projectFilesResolver projectFilesResolver,
-) *Cycles {
-	return &Cycles{
-		projectFilesResolver: projectFilesResolver,
-	}
-}
-
-func (c *Cycles) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
-	projectFiles, err := c.projectFilesResolver.ProjectFiles(ctx, spec)
-	if err != nil {
-		return models.CheckResult{}, fmt.Errorf("failed to resolve project files: %w", err)
-	}
-
+func (c *Cycles) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
 	graph := buildComponentGraph(spec, projectFiles)
 	result := models.CheckResult{}
 
