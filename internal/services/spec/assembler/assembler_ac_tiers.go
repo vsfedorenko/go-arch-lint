@@ -2,6 +2,7 @@ package assembler
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
@@ -27,6 +28,33 @@ func (a *tiersAssembler) assemble(spec *arch.Spec, document spec.Document) error
 			Components: append([]string(nil), tier.Components...),
 			Reference:  tier.Reference,
 		}
+	}
+
+	return nil
+}
+
+// assembleNaming copies packaging-convention rules into the spec.
+type namingAssembler struct{}
+
+func newNamingAssembler() *namingAssembler {
+	return &namingAssembler{}
+}
+
+func (a *namingAssembler) assemble(spec *arch.Spec, document spec.Document) error {
+	naming := document.Naming()
+	if naming == nil {
+		return nil
+	}
+
+	forbidden := naming.ForbiddenPackages()
+	if len(forbidden) == 0 {
+		return nil
+	}
+
+	spec.Naming = &arch.Naming{
+		ForbiddenPackages: append(
+			[]common.Referable[string](nil), forbidden...,
+		),
 	}
 
 	return nil

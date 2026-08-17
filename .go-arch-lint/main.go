@@ -41,6 +41,10 @@ var spec = Spec(func() {
 	CommonVendors("go-common")
 	CommonComponents("models")
 
+	Naming(func() {
+		ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
+	})
+
 	Tiers("cmd", "glue", "operations", "services", "view")
 	Tier("cmd", "main")
 	Tier("glue", "container")

@@ -78,12 +78,29 @@ func (d *GoSpecDocument) Tiers() []spec.Tier {
 	return result
 }
 
+func (d *GoSpecDocument) Naming() spec.Naming {
+	if d.builder.Naming == nil {
+		return nil
+	}
+	return &goNaming{entry: d.builder.Naming}
+}
+
 func (d *GoSpecDocument) Dependencies() spec.Dependencies {
 	result := make(spec.Dependencies, len(d.builder.Deps))
 	for name, dep := range d.builder.Deps {
 		result[name] = common.NewReferable(spec.DependencyRule(&goDependencyRule{dep: dep}), dep.Reference)
 	}
 	return result
+}
+
+// --- goNaming implements spec.Naming ---
+
+type goNaming struct {
+	entry *dsl.NamingEntry
+}
+
+func (n *goNaming) ForbiddenPackages() []common.Referable[string] {
+	return n.entry.ForbiddenPackages
 }
 
 // --- goOptions implements spec.Options ---

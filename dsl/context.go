@@ -6,4 +6,5 @@ type contextStack struct {
 	spec    *SpecBuilder
 	dep     *DepEntry
 	inAllow bool
+	naming  *NamingEntry
 }

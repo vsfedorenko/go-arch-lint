@@ -18,6 +18,13 @@ type (
 		ExcludeFilesMatcher []common.Referable[*regexp.Regexp]
 		Integrity           Integrity
 		Tiers               []Tier
+		Naming              *Naming
+	}
+
+	// Naming holds packaging-name convention rules: banned package names
+	// checked against every scanned project package.
+	Naming struct {
+		ForbiddenPackages []common.Referable[string]
 	}
 
 	// Tier is one architectural layer: a name plus member component names.
