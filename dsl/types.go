@@ -22,6 +22,18 @@ type SpecBuilder struct {
 
 	// Naming holds packaging-convention rules (see Naming()).
 	Naming *NamingEntry
+
+	// InterfacePlacement holds interface-location rules (see Interfaces()).
+	InterfacePlacement *InterfacePlacementEntry
+}
+
+// InterfacePlacementEntry holds interface-placement convention rules.
+type InterfacePlacementEntry struct {
+	// MustLiveWithConsumer: an interface used by exactly one other
+	// component must be declared in that component (hexagonal ports) —
+	// not next to its implementation.
+	MustLiveWithConsumer bool
+	Reference            common.Reference
 }
 
 // NamingEntry holds packaging-naming convention rules.

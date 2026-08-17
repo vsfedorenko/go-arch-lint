@@ -78,6 +78,13 @@ func (d *GoSpecDocument) Tiers() []spec.Tier {
 	return result
 }
 
+func (d *GoSpecDocument) InterfacePlacement() spec.InterfacePlacement {
+	if d.builder.InterfacePlacement == nil {
+		return nil
+	}
+	return &goInterfacePlacement{entry: d.builder.InterfacePlacement}
+}
+
 func (d *GoSpecDocument) Naming() spec.Naming {
 	if d.builder.Naming == nil {
 		return nil
@@ -91,6 +98,16 @@ func (d *GoSpecDocument) Dependencies() spec.Dependencies {
 		result[name] = common.NewReferable(spec.DependencyRule(&goDependencyRule{dep: dep}), dep.Reference)
 	}
 	return result
+}
+
+// --- goInterfacePlacement implements spec.InterfacePlacement ---
+
+type goInterfacePlacement struct {
+	entry *dsl.InterfacePlacementEntry
+}
+
+func (ip *goInterfacePlacement) MustLiveWithConsumer() bool {
+	return ip.entry.MustLiveWithConsumer
 }
 
 // --- goNaming implements spec.Naming ---

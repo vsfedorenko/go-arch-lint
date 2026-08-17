@@ -68,6 +68,17 @@ type (
 
 		// Naming holds packaging-convention rules (nil when absent).
 		Naming() Naming
+
+		// InterfacePlacement holds interface-location rules (nil when absent).
+		InterfacePlacement() InterfacePlacement
+	}
+
+	// InterfacePlacement is the interface-location conventions section of
+	// a Document. See Document.InterfacePlacement.
+	InterfacePlacement interface {
+		// MustLiveWithConsumer requires single-consumer interfaces to be
+		// declared in the consuming component.
+		MustLiveWithConsumer() bool
 	}
 
 	// Naming is the packaging-conventions section of a Document: banned
