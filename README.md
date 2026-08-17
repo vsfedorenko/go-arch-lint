@@ -208,6 +208,12 @@ Package name utils is forbidden internal/utils (3 file(s)): first at internal/ut
 В JSON-выводе метрики приходят в `MappingGrouped[].Coupling`
 (`omitempty` — для компонентов без зависимостей поле отсутствует).
 
+### JSON-вывод для CI
+
+`check --format json` печатает плоский массив нарушений (стабильный
+порядок, схема и примеры интеграции — в [docs/json-schema.md](docs/json-schema.md)):
+GitHub Actions-аннотации, GitLab CI-artifacts, семантика exit-кодов.
+
 ### Коды выхода (check)
 
 | Код | Значение                                                        |

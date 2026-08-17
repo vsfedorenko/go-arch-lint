@@ -31,6 +31,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/app"
@@ -71,6 +72,76 @@ func WithColors(b bool) Option {
 // or models.FormatText (the default) for human-readable ASCII.
 func WithFormat(format models.Format) Option {
 	return func(c *config) { c.format = format }
+}
+
+// OptionsFromFlags derives Options from the process's command-line flags
+// (os.Args). This is what a scaffolded `.go-arch-lint/main.go` passes to
+// [Run] so the delegated CLI surface keeps working:
+//
+//	--project-path string   (default "../")
+//	--max-warnings int      (default 512)
+//	--no-colors             (disable ANSI colors)
+//	--format text|json      ("json" = flat violation array for CI)
+//
+// Unknown flags are ignored rather than rejected: the launcher may pass
+// extra flags meant for other layers.
+func OptionsFromFlags(args []string) []Option {
+	opts := []Option{}
+
+	projectPath := stringFlag(args, "--project-path", "-p")
+	if projectPath != "" {
+		opts = append(opts, WithProjectPath(projectPath))
+	}
+
+	if maxWarnings, ok := intFlag(args, "--max-warnings"); ok {
+		opts = append(opts, WithMaxWarnings(maxWarnings))
+	}
+
+	if boolFlag(args, "--no-colors") {
+		opts = append(opts, WithColors(false))
+	}
+
+	if format := stringFlag(args, "--format"); format != "" {
+		opts = append(opts, WithFormat(models.Format(format)))
+	}
+
+	return opts
+}
+
+// stringFlag returns the value of the first "--name value" (or
+// "-s value") occurrence, or "" when absent.
+func stringFlag(args []string, names ...string) string {
+	for i := 0; i < len(args); i++ {
+		for _, name := range names {
+			if args[i] == name && i+1 < len(args) {
+				return args[i+1]
+			}
+		}
+	}
+	return ""
+}
+
+// intFlag parses the value of the first "--name value" occurrence.
+func intFlag(args []string, name string) (int, bool) {
+	raw := stringFlag(args, name)
+	if raw == "" {
+		return 0, false
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
+}
+
+// boolFlag reports whether a standalone "--name" flag is present.
+func boolFlag(args []string, name string) bool {
+	for _, a := range args {
+		if a == name {
+			return true
+		}
+	}
+	return false
 }
 
 // Run lints the project described by spec and returns an error describing
