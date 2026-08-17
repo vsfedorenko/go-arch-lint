@@ -79,7 +79,6 @@ func (c *Container) provideSpecVisibilityChecker() *checker.Visibility {
 
 func (c *Container) provideSpecDeepScanChecker() *checker.DeepScan {
 	return checker.NewDeepScan(
-		c.provideProjectFilesResolver(),
 		c.provideReferenceRender(),
 	)
 }

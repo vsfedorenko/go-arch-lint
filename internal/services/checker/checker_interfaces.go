@@ -23,8 +23,7 @@ import (
 // alias or the conventional last-path-segment package name). Interfaces
 // consumed by 0 or 2+ components are allowed where they are; an
 // interface with a single cross-component consumer must move.
-type InterfacePlacement struct {
-}
+type InterfacePlacement struct{}
 
 func NewInterfacePlacement() *InterfacePlacement {
 	return &InterfacePlacement{}

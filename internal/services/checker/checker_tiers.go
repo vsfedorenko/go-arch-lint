@@ -14,8 +14,7 @@ import (
 // but a lower tier importing upward is a violation. The check runs on the
 // ACTUAL import graph (same ownership resolution as the cycles checker),
 // independent of mayDependOn permissions.
-type TierRules struct {
-}
+type TierRules struct{}
 
 func NewTierRules() *TierRules {
 	return &TierRules{}

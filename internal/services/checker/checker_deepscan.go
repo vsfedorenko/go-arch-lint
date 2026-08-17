@@ -19,8 +19,7 @@ import (
 )
 
 type DeepScan struct {
-	projectFilesResolver projectFilesResolver
-	sourceCodeRenderer   sourceCodeRenderer
+	sourceCodeRenderer sourceCodeRenderer
 
 	scanner           *deepscan.Searcher
 	spec              arch.Spec
@@ -38,11 +37,10 @@ type DeepScan struct {
 	resultMux sync.Mutex
 }
 
-func NewDeepScan(projectFilesResolver projectFilesResolver, sourceCodeRenderer sourceCodeRenderer) *DeepScan {
+func NewDeepScan(sourceCodeRenderer sourceCodeRenderer) *DeepScan {
 	return &DeepScan{
-		projectFilesResolver: projectFilesResolver,
-		sourceCodeRenderer:   sourceCodeRenderer,
-		scanner:              deepscan.NewSearcher(),
+		sourceCodeRenderer: sourceCodeRenderer,
+		scanner:            deepscan.NewSearcher(),
 	}
 }
 

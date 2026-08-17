@@ -20,15 +20,13 @@ import (
 //
 // Graph construction lives in component_graph.go; the SCC machinery
 // lives in scc.go. This file is the checker only.
-type Cycles struct {
-}
+type Cycles struct{}
 
 func NewCycles() *Cycles {
 	return &Cycles{}
 }
 
 func (c *Cycles) Check(ctx context.Context, spec arch.Spec, projectFiles []models.FileHold) (models.CheckResult, error) {
-
 	graph := buildComponentGraph(spec, projectFiles)
 	result := models.CheckResult{}
 

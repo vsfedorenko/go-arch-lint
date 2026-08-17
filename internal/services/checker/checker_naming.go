@@ -13,8 +13,7 @@ import (
 // named with a forbidden name (utils, helpers, common, …), no matter which
 // component it belongs to. Non-descriptive package names are a widespread
 // architectural smell — they become dumping grounds.
-type Naming struct {
-}
+type Naming struct{}
 
 func NewNaming() *Naming {
 	return &Naming{}
