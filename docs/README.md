@@ -53,11 +53,27 @@ go-arch-lint mapping --scheme grouped
 module: github.com/vsfedorenko/go-arch-lint
 Project Packages:
    app:
+     coupling: out 1 | in 0 | stability 1.00
      /internal/app
    commands:
+     coupling: out 4 | in 1 | stability 0.80
      /internal/commands/check
      /internal/commands/mapping
    ...
 ```
 
-Те же данные доступны в формате json с опцией `--json`.
+#### Метрики связанности
+
+Для каждого компонента выводятся метрики по **фактическому** графу импортов
+(не по декларациям в спеке):
+
+- `out` (Ce, fan-out) — на сколько компонентов компонент ссылается;
+- `in` (Ca, fan-in) — сколько компонентов ссылаются на него;
+- `stability` — I = Ce / (Ca + Ce) по Роберту Мартину. `0` — максимально
+  стабильный компонент (на него опираются, сам ни на кого не завязан),
+  `1` — максимально нестабильный. Компоненты, предназначенные для
+  переиспользования, должны иметь низкий stability.
+
+Те же данные доступны в формате json с опцией `--json` (поля
+`MappingGrouped[].Coupling`; у компонентов без зависимостей поле
+отсутствует — `omitempty`).

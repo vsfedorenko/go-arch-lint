@@ -18,6 +18,9 @@ Project Packages:
 {{ else -}}
 	{{ range .MappingGrouped -}}
 		{{ "  " }} {{ .ComponentName }}:
+		{{ if .Coupling -}}
+		{{ "    " }} coupling: out {{ .Coupling.OutboundDeps }} | in {{ .Coupling.InboundDeps }} | stability {{ .Coupling.Stability | printf "%.2f" }}
+		{{ end -}}
 		{{ $prev := "" -}}
 		{{ range .FileNames -}}
 			{{ $packageName := (. | trimPrefix $root | dir | def "/") -}}
