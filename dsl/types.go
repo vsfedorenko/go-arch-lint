@@ -1,19 +1,19 @@
 package dsl
 
-import "github.com/vsfedorenko/go-arch-lint/internal/models/common"
+import "github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 
 // SpecBuilder is the in-memory representation of the user's arch config,
 // populated by DSL functions. It replaces the YAML decoder's ArchV3 struct.
 type SpecBuilder struct {
-	Version          common.Referable[int]
-	Workdir          common.Referable[string]
+	Version          domain.Referable[int]
+	Workdir          domain.Referable[string]
 	Allow            AllowEntry
-	Exclude          []common.Referable[string]
-	ExcludeFiles     []common.Referable[string]
+	Exclude          []domain.Referable[string]
+	ExcludeFiles     []domain.Referable[string]
 	Vendors          map[string]VendorEntry
-	CommonVendors    []common.Referable[string]
+	CommonVendors    []domain.Referable[string]
 	Components       map[string]ComponentEntry
-	CommonComponents []common.Referable[string]
+	CommonComponents []domain.Referable[string]
 	Deps             map[string]DepEntry
 
 	// Tiers holds the ordered layer list (see Tiers()/Tier() builders).
@@ -33,49 +33,49 @@ type InterfacePlacementEntry struct {
 	// component must be declared in that component (hexagonal ports) —
 	// not next to its implementation.
 	MustLiveWithConsumer bool
-	Reference            common.Reference
+	Reference            domain.Reference
 }
 
 // NamingEntry holds packaging-naming convention rules.
 type NamingEntry struct {
-	ForbiddenPackages []common.Referable[string]
-	Reference         common.Reference
+	ForbiddenPackages []domain.Referable[string]
+	Reference         domain.Reference
 }
 
 // TierEntry is one ordered layer: a name plus the components in it.
 type TierEntry struct {
 	Name       string
 	Components []string
-	Reference  common.Reference
+	Reference  domain.Reference
 }
 
 // AllowEntry holds global allow rules.
 type AllowEntry struct {
-	DepOnAnyVendor           common.Referable[bool]
-	DeepScan                 common.Referable[bool]
-	IgnoreNotFoundComponents common.Referable[bool]
+	DepOnAnyVendor           domain.Referable[bool]
+	DeepScan                 domain.Referable[bool]
+	IgnoreNotFoundComponents domain.Referable[bool]
 }
 
 // VendorEntry holds a named vendor definition.
 type VendorEntry struct {
 	ImportPaths []string
-	Reference   common.Reference
+	Reference   domain.Reference
 }
 
 // ComponentEntry holds a named component definition.
 type ComponentEntry struct {
 	RelativePaths []string
-	Reference     common.Reference
+	Reference     domain.Reference
 }
 
 // DepEntry holds dependency rules for a component.
 type DepEntry struct {
-	MayDependOn    []common.Referable[string]
-	CanUse         []common.Referable[string]
-	AnyProjectDeps common.Referable[bool]
-	AnyVendorDeps  common.Referable[bool]
-	DeepScan       common.Referable[bool]
-	Reference      common.Reference
+	MayDependOn    []domain.Referable[string]
+	CanUse         []domain.Referable[string]
+	AnyProjectDeps domain.Referable[bool]
+	AnyVendorDeps  domain.Referable[bool]
+	DeepScan       domain.Referable[bool]
+	Reference      domain.Reference
 }
 
 func newSpecBuilder() *SpecBuilder {

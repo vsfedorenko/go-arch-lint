@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 func TestToViolations_Empty(t *testing.T) {
@@ -25,7 +25,7 @@ func TestToViolations_DependencyWarnings(t *testing.T) {
 				FileRelativePath:   "internal/handler/user.go",
 				FileAbsolutePath:   "/abs/internal/handler/user.go",
 				ResolvedImportName: "github.com/x/proj/internal/db",
-				Reference:          common.NewReferenceSingleLine("internal/handler/user.go", 12, 3),
+				Reference:          domain.NewReferenceSingleLine("internal/handler/user.go", 12, 3),
 			},
 		},
 	}
@@ -83,7 +83,7 @@ func TestToViolations_DeepscanWarnings(t *testing.T) {
 					Name:          "UserRepo",
 					InjectionAST:  "c.provideUserRepo()",
 					InjectionPath: "internal/app/container.go",
-					Injection:     common.NewReferenceSingleLine("internal/app/container.go", 42, 5),
+					Injection:     domain.NewReferenceSingleLine("internal/app/container.go", 42, 5),
 				},
 			},
 		},

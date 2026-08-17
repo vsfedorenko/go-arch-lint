@@ -1,6 +1,6 @@
 package models
 
-import "github.com/vsfedorenko/go-arch-lint/internal/models/common"
+import "github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 
 type (
 	CmdCheckIn struct {
@@ -41,7 +41,7 @@ type (
 		FileRelativePath   string           `json:"FileRelativePath"`
 		FileAbsolutePath   string           `json:"FileAbsolutePath"`
 		ResolvedImportName string           `json:"ResolvedImportName"`
-		Reference          common.Reference `json:"Reference"`
+		Reference          domain.Reference `json:"Reference"`
 	}
 
 	CheckArchWarningNaming struct {
@@ -55,7 +55,7 @@ type (
 	CheckArchWarningMatch struct {
 		FileRelativePath string           `json:"FileRelativePath"`
 		FileAbsolutePath string           `json:"FileAbsolutePath"`
-		Reference        common.Reference `json:"-"`
+		Reference        domain.Reference `json:"-"`
 	}
 
 	CheckArchWarningDeepscan struct {
@@ -67,7 +67,7 @@ type (
 	DeepscanWarningGate struct {
 		ComponentName string           `json:"ComponentName"` // operations
 		MethodName    string           `json:"MethodName"`    // NewOperation
-		Definition    common.Reference `json:"Definition"`    // internal/glue/code/line_count.go:54
+		Definition    domain.Reference `json:"Definition"`    // internal/glue/code/line_count.go:54
 		RelativePath  string           `json:"-"`             // internal/glue/code/line_count.go:54
 	}
 
@@ -75,13 +75,13 @@ type (
 		ComponentName     string           `json:"ComponentName"` // repository
 		Name              string           `json:"Name"`          // micro.ViewRepository
 		InjectionAST      string           `json:"InjectionAST"`  // c.provideMicroViewRepository()
-		Injection         common.Reference `json:"Injection"`     // internal/app/container/container_cmd_mapping.go:15
+		Injection         domain.Reference `json:"Injection"`     // internal/app/container/container_cmd_mapping.go:15
 		InjectionPath     string           `json:"-"`             // internal/app/container/container_cmd_mapping.go:15
 		SourceCodePreview []byte           `json:"-"`
 	}
 
 	DeepscanWarningTarget struct {
-		Definition   common.Reference `json:"Definition"`
+		Definition   domain.Reference `json:"Definition"`
 		RelativePath string           `json:"-"` // internal/app/container/container_cmd_mapping.go:15
 	}
 

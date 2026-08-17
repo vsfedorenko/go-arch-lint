@@ -9,7 +9,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 const (
@@ -25,18 +25,18 @@ func makeTestAbsPath(localPath string) string {
 	return makeTestProjectRoot() + "/" + localPath
 }
 
-func makeBool(b bool) common.Referable[bool] {
-	return common.NewReferable(b, common.NewEmptyReference())
+func makeBool(b bool) domain.Referable[bool] {
+	return domain.NewReferable(b, domain.NewEmptyReference())
 }
 
-func makeTestResolvedPath(localPath string) common.Referable[models.ResolvedPath] {
-	return common.NewReferable(
+func makeTestResolvedPath(localPath string) domain.Referable[models.ResolvedPath] {
+	return domain.NewReferable(
 		models.ResolvedPath{
 			ImportPath: testModulePath + "/" + localPath,
 			AbsPath:    makeTestAbsPath(localPath),
 			LocalPath:  localPath,
 		},
-		common.NewEmptyReference(),
+		domain.NewEmptyReference(),
 	)
 }
 
@@ -63,7 +63,7 @@ func makeTestResolvedStdlibImport() models.ResolvedImport {
 
 func Test_checkImportPath(t *testing.T) {
 	type args struct {
-		componentImports []common.Referable[models.ResolvedPath]
+		componentImports []domain.Referable[models.ResolvedPath]
 		resolvedImport   models.ResolvedImport
 	}
 	tests := []struct {
@@ -74,7 +74,7 @@ func Test_checkImportPath(t *testing.T) {
 		{
 			name: "have needed import",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("needle"),
 					makeTestResolvedPath("checker"),
 					makeTestResolvedPath("path"),
@@ -86,7 +86,7 @@ func Test_checkImportPath(t *testing.T) {
 		{
 			name: "not have needed import",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("checker"),
 					makeTestResolvedPath("path"),
 					makeTestResolvedPath("some"),
@@ -98,7 +98,7 @@ func Test_checkImportPath(t *testing.T) {
 		{
 			name: "empty",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				resolvedImport:   makeTestResolvedProjectImport("needle"),
 			},
 			want: false,
@@ -106,7 +106,7 @@ func Test_checkImportPath(t *testing.T) {
 		{
 			name: "only needed",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("needle"),
 				},
 				resolvedImport: makeTestResolvedProjectImport("needle"),
@@ -117,7 +117,7 @@ func Test_checkImportPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmp := arch.Component{
-				Name:                  common.NewReferable("component", common.NewEmptyReference()),
+				Name:                  domain.NewReferable("component", domain.NewEmptyReference()),
 				AllowedProjectImports: tt.args.componentImports,
 			}
 
@@ -130,7 +130,7 @@ func Test_checkImportPath(t *testing.T) {
 
 func Test_checkProjectImport(t *testing.T) {
 	type args struct {
-		componentImports []common.Referable[models.ResolvedPath]
+		componentImports []domain.Referable[models.ResolvedPath]
 		componentFlags   arch.SpecialFlags
 		resolvedImport   models.ResolvedImport
 	}
@@ -142,7 +142,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "no flags, empty list",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				componentFlags: arch.SpecialFlags{
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(false),
@@ -154,7 +154,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "project flag, empty list",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				componentFlags: arch.SpecialFlags{
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
@@ -166,7 +166,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "vendor flag, empty list",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				componentFlags: arch.SpecialFlags{
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(true),
@@ -178,7 +178,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "flag + list exactly same",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("needle"),
 				},
 				componentFlags: arch.SpecialFlags{
@@ -192,7 +192,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "flag + list have needle",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("some"),
 					makeTestResolvedPath("needle"),
 					makeTestResolvedPath("module12"),
@@ -208,7 +208,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "flag + list not have needle",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("some"),
 					makeTestResolvedPath("module12"),
 				},
@@ -223,7 +223,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "no flag + list have needle",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("some"),
 					makeTestResolvedPath("needle"),
 					makeTestResolvedPath("module12"),
@@ -239,7 +239,7 @@ func Test_checkProjectImport(t *testing.T) {
 		{
 			name: "no flag + list not have needle",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{
+				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("some"),
 					makeTestResolvedPath("module12"),
 				},
@@ -255,7 +255,7 @@ func Test_checkProjectImport(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmp := arch.Component{
-				Name:                  common.NewReferable("component", common.NewEmptyReference()),
+				Name:                  domain.NewReferable("component", domain.NewEmptyReference()),
 				SpecialFlags:          tt.args.componentFlags,
 				AllowedProjectImports: tt.args.componentImports,
 			}
@@ -269,7 +269,7 @@ func Test_checkProjectImport(t *testing.T) {
 
 func Test_checkVendorImport(t *testing.T) {
 	type args struct {
-		componentImports []common.Referable[models.ResolvedPath]
+		componentImports []domain.Referable[models.ResolvedPath]
 		componentFlags   arch.SpecialFlags
 		resolvedImport   models.ResolvedImport
 	}
@@ -281,7 +281,7 @@ func Test_checkVendorImport(t *testing.T) {
 		{
 			name: "no flags, empty list",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				componentFlags: arch.SpecialFlags{
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(false),
@@ -293,7 +293,7 @@ func Test_checkVendorImport(t *testing.T) {
 		{
 			name: "vendor flag, empty list",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				componentFlags: arch.SpecialFlags{
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(true),
@@ -305,7 +305,7 @@ func Test_checkVendorImport(t *testing.T) {
 		{
 			name: "project flag, empty list",
 			args: args{
-				componentImports: []common.Referable[models.ResolvedPath]{},
+				componentImports: []domain.Referable[models.ResolvedPath]{},
 				componentFlags: arch.SpecialFlags{
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
@@ -318,7 +318,7 @@ func Test_checkVendorImport(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmp := arch.Component{
-				Name:                  common.NewReferable("component", common.NewEmptyReference()),
+				Name:                  domain.NewReferable("component", domain.NewEmptyReference()),
 				SpecialFlags:          tt.args.componentFlags,
 				AllowedProjectImports: tt.args.componentImports,
 			}
@@ -391,12 +391,12 @@ func TestChecker_checkImport(t *testing.T) {
 	}
 
 	cmp := arch.Component{
-		Name: common.NewReferable("component", common.NewEmptyReference()),
+		Name: domain.NewReferable("component", domain.NewEmptyReference()),
 		SpecialFlags: arch.SpecialFlags{
 			AllowAllProjectDeps: makeBool(false),
 			AllowAllVendorDeps:  makeBool(false),
 		},
-		AllowedProjectImports: []common.Referable[models.ResolvedPath]{},
+		AllowedProjectImports: []domain.Referable[models.ResolvedPath]{},
 	}
 
 	for _, tt := range tests {

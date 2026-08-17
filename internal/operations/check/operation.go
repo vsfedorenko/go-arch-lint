@@ -125,6 +125,7 @@ func (o *Operation) limitResults(result models.CheckResult, maxWarnings int) lim
 		DependencyWarnings: []models.CheckArchWarningDependency{},
 		MatchWarnings:      []models.CheckArchWarningMatch{},
 		DeepscanWarnings:   []models.CheckArchWarningDeepscan{},
+		NamingWarnings:     []models.CheckArchWarningNaming{},
 	}
 
 	// append deps
@@ -157,10 +158,21 @@ func (o *Operation) limitResults(result models.CheckResult, maxWarnings int) lim
 		passCount++
 	}
 
+	// append naming
+	for _, notice := range result.NamingWarnings {
+		if passCount >= maxWarnings {
+			break
+		}
+
+		limitedResults.NamingWarnings = append(limitedResults.NamingWarnings, notice)
+		passCount++
+	}
+
 	totalCount := 0 +
 		len(result.DeepscanWarnings) +
 		len(result.DependencyWarnings) +
-		len(result.MatchWarnings)
+		len(result.MatchWarnings) +
+		len(result.NamingWarnings)
 
 	return limiterResult{
 		results:      limitedResults,

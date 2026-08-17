@@ -10,7 +10,7 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 func readFile(fileName string) (content io.Reader, linesCount int) {
@@ -32,7 +32,7 @@ func readFile(fileName string) (content io.Reader, linesCount int) {
 	return file, linesCount
 }
 
-func readLines(r io.Reader, ref common.Reference) []byte {
+func readLines(r io.Reader, ref domain.Reference) []byte {
 	sc := bufio.NewScanner(r)
 	currentLine := 0
 	var buffer bytes.Buffer

@@ -4,18 +4,18 @@ import (
 	"regexp"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type (
 	Spec struct {
-		RootDirectory       common.Referable[string]
-		WorkingDirectory    common.Referable[string]
-		ModuleName          common.Referable[string]
+		RootDirectory       domain.Referable[string]
+		WorkingDirectory    domain.Referable[string]
+		ModuleName          domain.Referable[string]
 		Allow               Allow
 		Components          []Component
-		Exclude             []common.Referable[models.ResolvedPath]
-		ExcludeFilesMatcher []common.Referable[*regexp.Regexp]
+		Exclude             []domain.Referable[models.ResolvedPath]
+		ExcludeFilesMatcher []domain.Referable[*regexp.Regexp]
 		Integrity           Integrity
 		Tiers               []Tier
 		Naming              *Naming
@@ -32,7 +32,7 @@ type (
 	// Naming holds packaging-name convention rules: banned package names
 	// checked against every scanned project package.
 	Naming struct {
-		ForbiddenPackages []common.Referable[string]
+		ForbiddenPackages []domain.Referable[string]
 	}
 
 	// Tier is one architectural layer: a name plus member component names.
@@ -41,29 +41,29 @@ type (
 	Tier struct {
 		Name       string
 		Components []string
-		Reference  common.Reference
+		Reference  domain.Reference
 	}
 
 	Allow struct {
-		DepOnAnyVendor           common.Referable[bool]
-		DeepScan                 common.Referable[bool]
-		IgnoreNotFoundComponents common.Referable[bool]
+		DepOnAnyVendor           domain.Referable[bool]
+		DeepScan                 domain.Referable[bool]
+		IgnoreNotFoundComponents domain.Referable[bool]
 	}
 
 	Component struct {
-		Name                  common.Referable[string]
-		DeepScan              common.Referable[bool]
-		ResolvedPaths         []common.Referable[models.ResolvedPath]
-		AllowedProjectImports []common.Referable[models.ResolvedPath]
-		AllowedVendorGlobs    []common.Referable[models.Glob]
-		MayDependOn           []common.Referable[string]
-		CanUse                []common.Referable[string]
+		Name                  domain.Referable[string]
+		DeepScan              domain.Referable[bool]
+		ResolvedPaths         []domain.Referable[models.ResolvedPath]
+		AllowedProjectImports []domain.Referable[models.ResolvedPath]
+		AllowedVendorGlobs    []domain.Referable[models.Glob]
+		MayDependOn           []domain.Referable[string]
+		CanUse                []domain.Referable[string]
 		SpecialFlags          SpecialFlags
 	}
 
 	SpecialFlags struct {
-		AllowAllProjectDeps common.Referable[bool]
-		AllowAllVendorDeps  common.Referable[bool]
+		AllowAllProjectDeps domain.Referable[bool]
+		AllowAllVendorDeps  domain.Referable[bool]
 	}
 
 	Integrity struct {
@@ -73,6 +73,6 @@ type (
 
 	Notice struct {
 		Notice error
-		Ref    common.Reference
+		Ref    domain.Reference
 	}
 )

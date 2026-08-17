@@ -2,7 +2,7 @@ package assembler
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
@@ -53,7 +53,7 @@ func (a *namingAssembler) assemble(spec *arch.Spec, document spec.Document) erro
 
 	spec.Naming = &arch.Naming{
 		ForbiddenPackages: append(
-			[]common.Referable[string](nil), forbidden...,
+			[]domain.Referable[string](nil), forbidden...,
 		),
 	}
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 /**
@@ -32,12 +32,12 @@ func namingSpec(forbidden ...string) arch.Spec {
 	spec := cyclesSpec(map[string][]string{
 		tcAlpha: {tcPkgAlpha},
 	})
-	spec.RootDirectory = common.NewReferable("/project", common.NewEmptyReference())
+	spec.RootDirectory = domain.NewReferable("/project", domain.NewEmptyReference())
 
 	if len(forbidden) > 0 {
-		entries := make([]common.Referable[string], len(forbidden))
+		entries := make([]domain.Referable[string], len(forbidden))
 		for i, name := range forbidden {
-			entries[i] = common.NewReferable(name, common.NewEmptyReference())
+			entries[i] = domain.NewReferable(name, domain.NewEmptyReference())
 		}
 		spec.Naming = &arch.Naming{ForbiddenPackages: entries}
 	}

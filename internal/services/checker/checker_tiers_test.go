@@ -10,7 +10,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 /**
@@ -35,8 +35,8 @@ func tiersSpec(tiers []arch.Tier) arch.Spec {
 	return spec
 }
 
-func tierRef() common.Reference {
-	return common.NewEmptyReference()
+func tierRef() domain.Reference {
+	return domain.NewEmptyReference()
 }
 
 func TestTierRules_upward_dependency_is_violation(t *testing.T) {

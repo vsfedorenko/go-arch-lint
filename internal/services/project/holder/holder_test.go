@@ -6,7 +6,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // Common test fixture paths.
@@ -82,10 +82,10 @@ func Test_componentMatchPackage(t *testing.T) {
 			args: args{
 				packagePath: pathProjectPackage,
 				component: arch.Component{
-					ResolvedPaths: []common.Referable[models.ResolvedPath]{
-						common.NewReferable(
+					ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+						domain.NewReferable(
 							models.ResolvedPath{AbsPath: pathProjectPackage},
-							common.NewEmptyReference(),
+							domain.NewEmptyReference(),
 						),
 					},
 				},
@@ -97,10 +97,10 @@ func Test_componentMatchPackage(t *testing.T) {
 			args: args{
 				packagePath: pathProjectPackage,
 				component: arch.Component{
-					ResolvedPaths: []common.Referable[models.ResolvedPath]{
-						common.NewReferable(
+					ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+						domain.NewReferable(
 							models.ResolvedPath{AbsPath: "/app/internal/glue/project/package/sub"},
-							common.NewEmptyReference(),
+							domain.NewEmptyReference(),
 						),
 					},
 				},
@@ -112,14 +112,14 @@ func Test_componentMatchPackage(t *testing.T) {
 			args: args{
 				packagePath: pathProjectPackage,
 				component: arch.Component{
-					ResolvedPaths: []common.Referable[models.ResolvedPath]{
-						common.NewReferable(
+					ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+						domain.NewReferable(
 							models.ResolvedPath{AbsPath: "/app/internal/glue/project/package/sub"},
-							common.NewEmptyReference(),
+							domain.NewEmptyReference(),
 						),
-						common.NewReferable(
+						domain.NewReferable(
 							models.ResolvedPath{AbsPath: pathProjectPackage},
-							common.NewEmptyReference(),
+							domain.NewEmptyReference(),
 						),
 					},
 				},
@@ -152,38 +152,38 @@ func Test_componentsMatchesFile(t *testing.T) {
 				filePath: "/app/file.go",
 				components: []arch.Component{
 					{
-						Name: common.NewReferable("A", common.NewEmptyReference()),
-						ResolvedPaths: []common.Referable[models.ResolvedPath]{
-							common.NewReferable(
+						Name: domain.NewReferable("A", domain.NewEmptyReference()),
+						ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+							domain.NewReferable(
 								models.ResolvedPath{AbsPath: "/app"},
-								common.NewEmptyReference(),
+								domain.NewEmptyReference(),
 							),
 						},
 					},
 					{
-						Name: common.NewReferable("C", common.NewEmptyReference()),
-						ResolvedPaths: []common.Referable[models.ResolvedPath]{
-							common.NewReferable(
+						Name: domain.NewReferable("C", domain.NewEmptyReference()),
+						ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+							domain.NewReferable(
 								models.ResolvedPath{AbsPath: "/app/sub"},
-								common.NewEmptyReference(),
+								domain.NewEmptyReference(),
 							),
 						},
 					},
 					{
-						Name: common.NewReferable("D", common.NewEmptyReference()),
-						ResolvedPaths: []common.Referable[models.ResolvedPath]{
-							common.NewReferable(
+						Name: domain.NewReferable("D", domain.NewEmptyReference()),
+						ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+							domain.NewReferable(
 								models.ResolvedPath{AbsPath: "/"},
-								common.NewEmptyReference(),
+								domain.NewEmptyReference(),
 							),
 						},
 					},
 					{
-						Name: common.NewReferable("B", common.NewEmptyReference()),
-						ResolvedPaths: []common.Referable[models.ResolvedPath]{
-							common.NewReferable(
+						Name: domain.NewReferable("B", domain.NewEmptyReference()),
+						ResolvedPaths: []domain.Referable[models.ResolvedPath]{
+							domain.NewReferable(
 								models.ResolvedPath{AbsPath: "/app"},
-								common.NewEmptyReference(),
+								domain.NewEmptyReference(),
 							),
 						},
 					},

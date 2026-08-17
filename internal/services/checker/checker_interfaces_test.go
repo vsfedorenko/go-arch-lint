@@ -11,7 +11,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 /**
@@ -154,8 +154,8 @@ func writeFile(t *testing.T, root, rel, content string) {
 
 func ifSpecFor(root string) arch.Spec {
 	return arch.Spec{
-		RootDirectory:      common.NewReferable(root, common.NewEmptyReference()),
-		ModuleName:         common.NewReferable("example.com/proj", common.NewEmptyReference()),
+		RootDirectory:      domain.NewReferable(root, domain.NewEmptyReference()),
+		ModuleName:         domain.NewReferable("example.com/proj", domain.NewEmptyReference()),
 		InterfacePlacement: &arch.InterfacePlacement{MustLiveWithConsumer: true},
 	}
 }

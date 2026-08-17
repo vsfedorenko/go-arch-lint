@@ -1,11 +1,11 @@
-package common_test
+package domain_test
 
 import (
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 func TestReference_ClampWithRealLinesCount(t *testing.T) {
@@ -213,13 +213,13 @@ func TestReference_ClampWithRealLinesCount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ref := common.NewReferenceSingleLine("/tmp/dev", tt.args.line, 0)
+			ref := domain.NewReferenceSingleLine("/tmp/dev", tt.args.line, 0)
 			ref = ref.ExtendRange(
 				int(math.Ceil(float64(tt.args.regionHeight)/2)),
 				int(math.Floor(float64(tt.args.regionHeight)/2)),
 			)
 
-			want := common.NewReferenceRange(
+			want := domain.NewReferenceRange(
 				"/tmp/dev",
 				tt.wantLineFrom,
 				tt.wantLineMain,

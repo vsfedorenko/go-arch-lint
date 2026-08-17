@@ -7,7 +7,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 type Render struct {
@@ -16,7 +16,7 @@ type Render struct {
 
 type annotateOpts struct {
 	code              []byte
-	ref               common.Reference
+	ref               domain.Reference
 	showColumnPointer bool
 }
 
@@ -26,14 +26,14 @@ func NewRender(printer colorPrinter) *Render {
 	}
 }
 
-func (r *Render) SourceCode(ref common.Reference, highlight bool, showPointer bool) []byte {
+func (r *Render) SourceCode(ref domain.Reference, highlight bool, showPointer bool) []byte {
 	opts := r.fetch(ref, highlight)
 	opts.showColumnPointer = showPointer
 
 	return r.annotate(opts)
 }
 
-func (r *Render) fetch(ref common.Reference, highlight bool) annotateOpts {
+func (r *Render) fetch(ref domain.Reference, highlight bool) annotateOpts {
 	if !ref.Valid {
 		return annotateOpts{}
 	}

@@ -4,7 +4,7 @@ import (
 	"regexp"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/common"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
 )
 
@@ -21,7 +21,7 @@ func (efa *excludeFilesMatcherAssembler) assemble(spec *arch.Spec, yamlSpec spec
 			continue
 		}
 
-		spec.ExcludeFilesMatcher = append(spec.ExcludeFilesMatcher, common.NewReferable(
+		spec.ExcludeFilesMatcher = append(spec.ExcludeFilesMatcher, domain.NewReferable(
 			matcher,
 			regString.Reference,
 		))
