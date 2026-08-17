@@ -69,6 +69,9 @@ type (
 		// Naming holds packaging-convention rules (nil when absent).
 		Naming() Naming
 
+		// Visibility holds export-visibility rules (nil when absent).
+		Visibility() Visibility
+
 		// InterfacePlacement holds interface-location rules (nil when absent).
 		InterfacePlacement() InterfacePlacement
 	}
@@ -86,6 +89,21 @@ type (
 	Naming interface {
 		// ForbiddenPackages is the list of banned package names.
 		ForbiddenPackages() []domain.Referable[string]
+	}
+
+	// Visibility is the export-visibility section of a Document: which
+	// components may consume which component's API. See Document.Visibility.
+	Visibility interface {
+		// Rules is the list of visibility restrictions.
+		Rules() []VisibilityRule
+	}
+
+	// VisibilityRule is one declared restriction: exports of Component may
+	// only be consumed by Allowed (plus the component itself).
+	VisibilityRule struct {
+		Component string
+		Allowed   []string
+		Reference domain.Reference
 	}
 
 	// Tier is one declared architectural layer: a name plus its member

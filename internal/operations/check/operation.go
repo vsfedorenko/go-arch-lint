@@ -108,6 +108,12 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 				Used: spec.InterfacePlacement != nil,
 				Hint: "declare Interfaces(func(){ MustLiveWithConsumer() }) to on",
 			},
+			{
+				ID:   "visibility",
+				Name: "Base: export visibility rules",
+				Used: spec.Visibility != nil,
+				Hint: "declare Visibility(func(){ VisibleTo(...) }) to on",
+			},
 		},
 	}
 

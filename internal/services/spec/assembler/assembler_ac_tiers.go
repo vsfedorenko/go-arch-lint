@@ -79,3 +79,33 @@ func (a *interfacePlacementAssembler) assemble(spec *arch.Spec, document spec.Do
 
 	return nil
 }
+
+type visibilityAssembler struct{}
+
+func newVisibilityAssembler() *visibilityAssembler {
+	return &visibilityAssembler{}
+}
+
+func (a *visibilityAssembler) assemble(spec *arch.Spec, document spec.Document) error {
+	visibility := document.Visibility()
+	if visibility == nil {
+		return nil
+	}
+
+	rules := visibility.Rules()
+	if len(rules) == 0 {
+		return nil
+	}
+
+	archRules := make([]arch.VisibilityRule, len(rules))
+	for i, rule := range rules {
+		archRules[i] = arch.VisibilityRule{
+			Component: rule.Component,
+			Allowed:   append([]string(nil), rule.Allowed...),
+			Reference: rule.Reference,
+		}
+	}
+
+	spec.Visibility = &arch.Visibility{Rules: archRules}
+	return nil
+}

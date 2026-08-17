@@ -126,6 +126,59 @@ func Tiers(names ...string) {
 // Tier assigns components to a layer declared by Tiers(). Must be called
 // after the matching Tiers() call. A component may belong to one tier
 // only; components not mentioned in any tier are unchecked by tier rules.
+// Visibility declares export-visibility rules: which components may
+// consume which component's exported API. Rules are collected.
+//
+//	Visibility(func() {
+//	    VisibleTo("services") // internal: nobody else may import services
+//	    VisibleTo("models", "services", "container")
+//	})
+func Visibility(fn func()) {
+	file, line := callerRef(1)
+
+	entry := current.spec.Visibility
+	if entry == nil {
+		entry = &VisibilityEntry{Reference: domain.NewReferenceSingleLine(file, line, 0)}
+		current.spec.Visibility = entry
+	}
+
+	saved := current.inVisibility
+	current.inVisibility = true
+	defer func() { current.inVisibility = saved }()
+
+	fn()
+}
+
+// VisibleTo restricts who may consume Component's exported API.
+// Allowed components (plus the component itself) are the only legal
+// consumers. With no Allowed arguments the component is fully internal.
+func VisibleTo(component string, allowed ...string) {
+	file, line := callerRef(1)
+
+	if component == "" {
+		panic(fmt.Errorf("VisibleTo component name cannot be empty"))
+	}
+
+	if current.spec.Visibility == nil {
+		panic(fmt.Errorf("VisibleTo must be called inside Visibility(func(){...})"))
+	}
+
+	for _, a := range allowed {
+		if a == "" {
+			panic(fmt.Errorf("VisibleTo allowed component name cannot be empty"))
+		}
+		if a == component {
+			panic(fmt.Errorf("VisibleTo allowed component '%s' is the component itself — self is always implicit", component))
+		}
+	}
+
+	current.spec.Visibility.Rules = append(current.spec.Visibility.Rules, VisibilityRule{
+		Component: component,
+		Allowed:   allowed,
+		Reference: domain.NewReferenceSingleLine(file, line, 0),
+	})
+}
+
 func Tier(name string, components ...string) {
 	if name == "" {
 		panic(fmt.Errorf("Tier name cannot be empty"))

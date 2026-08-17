@@ -22,11 +22,28 @@ type (
 
 		// InterfacePlacement holds interface-location rules (nil = off).
 		InterfacePlacement *InterfacePlacement
+
+		// Visibility holds export-visibility rules (nil = off).
+		Visibility *Visibility
 	}
 
 	// InterfacePlacement holds interface-location convention rules.
 	InterfacePlacement struct {
 		MustLiveWithConsumer bool
+	}
+
+	// Visibility holds export-visibility convention rules: which
+	// components may consume which component's exported API.
+	Visibility struct {
+		Rules []VisibilityRule
+	}
+
+	// VisibilityRule restricts consumers of Component's exported API to
+	// Allowed (plus the component itself).
+	VisibilityRule struct {
+		Component string
+		Allowed   []string
+		Reference domain.Reference
 	}
 
 	// Naming holds packaging-name convention rules: banned package names

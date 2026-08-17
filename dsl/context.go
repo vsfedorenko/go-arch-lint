@@ -3,9 +3,10 @@ package dsl
 var current contextStack
 
 type contextStack struct {
-	spec       *SpecBuilder
-	dep        *DepEntry
-	inAllow    bool
-	naming     *NamingEntry
-	interfaces *InterfacePlacementEntry
+	spec         *SpecBuilder
+	dep          *DepEntry
+	inAllow      bool
+	inVisibility bool
+	naming       *NamingEntry
+	interfaces   *InterfacePlacementEntry
 }
