@@ -19,6 +19,14 @@ type (
 		Integrity           Integrity
 		Tiers               []Tier
 		Naming              *Naming
+
+		// InterfacePlacement holds interface-location rules (nil = off).
+		InterfacePlacement *InterfacePlacement
+	}
+
+	// InterfacePlacement holds interface-location convention rules.
+	InterfacePlacement struct {
+		MustLiveWithConsumer bool
 	}
 
 	// Naming holds packaging-name convention rules: banned package names

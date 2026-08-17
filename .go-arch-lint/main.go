@@ -47,6 +47,10 @@ var spec = Spec(func() {
 		ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
 	})
 
+	Interfaces(func() {
+		MustLiveWithConsumer()
+	})
+
 	Tiers("cmd", "glue", "operations", "services", "view")
 	Tier("cmd", "main")
 	Tier("glue", "container")

@@ -46,7 +46,14 @@ func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 		c.provideSpecCyclesChecker(),
 		c.provideSpecTiersChecker(),
 		c.provideSpecNamingChecker(),
+		c.provideSpecInterfacePlacementChecker(),
 		c.provideSpecDeepScanChecker(),
+	)
+}
+
+func (c *Container) provideSpecInterfacePlacementChecker() *checker.InterfacePlacement {
+	return checker.NewInterfacePlacement(
+		c.provideProjectFilesResolver(),
 	)
 }
 
