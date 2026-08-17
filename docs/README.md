@@ -82,3 +82,9 @@ Project Packages:
 
 Схема violation-вывода (`check --format json`) и готовые примеры
 интеграции (GitHub Actions, GitLab CI): [json-schema.md](json-schema.md).
+
+## Модель делегирования `go run`
+
+Как лаунчер делегирует команды в `.go-arch-lint/`: маршрутизация флагов,
+выходные коды, кэширование (холодный/тёплый запуск ~45 с → ~2 с), все
+режимы отказов и известные острые углы: [delegation.md](delegation.md).

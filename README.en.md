@@ -99,6 +99,11 @@ The linter builds an import graph from the actual code, compares it to the confi
 
 Use `--json` for machine-readable output in CI pipelines.
 
+Under the hood, `check`/`mapping`/`graph`/`selfInspect` delegate to
+`.go-arch-lint/` via `go run` — flag routing, exit codes, and caching
+(~45 s cold start, ~2 s steady state) are documented in
+[docs/delegation.md](docs/delegation.md).
+
 ## Dependency graph
 
 ```bash
