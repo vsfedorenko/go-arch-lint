@@ -73,6 +73,7 @@ func (sa *Assembler) Assemble(prj common.Project) (arch.Spec, error) {
 		newExcludeFilesMatcherAssembler(),
 		newAllowAssembler(),
 		newWorkdirAssembler(),
+		newTiersAssembler(),
 	})
 
 	err = assembler.assemble(&spec, document)

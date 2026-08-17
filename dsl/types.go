@@ -15,6 +15,17 @@ type SpecBuilder struct {
 	Components       map[string]ComponentEntry
 	CommonComponents []common.Referable[string]
 	Deps             map[string]DepEntry
+
+	// Tiers holds the ordered layer list (see Tiers()/Tier() builders).
+	// Index 0 is the highest layer; dependencies may only flow downward.
+	Tiers []TierEntry
+}
+
+// TierEntry is one ordered layer: a name plus the components in it.
+type TierEntry struct {
+	Name       string
+	Components []string
+	Reference  common.Reference
 }
 
 // AllowEntry holds global allow rules.

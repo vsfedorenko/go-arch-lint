@@ -17,6 +17,16 @@ type (
 		Exclude             []common.Referable[models.ResolvedPath]
 		ExcludeFilesMatcher []common.Referable[*regexp.Regexp]
 		Integrity           Integrity
+		Tiers               []Tier
+	}
+
+	// Tier is one architectural layer: a name plus member component names.
+	// Index 0 in Spec.Tiers is the highest layer — dependencies may only
+	// flow downward (higher -> lower), never upward.
+	Tier struct {
+		Name       string
+		Components []string
+		Reference  common.Reference
 	}
 
 	Allow struct {

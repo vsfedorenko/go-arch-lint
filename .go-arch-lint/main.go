@@ -41,6 +41,13 @@ var spec = Spec(func() {
 	CommonVendors("go-common")
 	CommonComponents("models")
 
+	Tiers("cmd", "glue", "operations", "services", "view")
+	Tier("cmd", "main")
+	Tier("glue", "container")
+	Tier("operations", "operations")
+	Tier("services", "services")
+	Tier("view", "view")
+
 	Deps("main", func() {
 		MayDependOn("container")
 	})

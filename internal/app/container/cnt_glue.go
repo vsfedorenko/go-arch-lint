@@ -44,7 +44,14 @@ func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 	return checker.NewCompositeChecker(
 		c.provideSpecImportsChecker(),
 		c.provideSpecCyclesChecker(),
+		c.provideSpecTiersChecker(),
 		c.provideSpecDeepScanChecker(),
+	)
+}
+
+func (c *Container) provideSpecTiersChecker() *checker.TierRules {
+	return checker.NewTierRules(
+		c.provideProjectFilesResolver(),
 	)
 }
 
