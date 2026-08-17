@@ -47,6 +47,7 @@ func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 		c.provideSpecTiersChecker(),
 		c.provideSpecNamingChecker(),
 		c.provideSpecInterfacePlacementChecker(),
+		c.provideSpecVisibilityChecker(),
 		c.provideSpecDeepScanChecker(),
 	)
 }
@@ -77,6 +78,12 @@ func (c *Container) provideSpecCyclesChecker() *checker.Cycles {
 
 func (c *Container) provideSpecImportsChecker() *checker.Imports {
 	return checker.NewImport(
+		c.provideProjectFilesResolver(),
+	)
+}
+
+func (c *Container) provideSpecVisibilityChecker() *checker.Visibility {
+	return checker.NewVisibility(
 		c.provideProjectFilesResolver(),
 	)
 }
