@@ -97,7 +97,10 @@ The linter builds an import graph from the actual code, compares it to the confi
 | 0         | No violations              |
 | 1         | Violations found           |
 
-Use `--json` for machine-readable output in CI pipelines.
+Use `--json` for machine-readable output in CI pipelines, or
+`--format sarif` for a SARIF 2.1.0 log that GitHub Code Scanning and other
+code-scanning tools ingest natively (see
+[docs/json-schema.md](docs/json-schema.md#sarif-output-for-github-code-scanning)).
 
 Under the hood, `check`/`mapping`/`graph`/`selfInspect` delegate to
 `.go-arch-lint/` via `go run` — flag routing, exit codes, and caching

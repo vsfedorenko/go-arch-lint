@@ -176,8 +176,9 @@ Global flags (passed through to delegated commands):
   --project-path string   project directory (default "./")
   --output-type string    output format [ascii, json] (default "ascii")
   --json                  alias for --output-type=json
-  --format string         check output format [text, json] — 'json' emits a flat
-                          array of violations for CI pipelines (default "text")
+  --format string         check output format [text, json, sarif] — 'json' emits a flat
+                          array of violations for CI pipelines, 'sarif' emits a
+                          SARIF 2.1.0 log for GitHub Code Scanning (default "text")
   --output-color          use ANSI colors (default true)
 
 Exit codes (check):

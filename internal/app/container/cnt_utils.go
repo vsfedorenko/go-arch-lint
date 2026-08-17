@@ -28,5 +28,5 @@ func (c *Container) ProvideRenderer() *render.Renderer {
 		c.flags.OutputJsonOneLine,
 		c.flags.Format,
 		view.Templates,
-	)
+	).WithDriverVersion(c.version)
 }
