@@ -92,6 +92,29 @@ func (d *GoSpecDocument) Naming() spec.Naming {
 	return &goNaming{entry: d.builder.Naming}
 }
 
+func (d *GoSpecDocument) Visibility() spec.Visibility {
+	if d.builder.Visibility == nil {
+		return nil
+	}
+	return &goVisibility{entry: d.builder.Visibility}
+}
+
+type goVisibility struct {
+	entry *dsl.VisibilityEntry
+}
+
+func (g *goVisibility) Rules() []spec.VisibilityRule {
+	result := make([]spec.VisibilityRule, len(g.entry.Rules))
+	for i, rule := range g.entry.Rules {
+		result[i] = spec.VisibilityRule{
+			Component: rule.Component,
+			Allowed:   append([]string(nil), rule.Allowed...),
+			Reference: rule.Reference,
+		}
+	}
+	return result
+}
+
 func (d *GoSpecDocument) Dependencies() spec.Dependencies {
 	result := make(spec.Dependencies, len(d.builder.Deps))
 	for name, dep := range d.builder.Deps {

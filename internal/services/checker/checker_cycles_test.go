@@ -26,6 +26,7 @@ import (
 const (
 	tcAlpha    = "alpha"
 	tcBeta     = "beta"
+	tcGamma    = "gamma"
 	tcCore     = "core"
 	tcPkgCore  = "internal"
 	tcPkgAlpha = "internal/alpha"

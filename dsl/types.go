@@ -25,6 +25,26 @@ type SpecBuilder struct {
 
 	// InterfacePlacement holds interface-location rules (see Interfaces()).
 	InterfacePlacement *InterfacePlacementEntry
+
+	// Visibility holds export-visibility rules (see Visibility()).
+	Visibility *VisibilityEntry
+}
+
+// VisibilityEntry holds export-visibility convention rules.
+// VisibleTo declares which components may consume a component's
+// exported API; any other component importing it is a violation.
+type VisibilityEntry struct {
+	Rules     []VisibilityRule
+	Reference domain.Reference
+}
+
+// VisibilityRule: exports of Component may only be used by Allowed
+// components (plus Component itself). An empty Allowed list means the
+// component is internal to itself only — nobody else may import it.
+type VisibilityRule struct {
+	Component string
+	Allowed   []string
+	Reference domain.Reference
 }
 
 // InterfacePlacementEntry holds interface-placement convention rules.

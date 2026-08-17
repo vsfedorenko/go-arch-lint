@@ -51,6 +51,13 @@ var spec = Spec(func() {
 		MustLiveWithConsumer()
 	})
 
+	Visibility(func() {
+		// view and operations are container-internal plumbing: only the
+		// glue layer may consume them.
+		VisibleTo("view", "container")
+		VisibleTo("operations", "container")
+	})
+
 	Tiers("cmd", "glue", "operations", "services", "view")
 	Tier("cmd", "main")
 	Tier("glue", "container")
