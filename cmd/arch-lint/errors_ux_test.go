@@ -48,7 +48,7 @@ func writeFixture(t *testing.T, specMain string) string {
 	if err := os.WriteFile(dir+"/.go-arch-lint/go.mod", []byte("module example.com/fixture/.go-arch-lint\n\ngo 1.25\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(dir+"/.go-arch-lint/main.go", []byte(specMain), 0o600); err != nil {
+	if err := os.WriteFile(dir+"/.go-arch-lint/arch.go", []byte(specMain), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

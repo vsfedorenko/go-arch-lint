@@ -45,13 +45,13 @@ cd ~/code/my-project
 go-arch-lint init
 ```
 
-Создаёт `.go-arch-lint/` с `go.mod` и `main.go`:
+Создаёт `.go-arch-lint/` с `go.mod`, `arch.go` (ваша спека) и `main.go` (стабильный раннер):
 
 ```go
+// arch.go — редактируйте этот файл
 package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
@@ -327,7 +327,7 @@ CI может различать «нашли нарушения» (падени
 - **[ddd](examples/ddd/)** — domain-driven design (domain → application → infrastructure → interfaces).
 - **[hexagonal](examples/hexagonal/)** — ports and adapters (core → adapters → domain).
 
-Каждый пример содержит `.go-arch-lint/main.go` с конфигурацией arch-lint.
+Каждый пример содержит `.go-arch-lint/` с конфигурацией arch-lint (`arch.go` + `main.go`).
 
 ## Принцип работы
 
