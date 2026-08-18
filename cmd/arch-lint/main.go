@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/vsfedorenko/go-arch-lint/internal/app"
 )
 
 const flagProjectPath = "--project-path"
@@ -63,7 +65,7 @@ func run() int {
 
 	switch command {
 	case "version":
-		fmt.Printf("go-arch-lint launcher v2.0.0-dev\n")
+		fmt.Printf("go-arch-lint launcher %s (commit %s, built %s)\n", app.Version, app.CommitHash, app.BuildTime)
 		return 0
 	case "init":
 		return cmdInit(os.Args[2:])
