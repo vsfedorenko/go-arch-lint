@@ -2,6 +2,7 @@ package check_test
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
@@ -376,4 +377,113 @@ type sarifLog struct {
 			} `json:"locations"`
 		} `json:"results"`
 	} `json:"runs"`
+}
+
+// archJUnitTpl mirrors archSARIFTpl but renders the JUnit XML format.
+const archJUnitTpl = `package main
+
+import (
+	"github.com/vsfedorenko/go-arch-lint"
+	. "github.com/vsfedorenko/go-arch-lint/dsl"
+)
+
+func main() {
+	spec := Spec(func() {
+		Version(1)
+		Allow(func() { DepOnAnyVendor(false) })
+		Exclude("internal/excluded", "vendor", "variadic")
+		ExcludeFiles("^.*_test\\.go$")
+		Component("main", "internal/.")
+		Component("a", "internal/a")
+		Component("allowb", "internal/a/allowb")
+		Component("b", "internal/b")
+		Component("c", "internal/c")
+		Component("e", "internal/e")
+		Component("common", "internal/common/**")
+		Component("models", "internal/d/models/*/model")
+		CommonComponents("common")
+		Deps("e", func() {
+			MayDependOn("models")
+			AnyVendorDeps(true)
+		})
+		Deps("allowb", func() { MayDependOn("b") })
+	})
+	archlint.MustRun(spec,
+		archlint.WithProjectPath("%s"),
+		archlint.WithColors(false),
+		archlint.WithFormat("junit"),
+	)
+}
+`
+
+// junitReport is the minimal decode target for the JUnit assertions —
+// only the fields the test reasons about.
+type junitReport struct {
+	XMLName  xml.Name `xml:"testsuites"`
+	Tests    int      `xml:"tests,attr"`
+	Failures int      `xml:"failures,attr"`
+	Suites   []struct {
+		XMLName  xml.Name `xml:"testsuite"`
+		Tests    int      `xml:"tests,attr"`
+		Failures int      `xml:"failures,attr"`
+		Cases    []struct {
+			XMLName   xml.Name `xml:"testcase"`
+			Classname string   `xml:"classname,attr"`
+			Name      string   `xml:"name,attr"`
+			Failure   *struct {
+				Message string `xml:"message,attr"`
+				Type    string `xml:"type,attr"`
+			} `xml:"failure"`
+		} `xml:"testcase"`
+	} `xml:"testsuite"`
+}
+
+// TestCheckJUnitFormat exercises the --format junit path end-to-end: the
+// scaffolded main() runs with WithFormat("junit") against the fixture
+// project (which has real violations under this spec), and stdout must be
+// a parseable JUnit XML report whose testcases carry classnames, relative
+// file:line names and non-empty failure types. Exit code stays 1
+// (violations found).
+func TestCheckJUnitFormat(t *testing.T) {
+	project := testProjectDir(t)
+	root := repoRoot(t)
+	dir := scaffoldArch(t, root, fmt.Sprintf(archJUnitTpl, project))
+
+	stdout, stderr, exitCode := runArchLint(t, dir)
+	if exitCode != 1 {
+		t.Fatalf("exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
+	}
+
+	var report junitReport
+	if err := xml.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("stdout is not a JUnit report: %v\nstdout:\n%s", err, stdout)
+	}
+	if len(report.Suites) != 1 {
+		t.Fatalf("expected 1 testsuite, got %d\nstdout:\n%s", len(report.Suites), stdout)
+	}
+
+	suite := report.Suites[0]
+	if len(suite.Cases) == 0 {
+		t.Fatalf("expected failed testcases, got none\nstdout:\n%s", stdout)
+	}
+	if suite.Tests != len(suite.Cases) {
+		t.Errorf("suite tests = %d, want %d (one per testcase)", suite.Tests, len(suite.Cases))
+	}
+	if suite.Failures == 0 || report.Failures != suite.Failures {
+		t.Errorf("failures must be consistent suite=%d envelope=%d", suite.Failures, report.Failures)
+	}
+
+	for _, tc := range suite.Cases {
+		if tc.Classname == "" {
+			t.Errorf("testcase without classname: %+v", tc)
+		}
+		if tc.Name == "" || strings.HasPrefix(tc.Name, "/") {
+			t.Errorf("testcase name must be a relative file[:line], got %q", tc.Name)
+		}
+		if tc.Failure == nil {
+			t.Errorf("violation testcase must carry a failure: %+v", tc)
+		} else if tc.Failure.Type == "" || tc.Failure.Message == "" {
+			t.Errorf("failure must carry type and message: %+v", tc.Failure)
+		}
+	}
 }

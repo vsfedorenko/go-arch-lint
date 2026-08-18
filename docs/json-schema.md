@@ -211,9 +211,70 @@ files):
 }
 ```
 
+
+## JUnit output for CI test dashboards
+
+`go-arch-lint check --format junit` prints a JUnit-style XML report — the
+native ingestion format for CI test dashboards: GitLab CI
+[`artifacts:reports:junit`](https://docs.gitlab.com/ee/ci/testing/unit_test_reports.html),
+the Jenkins JUnit plugin, Buildkite test annotations, Azure Pipelines.
+One violation = one failed `testcase`; a clean check emits a single green
+`arch-check` testcase so dashboards that require at least one case keep
+rendering. The exit-code convention is unchanged (`0`/`1`/`2`).
+
+```bash
+go-arch-lint check --format junit --project-path . > arch-lint-junit.xml
+```
+
+Field mapping:
+
+| JUnit field        | Value                                                    |
+|--------------------|----------------------------------------------------------|
+| `testsuite/@name`  | `go-arch-lint check`                                     |
+| `testcase/@classname` | `go-arch-lint.GA001`…`GA004` (rule IDs shared with SARIF) |
+| `testcase/@name`   | project-relative `file:line` of the violation            |
+| `failure/@message` | the same human-readable rule text as `--format json`     |
+| `failure/@type`    | rule ID (`GA001`…`GA004`)                                |
+| `failure` body     | rule text + `component:` / `dependency:` / deepscan AST context |
+
+GitLab CI recipe:
+
+```yaml
+arch-check:
+  script:
+    - arch-lint check --format junit --project-path . > arch-lint-junit.xml || [ $? -eq 1 ]
+  artifacts:
+    when: always
+    reports:
+      junit: arch-lint-junit.xml
+```
+
+`|| [ $? -eq 1 ]` keeps the job alive when violations are found (exit 1)
+so the report is still uploaded; exit 2 (broken config) still fails the job.
+
+Real output (fixture project, one dependency violation + three unattached
+files):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="go-arch-lint" tests="4" failures="4">
+  <testsuite name="go-arch-lint check" tests="4" failures="4">
+    <testcase classname="go-arch-lint.GA001" name="internal/c/c1.go:3">
+      <failure message="component &#34;c&#34; may not depend on &#34;github.com/x/proj/internal/a&#34;" type="GA001">component &#34;c&#34; may not depend on &#34;github.com/x/proj/internal/a&#34;&#xA;component: c&#xA;dependency: github.com/x/proj/internal/a</failure>
+    </testcase>
+    <testcase classname="go-arch-lint.GA002" name="internal/c/not_covered/c1nc.go">
+      <failure message="file is not attached to any component" type="GA002">file is not attached to any component</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
+```
+
+(Rows for `internal/d/not_covered.go` and `internal/not_covered/nc.go`
+omitted for brevity — same shape as the `GA002` case above.)
+
 ## Notes
 
-- `--format json` and `--format sarif` affect only `check`; other commands
+- `--format json`, `--format sarif` and `--format junit` affect only `check`; other commands
   keep the `--output-type` (`ascii`/`json`) wrapper format (both formats
   fall back to it for non-check models).
 - The scaffold `main()` must pass through CLI flags — the modern scaffold
