@@ -176,6 +176,15 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 		return err
 	}
 
+	// Fast path: --format html renders check results as a standalone HTML
+	// report for humans and CI artifact archives.
+	if r.format == models.FormatHTML {
+		if renderErr := r.renderHTML(model, err); renderErr != nil {
+			return fmt.Errorf("failed to render model: %w", renderErr)
+		}
+		return err
+	}
+
 	var renderErr error
 
 	switch r.outputType {
