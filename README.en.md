@@ -202,7 +202,7 @@ conventional exit code: `1` on violations, `2` on a configuration error
 | `selfInspect` | Inspect go-arch-lint's own architecture          |
 | `version`     | Print version                                    |
 
-Global flags: `--project-path` (short `-p`), `--max-warnings N`, `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
+Global flags: `--project-path` (short `-p`), `--max-warnings N` (display cap for violations, default 512; the exit code reflects the full count — see [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
 
 ### Visibility rules
 
