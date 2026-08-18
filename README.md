@@ -88,6 +88,18 @@ func main() {
 
 Полный список функций DSL — в [документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/dsl`.
 
+### Рецепты init
+
+Не хотите начинать с чистого листа — возьмите готовый шаблон известной архитектуры:
+
+```bash
+go-arch-lint init --recipe hexagonal   # порты и адаптеры: домен+core в центре, http/db смотрят внутрь
+go-arch-lint init --recipe ddd         # DDD: bounded contexts + application/infrastructure/interfaces
+go-arch-lint init --recipe clean       # чистая архитектура: domain ← usecase ← delivery
+```
+
+Рецепт пишет тот же каркас (`.go-arch-lint/`), но `arch.go` сразу описывает слои и правила зависимостей выбранного паттерна. Спека включает `IgnoreNotFoundComponents(true)` — директории слоёв можно создавать постепенно, линтер не упадёт, пока какого-то слоя ещё нет.
+
 ## Проверка
 
 ```bash
@@ -212,7 +224,7 @@ func runArchCheck() error {
 
 | Команда       | Назначение                                        |
 |---------------|---------------------------------------------------|
-| `init`        | Создать каркас `.go-arch-lint/`                   |
+| `init`        | Создать каркас `.go-arch-lint/`; `--recipe clean\|hexagonal\|ddd` — начать с известного паттерна |
 | `check`       | Проверить архитектуру                             |
 | `graph`       | Сгенерировать граф зависимостей                   |
 | `mapping`     | Показать соответствие пакетов и компонентов       |

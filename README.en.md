@@ -88,6 +88,18 @@ How this works:
 
 Full DSL function reference: [syntax docs](docs/syntax/README.md) or `go doc github.com/vsfedorenko/go-arch-lint/dsl`.
 
+### Init recipes
+
+Skip the blank page — start from a known architecture pattern:
+
+```bash
+go-arch-lint init --recipe hexagonal   # ports & adapters: domain+core at the center, http/db depend inward
+go-arch-lint init --recipe ddd         # DDD: bounded contexts + application/infrastructure/interfaces
+go-arch-lint init --recipe clean       # clean architecture: domain ← usecase ← delivery
+```
+
+A recipe writes the same scaffold (`.go-arch-lint/`), but `arch.go` already describes the layers and dependency rules of the chosen pattern. The spec sets `IgnoreNotFoundComponents(true)` — you can create the layer directories gradually; the linter won't fail while a layer is still missing.
+
 ## Check
 
 ```bash
@@ -221,7 +233,7 @@ conventional exit code: `1` on violations, `2` on a configuration error
 
 | Command       | Purpose                                          |
 |---------------|--------------------------------------------------|
-| `init`        | Create `.go-arch-lint/` scaffold                 |
+| `init`        | Create `.go-arch-lint/` scaffold; `--recipe clean\|hexagonal\|ddd` starts from a known pattern |
 | `check`       | Check project architecture                       |
 | `graph`       | Generate dependency graph                        |
 | `mapping`     | Show package-to-component mapping                |
