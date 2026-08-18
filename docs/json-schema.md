@@ -10,6 +10,26 @@ follows the linter convention: `0` no violations, `1` violations found,
 go-arch-lint check --format json --project-path .
 ```
 
+## Output cap (`--max-warnings`)
+
+Every output format — text, JSON, SARIF, JUnit, GitHub Actions — is capped
+at `--max-warnings` violations (**default 512**). The exit code reflects
+the FULL count: `1` fires as soon as the project has any violation, even
+when the displayed array is truncated.
+
+- The **text** format marks the truncation explicitly (`omitted: N (too
+  big to display)`).
+- The **machine formats** (JSON/SARIF/JUnit) contain no truncation marker:
+  a pipeline that counts array elements under-reports the violation count
+  on heavily-violating projects. Raise the cap when the count matters:
+
+```bash
+go-arch-lint check --format json --max-warnings=100000 --project-path .
+```
+
+Programmatic consumers get the same behaviour through
+`archlint.WithMaxWarnings(n)`.
+
 ## Violation schema
 
 | Field        | Type   | Always | Description                                                        |

@@ -196,7 +196,7 @@ func runArchCheck() error {
 | `selfInspect` | Проверить архитектуру самого go-arch-lint         |
 | `version`     | Вывести версию                                    |
 
-Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N`, `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
+Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N` (лимит показа нарушений, по умолчанию 512; код выхода отражает полное число — подробности в [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
 
 ### Правила видимости (export visibility)
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Documentation for the `--max-warnings` display cap (found by the
+  540-file synthetic stress run): every output format is capped at the
+  limit (default 512); text marks truncation (`omitted: N`) while the
+  machine formats (JSON/SARIF/JUnit) truncate silently — pipelines that
+  count array elements under-report on heavily-violating projects. The
+  exit code reflects the FULL violation count either way. Documented in
+  docs/json-schema.md (new "Output cap" section) and the README RU/EN
+  global-flags lines; pinned by tests that the cap never flips
+  pass/fail semantics (`WithMaxWarnings(1)` on a violating project
+  still maps to exit code 1).
+
 ### Fixed
 - Equals-form CLI flags (`--format=json`, `--project-path=/x`,
   `--max-warnings=0`) were silently dropped by the scaffold flag parser —
