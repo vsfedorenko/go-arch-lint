@@ -109,6 +109,29 @@ tools ingest natively, or `--format junit` for a JUnit-style XML report
 that CI test dashboards (GitLab CI, Jenkins, Buildkite) render natively
 (see [docs/json-schema.md](docs/json-schema.md#sarif-output-for-github-code-scanning)).
 
+### Suppressing known violations (baseline)
+
+For incremental adoption on legacy codebases, annotate a known violation
+in source with a directive — the check passes, while new violations
+still fail the build:
+
+```go
+//go-arch-lint:ignore            // suppress any violation on the line
+//go-arch-lint:ignore beta       // only when the dependency target is beta
+import _ "example.com/app/internal/beta"
+
+//go-arch-lint:ignore-file       // suppress every violation in the file
+package legacy
+```
+
+Place the directive on the offending line itself or the line directly
+above it. The argument (space-separated, multiple allowed) filters by
+target: component name (`beta`) or the last segment of the import path
+(`internal/beta` → `beta`). Suppressed violations stay visible: the
+report footer prints `suppressed: N (by //go-arch-lint:ignore
+directives)` and the JSON output carries a `SuppressedCount` field, so
+technical debt never disappears silently.
+
 Under the hood, `check`/`mapping`/`graph`/`selfInspect` delegate to
 `.go-arch-lint/` via `go run` — flag routing, exit codes, and caching
 (~45 s cold start, ~2 s steady state) are documented in

@@ -8,9 +8,18 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
 )
 
+// suppressIndexFactory builds the directive index from the resolved
+// project file list. Overridable for tests; the container injects the
+// suppress.NewIndexFromFiles adapter.
+type suppressIndexFactory func(projectFiles []models.FileHold) (SuppressIndex, error)
+
+// CompositeChecker coordinates all checkers: it resolves the project
+// file list once, runs every checker over it, and applies source-level
+// suppression directives to the aggregated result.
 type CompositeChecker struct {
 	projectFilesResolver projectFilesResolver
 	checkers             []checker
+	suppressIndexFactory suppressIndexFactory
 }
 
 func NewCompositeChecker(projectFilesResolver projectFilesResolver, checkers ...checker) *CompositeChecker {
@@ -18,6 +27,13 @@ func NewCompositeChecker(projectFilesResolver projectFilesResolver, checkers ...
 		projectFilesResolver: projectFilesResolver,
 		checkers:             checkers,
 	}
+}
+
+// WithSuppressIndex wires the //go-arch-lint:ignore directive index
+// factory. Without it no filtering happens (feature off).
+func (c *CompositeChecker) WithSuppressIndex(factory suppressIndexFactory) *CompositeChecker {
+	c.suppressIndexFactory = factory
+	return c
 }
 
 func (c *CompositeChecker) Check(ctx context.Context, spec arch.Spec) (models.CheckResult, error) {
@@ -41,6 +57,20 @@ func (c *CompositeChecker) Check(ctx context.Context, spec arch.Spec) (models.Ch
 		}
 
 		overallResults.Append(results)
+	}
+
+	// Apply //go-arch-lint:ignore directives AFTER aggregation so the
+	// filtering covers every warning kind and every output format
+	// (text, JSON, SARIF, JUnit) uniformly.
+	if c.suppressIndexFactory != nil {
+		index, err := c.suppressIndexFactory(projectFiles)
+		if err != nil {
+			return models.CheckResult{}, fmt.Errorf("failed to build suppress index: %w", err)
+		}
+
+		filtered, suppressed := (&SuppressFilter{index: index}).Filter(overallResults)
+		overallResults = filtered
+		overallResults.SuppressedCount = suppressed
 	}
 
 	return overallResults, nil

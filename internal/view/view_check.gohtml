@@ -45,6 +45,9 @@ linters:
 		{{ if gt .OmittedCount 0 -}}
 			omitted: {{.OmittedCount | printf "%d" | colorize "yellow" }} (too big to display)
 		{{ end }}
+		{{ if gt .SuppressedCount 0 -}}
+			suppressed: {{.SuppressedCount | printf "%d" | colorize "gray" }} (by //go-arch-lint:ignore directives)
+		{{ end }}
 	{{ else -}}
 		{{"OK - No warnings found" | colorize "green" -}}
 	{{ end -}}

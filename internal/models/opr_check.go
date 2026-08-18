@@ -17,6 +17,7 @@ type (
 		ArchWarningsDeepScan   []CheckArchWarningDeepscan   `json:"ArchWarningsDeepScan"`
 		ArchWarningsNaming     []CheckArchWarningNaming     `json:"ArchWarningsNaming"`
 		OmittedCount           int                          `json:"OmittedCount"`
+		SuppressedCount        int                          `json:"SuppressedCount"`
 		ModuleName             string                       `json:"ModuleName"`
 		Qualities              []CheckQuality               `json:"Qualities"`
 	}
@@ -90,6 +91,11 @@ type (
 		MatchWarnings      []CheckArchWarningMatch
 		DeepscanWarnings   []CheckArchWarningDeepscan
 		NamingWarnings     []CheckArchWarningNaming
+
+		// SuppressedCount is the number of violations removed from the
+		// result by //go-arch-lint:ignore directives — surfaced in
+		// output so suppressed debt stays visible.
+		SuppressedCount int
 	}
 )
 
