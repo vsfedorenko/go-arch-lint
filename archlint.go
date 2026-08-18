@@ -157,12 +157,18 @@ func boolValueFlag(args []string, name string) (bool, bool) {
 }
 
 // stringFlag returns the value of the first "--name value" (or
-// "-s value") occurrence, or "" when absent.
+// "-s value") occurrence, or "" when absent. The cobra-style equals
+// form "--name=value" is recognized with the same semantics: users
+// write flags both ways, and silently dropping one spelling makes CI
+// pipelines misbehave (see the --output-color fix for the same class).
 func stringFlag(args []string, names ...string) string {
 	for i := 0; i < len(args); i++ {
 		for _, name := range names {
 			if args[i] == name && i+1 < len(args) {
 				return args[i+1]
+			}
+			if v, ok := strings.CutPrefix(args[i], name+"="); ok {
+				return v
 			}
 		}
 	}

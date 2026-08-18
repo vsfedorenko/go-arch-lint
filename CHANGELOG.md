@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Equals-form CLI flags (`--format=json`, `--project-path=/x`,
+  `--max-warnings=0`) were silently dropped by the scaffold flag parser —
+  the same class as the `--output-color=false` bug fixed earlier. Found
+  by synthetic flag probing: a CI pipeline writing the cobra-style
+  spelling got text output from a "json" invocation and linted the wrong
+  directory from a "project-path" one. `stringFlag` now recognizes both
+  `--name value` and `--name=value`; first occurrence wins.
+
+### Added
+- CRLF line-ending tests for the suppress directive scanner (Windows
+  checkouts must not glue `\r` into directive arguments).
+- Synthetic hostile-input suite for `OptionsFromFlags` (empty values,
+  value-less trailing flags, overflow numbers, duplicate and conflicting
+  flags, `--` terminator): no panics, sane ignore semantics.
+
+### Fixed
 - Nil-pointer panic in project-info assembly when `go.mod` contains a
   syntax error or no `module` directive: `modfile.ParseLax` results are
   now nil-checked before dereferencing, producing a clear
