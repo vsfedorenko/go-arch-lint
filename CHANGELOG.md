@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Segmentation fault in the DSL: calling any builder function AFTER a
+  nested `Spec()` callback crashed with a raw nil-pointer dereference
+  (the nested `Spec` resets the package-level builder context on exit;
+  subsequent builders dereferenced the nil `*SpecBuilder`). Found by
+  synthetic DSL probing. Every builder now guards with an actionable
+  panic: "this DSL function must be called inside Spec(func(){...}) —
+  the context was reset (a nested Spec() finished)". Normal nested
+  callbacks (Deps/Allow/Naming/...) are unaffected — pinned by tests.
+
 ### Added
 - Weird-path format integration tests: a project with spaces and `::`
   in directory names (legal on unix, hostile to URI encoders,
