@@ -196,7 +196,7 @@ func runArchCheck() error {
 | `selfInspect` | Проверить архитектуру самого go-arch-lint         |
 | `version`     | Вывести версию                                    |
 
-Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N`, `--format text|json|sarif|junit` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
+Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N`, `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
 
 ### Правила видимости (export visibility)
 
@@ -296,6 +296,18 @@ GitHub Actions-аннотации, GitLab CI-artifacts, семантика exit-
 Buildkite) есть `check --format junit` — JUnit-отчёт в XML: одно нарушение =
 один упавший testcase, у чистого проекта один зелёный `arch-check`.
 Рецепт: [docs/json-schema.md → JUnit](docs/json-schema.md#junit-output-for-ci-test-dashboards).
+
+Для pull request'ов есть официальный GitHub Action: аннотации `::error`
+прямо на строках диффа, установка бинарника из релиза — без JS-скриптов:
+
+```yaml
+- uses: actions/checkout@v7
+- uses: actions/setup-go@v7
+  with: { go-version: '1.25' }
+- uses: vsfedorenko/go-arch-lint@main   # после первого релиза — @v2.1
+```
+
+Подробности и все inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).
 
 ### Коды выхода (check)
 

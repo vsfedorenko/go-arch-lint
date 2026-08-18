@@ -72,7 +72,9 @@ func WithColors(b bool) Option {
 // Use models.FormatJSON for a flat JSON array of violations,
 // models.FormatSARIF for a SARIF 2.1.0 log (GitHub Code Scanning),
 // models.FormatJUnit for a JUnit-style XML report (CI test dashboards),
-// or models.FormatText (the default) for human-readable ASCII.
+// models.FormatGitHubActions for GitHub Actions workflow commands
+// (::error/::notice PR annotations), or models.FormatText (the default)
+// for human-readable ASCII.
 func WithFormat(format models.Format) Option {
 	return func(c *config) { c.format = format }
 }
@@ -86,9 +88,10 @@ func WithFormat(format models.Format) Option {
 //	--max-warnings int      (default 512)
 //	--no-colors             (disable ANSI colors)
 //	--output-color=false    (cobra-style value form of --no-colors)
-//	--format text|json|sarif|junit ("json" = flat violation array for CI,
-//	                         "sarif" = SARIF 2.1.0 log for code scanning,
-//	                         "junit" = JUnit XML report for test dashboards)
+//	--format text|json|sarif|junit|github-actions ("json" = flat violation array
+//	                         for CI, "sarif" = SARIF 2.1.0 log for code scanning,
+//	                         "junit" = JUnit XML report for test dashboards,
+//	                         "github-actions" = workflow-command annotations)
 //
 // Unknown flags are ignored rather than rejected: the launcher may pass
 // extra flags meant for other layers.

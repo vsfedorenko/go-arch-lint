@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -17,6 +18,11 @@ import (
 // driverVersionDefault is reported as tool.driver.version in SARIF output
 // when no explicit build version was injected (local `go run` builds).
 const driverVersionDefault = "dev"
+
+// violationKindMatch is the advisory Violation.Type value (file matched no
+// component): those annotate as ::notice instead of ::error in
+// github-actions format. Kept in sync with models.ToViolations.
+const violationKindMatch = "match"
 
 const (
 	fnColorize   = "colorize"
@@ -156,6 +162,15 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 	// report for CI test dashboards (GitLab/Jenkins/Buildkite).
 	if r.format == models.FormatJUnit {
 		if renderErr := r.renderJUnit(model); renderErr != nil {
+			return fmt.Errorf("failed to render model: %w", renderErr)
+		}
+		return err
+	}
+
+	// Fast path: --format github-actions renders check results as GitHub
+	// Actions workflow commands (::error/::notice annotations).
+	if r.format == models.FormatGitHubActions {
+		if renderErr := r.renderGitHubActions(model, err); renderErr != nil {
 			return fmt.Errorf("failed to render model: %w", renderErr)
 		}
 		return err
@@ -309,6 +324,96 @@ func (r *Renderer) renderJUnit(model interface{}) error {
 	r.emit(doc.String())
 
 	return nil
+}
+
+// renderGitHubActions renders check results as GitHub Actions workflow
+// commands (the --format github-actions output): one `::error` annotation
+// per blocking violation and one `::notice` per advisory, each pointing at
+// the offending file and line so violations show up inline on the PR diff.
+// A config error gets a single `::error` instead — a "no violations"
+// notice would wrongly read as a green check when nothing was linted.
+// Non-check models fall back to the generic wrapped JSON so the flag stays
+// safe on other commands.
+func (r *Renderer) renderGitHubActions(model interface{}, err error) error {
+	checkOut, ok := model.(models.CmdCheckOut)
+	if !ok {
+		return r.renderJSON(model)
+	}
+
+	if models.IsConfigError(err) {
+		r.emit("::error title=go-arch-lint::configuration error — the check did not run: " +
+			githubActionsEscape(err.Error()))
+		return nil
+	}
+
+	violations := checkOut.ToViolations()
+	for _, v := range violations {
+		r.emit(githubActionsCommand(v))
+	}
+
+	if len(violations) == 0 {
+		r.emit("::notice ::go-arch-lint: no architecture violations found")
+	}
+
+	return nil
+}
+
+// githubActionsCommand renders one violation as a workflow command:
+//
+//	::error file=internal/handler/user.go,line=10,col=2,title=go-arch-lint (component: handler)::component "handler" may not depend on "…"
+//
+// Property values are escaped per the workflow-command spec (percent-encode
+// reserved characters); the message keeps newlines legal via %0A.
+func githubActionsCommand(v models.Violation) string {
+	var b strings.Builder
+
+	// Advisory kinds annotate as notices; everything that fails the check
+	// (dependency, deepscan, naming) is an error annotation. Mirrors
+	// models.Violation.Type == "match" (unmatched file), which is advisory.
+	command := "error"
+	if v.Type == violationKindMatch {
+		command = "notice"
+	}
+
+	b.WriteString("::")
+	b.WriteString(command)
+
+	b.WriteString(" file=")
+	b.WriteString(githubActionsEscape(models.RelativeFilePath(v.File)))
+	if v.Line > 0 {
+		b.WriteString(",line=")
+		b.WriteString(strconv.Itoa(v.Line))
+		if v.Column > 0 {
+			b.WriteString(",col=")
+			b.WriteString(strconv.Itoa(v.Column))
+		}
+	}
+	b.WriteString(",title=go-arch-lint")
+	if v.Component != "" {
+		b.WriteString(" ")
+		b.WriteString(githubActionsEscape(v.Component))
+	}
+
+	b.WriteString("::")
+	b.WriteString(githubActionsEscape(v.Rule))
+
+	return b.String()
+}
+
+// githubActionsEscape percent-encodes the characters the workflow-command
+// grammar reserves in property values and messages: `:` and `,` separate
+// properties, `=` separates keys from values, and `%` is the escape prefix.
+// Newlines are encoded as %0A (a raw newline would terminate the command).
+func githubActionsEscape(s string) string {
+	replacer := strings.NewReplacer(
+		"%", "%25",
+		"\r", "%0D",
+		"\n", "%0A",
+		":", "%3A",
+		",", "%2C",
+		"=", "%3D",
+	)
+	return replacer.Replace(s)
 }
 
 // Rename "anypackage.CmdXXXXOut" to "models.XXXX"

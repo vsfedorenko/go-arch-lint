@@ -176,9 +176,10 @@ Global flags (passed through to delegated commands):
   --project-path string   project directory (default "./")
   -p string               short form of --project-path
   --max-warnings int      fail when more than N violations (default 512)
-  --format string         check output format [text, json, sarif, junit] — 'json' emits a flat
-                          array of violations for CI pipelines, 'sarif' a SARIF 2.1.0 log for
-                          GitHub Code Scanning, 'junit' a JUnit XML report for CI dashboards
+  --format string         check output format [text, json, sarif, junit, github-actions] — 'json' emits a
+                          flat array of violations for CI pipelines, 'sarif' a SARIF 2.1.0 log for
+                          GitHub Code Scanning, 'junit' a JUnit XML report for CI dashboards,
+                          'github-actions' workflow commands (::error/::notice PR annotations)
                           (default "text")
   --output-color          use ANSI colors in terminal output (default true)
   --output-color=false    same as --no-colors (cobra-style value form)

@@ -204,6 +204,14 @@ func sarifResultMessage(v Violation) string {
 // sarifArtifactURI strips the leading slash go-arch-lint uses in
 // project-relative paths, producing a clean relative URI.
 func sarifArtifactURI(file string) string {
+	return RelativeFilePath(file)
+}
+
+// RelativeFilePath strips the leading slash go-arch-lint uses in
+// project-relative paths. Violation files are rooted ("/internal/...");
+// tool integrations (SARIF artifact URIs, GitHub Actions annotation
+// properties) expect workspace-relative paths without it.
+func RelativeFilePath(file string) string {
 	if len(file) > 1 && file[0] == '/' {
 		return file[1:]
 	}
