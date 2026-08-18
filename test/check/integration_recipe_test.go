@@ -78,7 +78,7 @@ func scaffoldRecipeArchDir(t *testing.T, projectDir, repoRoot string) {
 		t.Fatalf("mkdir arch dir: %v", err)
 	}
 
-	goMod := "module arch-lint-local\n\ngo 1.25\n\nrequire github.com/vsfedorenko/go-arch-lint v0.0.0\n\nreplace github.com/vsfedorenko/go-arch-lint => " + repoRoot + "\n"
+	goMod := offlineGoMod(t, repoRoot)
 	files := map[string]string{
 		"go.mod":  goMod,
 		"arch.go": hexagonalRecipeSpec(),
