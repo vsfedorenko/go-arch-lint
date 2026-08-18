@@ -94,7 +94,7 @@ Each row was reproduced against a real scaffold:
 | 1 | `.go-arch-lint/` missing | `Error: .go-arch-lint/ directory not found at …` + `Run 'go-arch-lint init' first` | `1` |
 | 2 | `go` not on PATH | explicit hint: delegation needs `go`, install link | `2` |
 | 3 | Scaffold not tidied (`go.sum` absent) | go's own `go get …/dsl` suggestion + footer `The arch spec … did not build. Fix the compile errors above, or regenerate the scaffold with 'go-arch-lint init'.` | `2` |
-| 4 | Spec does not compile (any Go error) | raw compiler errors, then the same footer pointing at `.go-arch-lint/main.go` | `2` |
+| 4 | Spec does not compile (any Go error) | raw compiler errors, then the same footer pointing at `.go-arch-lint/arch.go` | `2` |
 | 5 | Violations found | normal report | `1` |
 | 6 | Child crashes / signal | no `exit status N` line → config/system error | `2` |
 
@@ -105,7 +105,7 @@ exit-code mapping by `exitcode_test.go` plus `test/check/integration_test.go`
 
 ## Known sharp edge: scaffold ahead of the published library
 
-`go-arch-lint init` scaffolds `main.go` with flag passthrough:
+`go-arch-lint init` scaffolds `arch.go` (the spec) plus `main.go` (a stable runner) with flag passthrough — the split keeps the spec and the runner independently replaceable:
 
 ```go
 archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)

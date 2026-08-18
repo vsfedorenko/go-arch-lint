@@ -11,12 +11,12 @@ const scaffoldGoMod = `module arch-lint-local
 go 1.25
 `
 
-const scaffoldMainGo = `package main
+// scaffoldArchGo holds the user-editable spec. It lives in its own file so
+// the runner (main.go) can be regenerated or upgraded without touching the
+// architecture description.
+const scaffoldArchGo = `package main
 
 import (
-	"os"
-
-	"github.com/vsfedorenko/go-arch-lint"
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
@@ -28,7 +28,7 @@ var spec = Spec(func() {
 		DepOnAnyVendor(false)
 	})
 
-	ExcludeFiles(` + "`^.*_test\\.go$`" + `)
+	ExcludeFiles(` + "`^.*_test\\\\.go$`" + `)
 
 	// Define your components:
 	// Component("handler", "handlers/*")
@@ -39,6 +39,17 @@ var spec = Spec(func() {
 	//     MayDependOn("service")
 	// })
 })
+`
+
+// scaffoldMainGo is the stable runner. Keep user-facing configuration in
+// arch.go; this file only forwards CLI flags and executes the spec.
+const scaffoldMainGo = `package main
+
+import (
+	"os"
+
+	"github.com/vsfedorenko/go-arch-lint"
+)
 
 func main() {
 	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
@@ -68,6 +79,7 @@ func cmdInit(args []string) int {
 
 	files := map[string]string{
 		"go.mod":  scaffoldGoMod,
+		"arch.go": scaffoldArchGo,
 		"main.go": scaffoldMainGo,
 	}
 
@@ -81,7 +93,7 @@ func cmdInit(args []string) int {
 	}
 
 	fmt.Printf("\nNext steps:\n")
-	fmt.Printf("  1. Edit %s/main.go to describe your architecture\n", archDir)
+	fmt.Printf("  1. Edit %s/arch.go to describe your architecture\n", archDir)
 	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint dependency\n", archDir)
 	fmt.Printf("  3. Run 'go-arch-lint check' to lint your project\n")
 

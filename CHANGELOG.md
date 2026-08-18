@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `go-arch-lint init` now scaffolds the spec and the runner as separate
+  files: `arch.go` (user-editable spec) + `main.go` (stable runner with
+  flag passthrough). The runner can be regenerated or upgraded without
+  touching the architecture description, and vice versa — guarded by
+  `TestScaffoldSplit_RegenerateRunnerKeepsSpec`. The launcher's
+  spec-did-not-build footer now points at `arch.go` (the file users
+  edit); usage, README RU/EN, and docs/delegation.md updated to match.
+  The migration guide already documented this layout — the scaffold now
+  matches the docs instead of contradicting them.
+
 ### Added
 - Official GitHub Actions action (`action.yml`, composite) with inline PR
   annotations: installs the released binary, runs

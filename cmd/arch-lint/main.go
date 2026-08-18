@@ -141,7 +141,7 @@ func cmdDelegate(command string, args []string) int {
 
 		exitErr := &exec.ExitError{}
 		if errors.As(runErr, &exitErr) && code == 2 {
-			fmt.Fprintf(os.Stderr, "---\nThe arch spec at %s did not build.\n", filepath.Join(archDir, "main.go"))
+			fmt.Fprintf(os.Stderr, "---\nThe arch spec at %s did not build.\n", filepath.Join(archDir, "arch.go"))
 			fmt.Fprintf(os.Stderr, "Fix the compile errors above, or regenerate the scaffold with 'go-arch-lint init'.\n")
 		}
 	}
@@ -161,7 +161,7 @@ Usage:
   go-arch-lint <command> [flags]
 
 Commands:
-	init          Create .go-arch-lint/ scaffold (go.mod, main.go)
+	init          Create .go-arch-lint/ scaffold (go.mod, arch.go + main.go)
   check         Check project architecture against arch rules
   mapping       Show package-to-component mapping
   graph         Generate dependency graph

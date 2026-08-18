@@ -45,7 +45,7 @@ cd ~/code/my-project
 go-arch-lint init
 ```
 
-Creates `.go-arch-lint/` with `go.mod` and `main.go`:
+Creates `.go-arch-lint/` with `go.mod`, `arch.go` (your spec) and `main.go` (the stable runner):
 
 ```go
 package main
@@ -289,7 +289,7 @@ The [`examples/`](examples/) directory contains three demo projects:
 — **[ddd](examples/ddd/)** — domain-driven design (domain → application → infrastructure → interfaces).
 — **[hexagonal](examples/hexagonal/)** — ports and adapters (core → adapters → domain).
 
-Each example includes a `.go-arch-lint/main.go` with an arch-lint configuration for the corresponding pattern.
+Each example includes a `.go-arch-lint/` directory with an arch-lint configuration (`arch.go` + `main.go`).
 
 ## How it works
 
