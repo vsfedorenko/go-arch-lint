@@ -113,13 +113,13 @@ func TestScaffoldSplit_RegenerateRunnerKeepsSpec(t *testing.T) {
 	// Simulate the user editing their spec.
 	archPath := filepath.Join(".go-arch-lint", "arch.go")
 	edited := "package main\n\nimport (\n\t. \"github.com/vsfedorenko/go-arch-lint/dsl\"\n)\n\nvar spec = Spec(func() {\n\tVersion(1)\n\tComponent(\"mine\", \"internal/mine/*\")\n})\n"
-	if err := os.WriteFile(archPath, []byte(edited), 0o644); err != nil {
+	if err := os.WriteFile(archPath, []byte(edited), 0o600); err != nil { //nolint:gosec // test fixture in t.TempDir()
 		t.Fatalf("write edited arch.go: %v", err)
 	}
 
 	// Regenerate ONLY the runner, as an upgrade would.
 	mainPath := filepath.Join(".go-arch-lint", "main.go")
-	if err := os.WriteFile(mainPath, []byte(scaffoldMainGo), 0o644); err != nil {
+	if err := os.WriteFile(mainPath, []byte(scaffoldMainGo), 0o600); err != nil { //nolint:gosec // test fixture in t.TempDir()
 		t.Fatalf("rewrite main.go: %v", err)
 	}
 
