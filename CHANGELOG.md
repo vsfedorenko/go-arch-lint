@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Spec-validator messages: corrected typos and casing that reached users on
+  every malformed spec — "at least one component should by defined" →
+  "must be defined", "dublicated" → "duplicated" (components and vendors),
+  "failed to resolv path" → "resolve", "miss configuration" →
+  "misconfiguration", `AnyVendorDeps=true` → `anyVendorDeps=true` (casing
+  now matches the DSL flag it names).
+
 ### Added
+- Validator test suite (`internal/services/spec/validator`): 14 tests / 17
+  cases covering every validator through the real Document implementation
+  (dsl.SpecBuilder → GoSpecDocument) — version range, empty components,
+  unresolvable globs (+ `ignoreNotFoundComponents` suppression), unknown and
+  duplicated components/vendors in dep rules, `anyProjectDeps`/
+  `anyVendorDeps` conflicts with non-empty lists, empty dep rules, common
+  components/vendors, invalid `excludeFiles` regexps, and workdir
+  existence. Every notice is asserted against its source reference
+  (file/line), pinning the "source-referenced errors" contract.
 - `//go-arch-lint:ignore` suppression directives for incremental adoption
   on legacy codebases (roadmap #3): annotate a known violation in source
   (on the line or the line above) and the check passes while new

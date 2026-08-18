@@ -28,7 +28,7 @@ func (v *validatorDepsComponents) Validate(doc spec.Document) []arch.Notice {
 		for _, componentName := range rule.Value.MayDependOn() {
 			if _, ok := existComponents[componentName.Value]; ok {
 				notices = append(notices, arch.Notice{
-					Notice: fmt.Errorf("component '%s' dublicated in '%s' deps", componentName.Value, name),
+					Notice: fmt.Errorf("component '%s' duplicated in '%s' deps", componentName.Value, name),
 					Ref:    componentName.Reference,
 				})
 			}

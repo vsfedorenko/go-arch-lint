@@ -28,7 +28,7 @@ func (v *validatorDepsVendors) Validate(doc spec.Document) []arch.Notice {
 		for _, vendorName := range rule.Value.CanUse() {
 			if _, ok := existVendors[vendorName.Value]; ok {
 				notices = append(notices, arch.Notice{
-					Notice: fmt.Errorf("vendor '%s' dublicated in '%s' deps", vendorName.Value, name),
+					Notice: fmt.Errorf("vendor '%s' duplicated in '%s' deps", vendorName.Value, name),
 					Ref:    vendorName.Reference,
 				})
 			}

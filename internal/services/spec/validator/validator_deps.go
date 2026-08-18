@@ -32,14 +32,14 @@ func (v *validatorDeps) Validate(doc spec.Document) []arch.Notice {
 
 		if len(rule.Value.MayDependOn()) > 0 && rule.Value.AnyProjectDeps().Value {
 			notices = append(notices, arch.Notice{
-				Notice: fmt.Errorf("'anyProjectDeps=true' used with not empty 'MayDependOn' list (likely this is miss configuration)"),
+				Notice: fmt.Errorf("'anyProjectDeps=true' used with not empty 'MayDependOn' list (likely a misconfiguration)"),
 				Ref:    rule.Value.AnyProjectDeps().Reference,
 			})
 		}
 
 		if len(rule.Value.CanUse()) > 0 && rule.Value.AnyVendorDeps().Value {
 			notices = append(notices, arch.Notice{
-				Notice: fmt.Errorf("'AnyVendorDeps=true' used with not empty 'CanUse' list (likely this is miss configuration)"),
+				Notice: fmt.Errorf("'anyVendorDeps=true' used with not empty 'CanUse' list (likely a misconfiguration)"),
 				Ref:    rule.Value.AnyVendorDeps().Reference,
 			})
 		}
