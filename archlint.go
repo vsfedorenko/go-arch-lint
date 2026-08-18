@@ -88,10 +88,11 @@ func WithFormat(format models.Format) Option {
 //	--max-warnings int      (default 512)
 //	--no-colors             (disable ANSI colors)
 //	--output-color=false    (cobra-style value form of --no-colors)
-//	--format text|json|sarif|junit|github-actions ("json" = flat violation array
+//	--format text|json|sarif|junit|github-actions|html ("json" = flat violation array
 //	                         for CI, "sarif" = SARIF 2.1.0 log for code scanning,
 //	                         "junit" = JUnit XML report for test dashboards,
-//	                         "github-actions" = workflow-command annotations)
+//	                         "github-actions" = workflow-command annotations,
+//	                         "html" = standalone HTML report for humans/archives)
 //
 // Unknown flags are ignored rather than rejected: the launcher may pass
 // extra flags meant for other layers.

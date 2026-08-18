@@ -12,10 +12,11 @@ const (
 	FormatSARIF         Format = "sarif"          // SARIF 2.1.0 log for code-scanning tools
 	FormatJUnit         Format = "junit"          // JUnit-style XML report for CI test dashboards
 	FormatGitHubActions Format = "github-actions" // GitHub Actions workflow commands with inline annotations
+	FormatHTML          Format = "html"           // standalone HTML report for humans/archives
 )
 
 // FormatValues lists every accepted --format value.
-var FormatValues = []string{FormatText, FormatJSON, FormatSARIF, FormatJUnit, FormatGitHubActions}
+var FormatValues = []string{FormatText, FormatJSON, FormatSARIF, FormatJUnit, FormatGitHubActions, FormatHTML}
 
 // Violation is a single flattened architecture violation, intended for
 // machine consumption (CI pipelines, editor integrations, reporting tools).

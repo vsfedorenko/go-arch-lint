@@ -105,8 +105,9 @@ The linter builds an import graph from the actual code, compares it to the confi
 
 Use `--json` for machine-readable output in CI pipelines, `--format sarif`
 for a SARIF 2.1.0 log that GitHub Code Scanning and other code-scanning
-tools ingest natively, or `--format junit` for a JUnit-style XML report
-that CI test dashboards (GitLab CI, Jenkins, Buildkite) render natively
+tools ingest natively, `--format junit` for a JUnit-style XML report
+that CI test dashboards (GitLab CI, Jenkins, Buildkite) render natively,
+or `--format html` for a standalone HTML report humans can open directly
 (see [docs/json-schema.md](docs/json-schema.md#sarif-output-for-github-code-scanning)).
 
 ### Suppressing known violations (baseline)
@@ -202,7 +203,7 @@ conventional exit code: `1` on violations, `2` on a configuration error
 | `selfInspect` | Inspect go-arch-lint's own architecture          |
 | `version`     | Print version                                    |
 
-Global flags: `--project-path` (short `-p`), `--max-warnings N` (display cap for violations, default 512; the exit code reflects the full count — see [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
+Global flags: `--project-path` (short `-p`), `--max-warnings N` (display cap for violations, default 512; the exit code reflects the full count — see [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions|html` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
 
 ### Visibility rules
 
@@ -257,7 +258,7 @@ component 'service'
 
 ### JSON output for CI
 
-`check --format json` prints a flat JSON array of violations for CI pipelines; `--format sarif` produces a SARIF 2.1.0 log for GitHub Code Scanning; `--format junit` produces a JUnit-style XML report for CI test dashboards. Schemas and recipes: [docs/json-schema.md](docs/json-schema.md).
+`check --format json` prints a flat JSON array of violations for CI pipelines; `--format sarif` produces a SARIF 2.1.0 log for GitHub Code Scanning; `--format junit` produces a JUnit-style XML report for CI test dashboards; `--format html` produces a standalone HTML report for humans and archives. Schemas and recipes: [docs/json-schema.md](docs/json-schema.md).
 
 For pull requests there is an official GitHub Action: `::error` annotations
 directly on the diff lines, binary installed from the release — no JS glue:

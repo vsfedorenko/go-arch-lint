@@ -196,7 +196,7 @@ func runArchCheck() error {
 | `selfInspect` | Проверить архитектуру самого go-arch-lint         |
 | `version`     | Вывести версию                                    |
 
-Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N` (лимит показа нарушений, по умолчанию 512; код выхода отражает полное число — подробности в [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
+Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N` (лимит показа нарушений, по умолчанию 512; код выхода отражает полное число — подробности в [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions|html` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
 
 ### Правила видимости (export visibility)
 
@@ -296,6 +296,13 @@ GitHub Actions-аннотации, GitLab CI-artifacts, семантика exit-
 Buildkite) есть `check --format junit` — JUnit-отчёт в XML: одно нарушение =
 один упавший testcase, у чистого проекта один зелёный `arch-check`.
 Рецепт: [docs/json-schema.md → JUnit](docs/json-schema.md#junit-output-for-ci-test-dashboards).
+
+Для людей и архивов есть `check --format html` — самодостаточный
+HTML-отчёт (инлайн-CSS, без скриптов и внешних ассетов): карточки счётчиков
+по типам правил, таблица нарушений с file:line, экранирование враждебных
+путей, тёмная тема по `prefers-color-scheme`. Артефакт CI открывается
+напрямую в браузере.
+Схема: [docs/json-schema.md → HTML](docs/json-schema.md#html-report-for-humans-and-archives).
 
 Для pull request'ов есть официальный GitHub Action: аннотации `::error`
 прямо на строках диффа, установка бинарника из релиза — без JS-скриптов:

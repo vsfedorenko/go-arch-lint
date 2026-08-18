@@ -339,9 +339,68 @@ files):
 (Rows for `internal/d/not_covered.go` and `internal/not_covered/nc.go`
 omitted for brevity — same shape as the `GA002` case above.)
 
+## HTML report for humans and archives
+
+`go-arch-lint check --format html` prints a standalone HTML document —
+one file, no scripts, no external assets (inline CSS). CI pipelines
+archive it as an artifact; humans open it directly in a browser. Content:
+
+- header: tool name/version and the checked module;
+- summary cards: total violations plus per-rule-class counts
+  (Dependency / Not matched / DeepScan / Naming), and — when non-zero —
+  omitted (display cap) and suppressed counts;
+- violation table: one row per violation — rule tag, `file:line`,
+  component, dependency, rule text (+ details for DeepScan injections);
+- footer notes repeating the display-cap and suppression semantics.
+
+Guarantees (same contract as the other machine formats):
+
+- The `--max-warnings` display cap never changes pass/fail semantics:
+  the exit code reflects the FULL violation count; omitted rows are
+  announced in a card and a footer line (see
+  [Output cap](#output-cap---max-warnings)).
+- All dynamic values are context-escaped via `html/template` — file paths
+  and package names containing `<`, `>`, `&`, quotes, spaces or `::`
+  render as text, never markup (pinned by the weird-path integration
+  test). The document contains no scripts.
+- A configuration error renders an error banner document — never an
+  empty "no violations" page that would read as green (exit code `2`).
+- Non-check commands fall back to the wrapped JSON model, so the flag is
+  safe everywhere.
+
+Example (fragment):
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+...
+  <div class="card bad">
+    <div class="n">4</div>
+    <div class="l">violations</div>
+  </div>
+...
+  <tr>
+    <td><span class="tag dependency">Dependency</span></td>
+    <td class="file">internal/c/c1.go:3</td>
+    <td>c</td>
+    <td class="file">github.com/x/proj/internal/a</td>
+    <td>component "c" may not depend on "github.com/x/proj/internal/a"</td>
+  </tr>
+```
+
+GitLab CI artifact recipe:
+
+```yaml
+arch-report:
+  script: go-arch-lint check --format html > arch-report.html
+  artifacts:
+    paths: [arch-report.html]
+    when: always   # archive the report even when the check fails
+```
+
 ## Notes
 
-- `--format json`, `--format sarif`, `--format junit` and `--format github-actions` affect only `check`; other commands
+- `--format json`, `--format sarif`, `--format junit`, `--format github-actions` and `--format html` affect only `check`; other commands
   keep the `--output-type` (`ascii`/`json`) wrapper format (all formats
   fall back to it for non-check models).
 - The scaffold `main()` must pass through CLI flags — the modern scaffold
