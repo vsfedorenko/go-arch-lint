@@ -6,6 +6,17 @@ import (
 	archlint "github.com/vsfedorenko/go-arch-lint"
 )
 
+// Flag spellings shared across the flag tests (goconst).
+const (
+	flProjectPath = "--project-path"
+	flMaxWarnings = "--max-warnings"
+	flNoColors    = "--no-colors"
+	flFormat      = "--format"
+
+	tcJSON       = "json"
+	flFormatJSON = flFormat + "=json"
+)
+
 /**
  * OptionsFromFlags derives run Options from CLI args — the bridge that
  * lets a scaffolded main() keep the delegated CLI surface working.
@@ -21,10 +32,10 @@ func TestOptionsFromFlags_empty(t *testing.T) {
 func TestOptionsFromFlags_full_surface(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{
 		"check",
-		"--project-path", "/tmp/proj",
-		"--max-warnings", "42",
-		"--no-colors",
-		"--format", "json",
+		flProjectPath, "/tmp/proj",
+		flMaxWarnings, "42",
+		flNoColors,
+		flFormat, tcJSON,
 	})
 	if len(opts) != 4 {
 		t.Fatalf("expected 4 options, got %d", len(opts))
@@ -40,7 +51,7 @@ func TestOptionsFromFlags_short_project_path(t *testing.T) {
 
 func TestOptionsFromFlags_ignores_unknown(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{
-		"--output-type", "json", // handled by other layers
+		"--output-type", tcJSON, // handled by other layers
 		"--verbose",
 	})
 	if len(opts) != 0 {
@@ -49,7 +60,7 @@ func TestOptionsFromFlags_ignores_unknown(t *testing.T) {
 }
 
 func TestOptionsFromFlags_invalid_int_ignored(t *testing.T) {
-	opts := archlint.OptionsFromFlags([]string{"--max-warnings", "abc"})
+	opts := archlint.OptionsFromFlags([]string{flMaxWarnings, "abc"})
 	if len(opts) != 0 {
 		t.Fatalf("invalid int must be dropped, got %d options", len(opts))
 	}
@@ -69,7 +80,7 @@ func TestOptionsFromFlags_output_color_value_form(t *testing.T) {
 		{"space form false", []string{"--output-color", "false"}, 1, false},
 		{"value form true", []string{"--output-color=true"}, 0, true},
 		{"bare flag means true", []string{"--output-color"}, 0, true},
-		{"no-colors still works", []string{"--no-colors"}, 1, false},
+		{"no-colors still works", []string{flNoColors}, 1, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			opts := archlint.OptionsFromFlags(tc.args)
