@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `go-arch-lint version` now reports the real release build metadata
+  (version, commit, build time via goreleaser ldflags) instead of the
+  hard-coded `v2.0.0-dev` string. Local builds fall back to `dev`.
+
 ## [2.1.0] - 2026-08-18
 v1.0 roadmap block complete: stabilization, docs, CI & release hygiene,
 polish. 84 commits since v2.0.0.
