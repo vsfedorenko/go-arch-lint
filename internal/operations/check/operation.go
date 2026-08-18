@@ -77,6 +77,7 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 		ArchWarningsDeepScan:   limitedResult.results.DeepscanWarnings,
 		ArchWarningsNaming:     limitedResult.results.NamingWarnings,
 		OmittedCount:           limitedResult.omittedCount,
+		SuppressedCount:        limitedResult.results.SuppressedCount,
 		Qualities: []models.CheckQuality{
 			{
 				ID:   "component_imports",
@@ -138,6 +139,8 @@ func (o *Operation) limitResults(result models.CheckResult, maxWarnings int) lim
 		MatchWarnings:      []models.CheckArchWarningMatch{},
 		DeepscanWarnings:   []models.CheckArchWarningDeepscan{},
 		NamingWarnings:     []models.CheckArchWarningNaming{},
+		// Metadata (e.g. the suppression count) must survive limiting.
+		SuppressedCount: result.SuppressedCount,
 	}
 
 	// append deps

@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `//go-arch-lint:ignore` suppression directives for incremental adoption
+  on legacy codebases (roadmap #3): annotate a known violation in source
+  (on the line or the line above) and the check passes while new
+  violations still fail it. Optional arguments filter by dependency
+  target (component name or the last import-path segment);
+  `//go-arch-lint:ignore-file` suppresses the whole file. Suppressed
+  violations are counted and surfaced (`suppressed: N` footer in text
+  output, `SuppressedCount` in JSON) so debt stays visible. Works
+  uniformly across all output formats and the programmatic API.
 - `--format sarif`: check results as a SARIF 2.1.0 log for GitHub Code
   Scanning and other code-scanning tools — rule IDs (GA001–GA004),
   severity levels, relative file URIs and line/column regions;

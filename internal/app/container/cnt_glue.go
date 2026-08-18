@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/checker"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/common/path"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/project/holder"
@@ -10,6 +11,7 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/services/render/code"
 	specassembler "github.com/vsfedorenko/go-arch-lint/internal/services/spec/assembler"
 	specvalidator "github.com/vsfedorenko/go-arch-lint/internal/services/spec/validator"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/suppress"
 )
 
 func (c *Container) provideSpecAssembler() *specassembler.Assembler {
@@ -50,7 +52,14 @@ func (c *Container) provideSpecChecker() *checker.CompositeChecker {
 		c.provideSpecInterfacePlacementChecker(),
 		c.provideSpecVisibilityChecker(),
 		c.provideSpecDeepScanChecker(),
-	)
+	).WithSuppressIndex(func(projectFiles []models.FileHold) (checker.SuppressIndex, error) {
+		paths := make([]string, 0, len(projectFiles))
+		for _, hold := range projectFiles {
+			paths = append(paths, hold.File.Path)
+		}
+
+		return suppress.NewIndexFromFiles(paths)
+	})
 }
 
 func (c *Container) provideSpecInterfacePlacementChecker() *checker.InterfacePlacement {
