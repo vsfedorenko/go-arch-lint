@@ -35,9 +35,11 @@ func (c *Container) RunCheck(ctx context.Context, spec SpecDecoder, opts models.
 	}
 
 	in := models.CmdCheckIn{
-		ProjectPath: opts.ProjectPath,
-		ArchFile:    models.DefaultArchFileName,
-		MaxWarnings: opts.MaxWarnings,
+		ProjectPath:    opts.ProjectPath,
+		ArchFile:       models.DefaultArchFileName,
+		MaxWarnings:    opts.MaxWarnings,
+		BaselinePath:   opts.BaselinePath,
+		BaselineUpdate: opts.BaselineUpdate,
 	}
 
 	model, err := c.commandCheckOperation().Behave(ctx, in)

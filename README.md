@@ -127,6 +127,29 @@ package legacy
 `suppressed: N (by //go-arch-lint:ignore directives)`, а в JSON — поле
 `SuppressedCount`, так что технический долг остаётся видимым.
 
+### Baseline-файл: инкрементальное внедрение
+
+Когда нарушений сотни и размечать исходники директивами нереалистично,
+запишите их в baseline-файл — проверка будет падать только на НОВЫХ
+нарушениях («не чинить всё сразу, но и не добавлять нового»):
+
+```bash
+# 1. Записать текущие нарушения (файл коммитится в репозиторий):
+go-arch-lint check --baseline .go-arch-lint/baseline.json --baseline-update
+
+# 2. В CI — только сравнение: известный долг толерируется,
+#    новое нарушение фейлит сборку (exit 1):
+go-arch-lint check --baseline .go-arch-lint/baseline.json
+```
+
+Baseline — JSON с версией схемы и отпечатками (fingerprints) нарушений:
+`kind|rule|file` без номеров строк, поэтому правки выше по файлу не
+«воскрешают» старый долг как новый. Сводка в текстовом выводе показывает
+`baseline: N new, M known (tolerated)`, в JSON — поля `BaselineNewCount`
+и `BaselineKnownCount`. Отсутствующий baseline-файл в режиме сравнения —
+ошибка конфигурации (exit 2), а не молчаливый пропуск. Когда долг
+починен — просто перезапишите baseline (устаревшие отпечатки игнорируются).
+
 Под капотом команды `check`/`mapping`/`graph`/`selfInspect` делегируются в
 `.go-arch-lint/` через `go run` — как устроена маршрутизация флагов, выходные
 коды и кэширование (холодный старт ~45 с, рабочий режим ~2 с), см.
@@ -196,7 +219,7 @@ func runArchCheck() error {
 | `selfInspect` | Проверить архитектуру самого go-arch-lint         |
 | `version`     | Вывести версию                                    |
 
-Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N` (лимит показа нарушений, по умолчанию 512; код выхода отражает полное число — подробности в [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions|html` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
+Глобальные флаги: `--project-path` (кратко `-p`), `--max-warnings N` (лимит показа нарушений, по умолчанию 512; код выхода отражает полное число — подробности в [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions|html` (check), `--baseline <file>` + `--baseline-update` (инкрементальное внедрение: известные нарушения толерируются, проверка падает только на новых — см. [Baseline / инкрементальный режим](#baseline--инкрементальный-режим)), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (выключить ANSI-цвета).
 
 ### Правила видимости (export visibility)
 

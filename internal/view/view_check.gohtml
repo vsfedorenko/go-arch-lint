@@ -48,6 +48,9 @@ linters:
 		{{ if gt .SuppressedCount 0 -}}
 			suppressed: {{.SuppressedCount | printf "%d" | colorize "gray" }} (by //go-arch-lint:ignore directives)
 		{{ end }}
+		{{ if or (gt .BaselineKnownCount 0) (gt .BaselineNewCount 0) -}}
+			baseline: {{.BaselineNewCount | printf "%d" | colorize "yellow" }} new, {{.BaselineKnownCount | printf "%d" | colorize "gray" }} known (tolerated)
+		{{ end }}
 	{{ else -}}
 		{{"OK - No warnings found" | colorize "green" -}}
 	{{ end -}}

@@ -44,10 +44,12 @@ import (
 type Option func(*config)
 
 type config struct {
-	projectPath string
-	maxWarnings int
-	useColors   bool
-	format      models.Format
+	projectPath    string
+	maxWarnings    int
+	useColors      bool
+	format         models.Format
+	baselinePath   string
+	baselineUpdate bool
 }
 
 // WithProjectPath sets the absolute or relative path of the project root to
@@ -79,6 +81,23 @@ func WithFormat(format models.Format) Option {
 	return func(c *config) { c.format = format }
 }
 
+// WithBaseline enables the incremental adoption mode: violations whose
+// fingerprints are recorded in the baseline file at path are tolerated
+// as known debt, and only NEW violations fail the check. Record the
+// baseline with [WithBaselineUpdate]. Pair with the conventional
+// .go-arch-lint/baseline.json committed to the repository.
+func WithBaseline(path string) Option {
+	return func(c *config) { c.baselinePath = path }
+}
+
+// WithBaselineUpdate switches the baseline mode from compare to record:
+// the check writes the current full violation set to the baseline file
+// instead of comparing against it (a run with an empty project state
+// writes an empty baseline). Requires [WithBaseline].
+func WithBaselineUpdate() Option {
+	return func(c *config) { c.baselineUpdate = true }
+}
+
 // OptionsFromFlags derives Options from the process's command-line flags
 // (os.Args). This is what a scaffolded `.go-arch-lint/main.go` passes to
 // [Run] so the delegated CLI surface keeps working:
@@ -93,6 +112,9 @@ func WithFormat(format models.Format) Option {
 //	                         "junit" = JUnit XML report for test dashboards,
 //	                         "github-actions" = workflow-command annotations,
 //	                         "html" = standalone HTML report for humans/archives)
+//	--baseline string       (baseline file with known violations; only NEW
+//	                         violations fail the check — incremental adoption)
+//	--baseline-update       (record current violations as the baseline)
 //
 // Unknown flags are ignored rather than rejected: the launcher may pass
 // extra flags meant for other layers.
@@ -114,6 +136,14 @@ func OptionsFromFlags(args []string) []Option {
 
 	if format := stringFlag(args, "--format"); format != "" {
 		opts = append(opts, WithFormat(format))
+	}
+
+	if baselinePath := stringFlag(args, "--baseline"); baselinePath != "" {
+		opts = append(opts, WithBaseline(baselinePath))
+	}
+
+	if boolFlag(args, "--baseline-update") {
+		opts = append(opts, WithBaselineUpdate())
 	}
 
 	return opts
@@ -231,10 +261,12 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	// internal app layer consumes a services-layer GoDecoder. Converting
 	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
 	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), models.CheckOptions{
-		ProjectPath: cfg.projectPath,
-		MaxWarnings: cfg.maxWarnings,
-		UseColors:   cfg.useColors,
-		Format:      cfg.format,
+		ProjectPath:    cfg.projectPath,
+		MaxWarnings:    cfg.maxWarnings,
+		UseColors:      cfg.useColors,
+		Format:         cfg.format,
+		BaselinePath:   cfg.baselinePath,
+		BaselineUpdate: cfg.baselineUpdate,
 	})
 }
 

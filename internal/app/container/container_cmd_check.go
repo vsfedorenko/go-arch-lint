@@ -26,6 +26,8 @@ func (c *Container) commandCheck() (*cobra.Command, runner) {
 	cmd.PersistentFlags().StringVar(&in.ProjectPath, "project-path", in.ProjectPath, "absolute path to project directory")
 	cmd.PersistentFlags().StringVar(&in.ArchFile, "arch-file", in.ArchFile, "arch file path")
 	cmd.PersistentFlags().IntVar(&in.MaxWarnings, "max-warnings", in.MaxWarnings, "max number of warnings to output")
+	cmd.PersistentFlags().StringVar(&in.BaselinePath, "baseline", "", "baseline file with known violations (only NEW violations fail the check)")
+	cmd.PersistentFlags().BoolVar(&in.BaselineUpdate, "baseline-update", false, "record the current violations as the baseline (use with --baseline)")
 
 	return cmd, func(act *cobra.Command) (any, error) {
 		const warningsRangeMin = 1

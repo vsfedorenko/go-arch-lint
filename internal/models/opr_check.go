@@ -7,6 +7,11 @@ type (
 		ProjectPath string
 		ArchFile    string
 		MaxWarnings int
+
+		// BaselinePath/BaselineUpdate carry the incremental adoption
+		// mode (see models.CheckOptions). Empty BaselinePath disables it.
+		BaselinePath   string
+		BaselineUpdate bool
 	}
 
 	CmdCheckOut struct {
@@ -20,6 +25,13 @@ type (
 		SuppressedCount        int                          `json:"SuppressedCount"`
 		ModuleName             string                       `json:"ModuleName"`
 		Qualities              []CheckQuality               `json:"Qualities"`
+
+		// BaselineKnownCount/BaselineNewCount carry the incremental
+		// adoption contract: known violations are tolerated debt present
+		// in the baseline file, new ones are the actual failure. Both
+		// stay zero when the mode is off.
+		BaselineKnownCount int `json:"BaselineKnownCount"`
+		BaselineNewCount   int `json:"BaselineNewCount"`
 	}
 
 	CheckQuality struct {

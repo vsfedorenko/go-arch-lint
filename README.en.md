@@ -133,6 +133,31 @@ report footer prints `suppressed: N (by //go-arch-lint:ignore
 directives)` and the JSON output carries a `SuppressedCount` field, so
 technical debt never disappears silently.
 
+### Baseline file: incremental adoption
+
+When there are hundreds of violations and annotating sources with
+directives is unrealistic, record them into a baseline file — the check
+then fails only on NEW violations ("don't fix everything, don't add
+new"):
+
+```bash
+# 1. Record the current violations (commit the file to the repository):
+go-arch-lint check --baseline .go-arch-lint/baseline.json --baseline-update
+
+# 2. In CI — compare only: known debt is tolerated,
+#    a new violation fails the build (exit 1):
+go-arch-lint check --baseline .go-arch-lint/baseline.json
+```
+
+The baseline is a JSON document with a schema version and violation
+fingerprints: `kind|rule|file` without line numbers, so edits higher up
+in a file never "resurrect" old debt as new. The text summary prints
+`baseline: N new, M known (tolerated)`; the JSON output carries
+`BaselineNewCount` and `BaselineKnownCount`. A missing baseline file in
+compare mode is a configuration error (exit 2), never a silent pass.
+Once the debt is fixed, simply re-record the baseline (stale
+fingerprints are ignored).
+
 Under the hood, `check`/`mapping`/`graph`/`selfInspect` delegate to
 `.go-arch-lint/` via `go run` — flag routing, exit codes, and caching
 (~45 s cold start, ~2 s steady state) are documented in
@@ -203,7 +228,7 @@ conventional exit code: `1` on violations, `2` on a configuration error
 | `selfInspect` | Inspect go-arch-lint's own architecture          |
 | `version`     | Print version                                    |
 
-Global flags: `--project-path` (short `-p`), `--max-warnings N` (display cap for violations, default 512; the exit code reflects the full count — see [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions|html` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
+Global flags: `--project-path` (short `-p`), `--max-warnings N` (display cap for violations, default 512; the exit code reflects the full count — see [docs/json-schema.md](docs/json-schema.md#output-cap---max-warnings)), `--format text|json|sarif|junit|github-actions|html` (check), `--baseline <file>` + `--baseline-update` (incremental adoption: known violations are tolerated, only NEW ones fail the check — see [Baseline / incremental mode](#baseline--incremental-mode)), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
 
 ### Visibility rules
 

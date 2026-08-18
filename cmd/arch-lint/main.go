@@ -14,7 +14,10 @@ import (
 	"github.com/vsfedorenko/go-arch-lint/internal/app"
 )
 
-const flagProjectPath = "--project-path"
+const (
+	flagProjectPath = "--project-path"
+	flagBaseline    = "--baseline"
+)
 
 // `go run` does not propagate the child's exit code: any non-zero child exit
 // becomes go run's exit 1, with the original code mentioned only in the last
@@ -101,12 +104,23 @@ func cmdDelegate(command string, args []string) int {
 		return 1
 	}
 
-	delegatedArgs := make([]string, 0, len(args)+2)
+	delegatedArgs := make([]string, 0, len(args)+4)
 	projectPathSet := false
 	for i := 0; i < len(args); i++ {
 		if (args[i] == flagProjectPath || args[i] == "-p") && i+1 < len(args) {
 			delegatedArgs = append(delegatedArgs, args[i], absProjectPath)
 			projectPathSet = true
+			i++
+		} else if args[i] == flagBaseline && i+1 < len(args) {
+			// The delegated process runs with cwd=.go-arch-lint/, so a
+			// relative baseline path would resolve against the wrong
+			// directory — absolutize it against the user's cwd first
+			// (same treatment as --project-path).
+			absBaseline, err := filepath.Abs(args[i+1])
+			if err != nil {
+				absBaseline = args[i+1]
+			}
+			delegatedArgs = append(delegatedArgs, args[i], absBaseline)
 			i++
 		} else {
 			delegatedArgs = append(delegatedArgs, args[i])
@@ -186,6 +200,9 @@ Global flags (passed through to delegated commands):
                           (default "text")
   --output-color          use ANSI colors in terminal output (default true)
   --output-color=false    same as --no-colors (cobra-style value form)
+  --baseline string       baseline file with known violations; only NEW violations
+                          fail the check (incremental adoption for legacy codebases)
+  --baseline-update       record the current violations as the baseline (with --baseline)
   --no-colors             disable ANSI colors
   --output-type string    command output type [ascii, json] (default "ascii")
   --json                  alias for --output-type=json
