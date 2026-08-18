@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Global flag consistency (roadmap #3): `--output-color=false` (the
+  cobra-style spelling the delegated layer documents) was silently ignored
+  on the scaffold path — only `--no-colors` worked. `OptionsFromFlags` now
+  honors both spellings (`--output-color=false|true`, `--output-color
+  false`, bare `--output-color`, and `--no-colors`), verified end-to-end
+  through the delegation launcher on a real fixture. Launcher `help`
+  output updated to the actual flag surface (added `junit` to `--format`,
+  `--max-warnings`, `-p`, both color spellings, `--output-json-one-line`);
+  README RU/EN global-flags lines updated to match.
 - Spec-validator messages: corrected typos and casing that reached users on
   every malformed spec — "at least one component should by defined" →
   "must be defined", "dublicated" → "duplicated" (components and vendors),

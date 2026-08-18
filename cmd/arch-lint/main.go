@@ -174,12 +174,18 @@ The 'check', 'mapping', 'graph', and 'selfInspect' commands require a
 
 Global flags (passed through to delegated commands):
   --project-path string   project directory (default "./")
-  --output-type string    output format [ascii, json] (default "ascii")
+  -p string               short form of --project-path
+  --max-warnings int      fail when more than N violations (default 512)
+  --format string         check output format [text, json, sarif, junit] — 'json' emits a flat
+                          array of violations for CI pipelines, 'sarif' a SARIF 2.1.0 log for
+                          GitHub Code Scanning, 'junit' a JUnit XML report for CI dashboards
+                          (default "text")
+  --output-color          use ANSI colors in terminal output (default true)
+  --output-color=false    same as --no-colors (cobra-style value form)
+  --no-colors             disable ANSI colors
+  --output-type string    command output type [ascii, json] (default "ascii")
   --json                  alias for --output-type=json
-  --format string         check output format [text, json, sarif] — 'json' emits a flat
-                          array of violations for CI pipelines, 'sarif' emits a
-                          SARIF 2.1.0 log for GitHub Code Scanning (default "text")
-  --output-color          use ANSI colors (default true)
+  --output-json-one-line  JSON as single line payload (json output type only)
 
 Exit codes (check):
   0   no violations

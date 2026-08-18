@@ -32,6 +32,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/app"
@@ -81,8 +82,10 @@ func WithFormat(format models.Format) Option {
 // [Run] so the delegated CLI surface keeps working:
 //
 //	--project-path string   (default "../")
+//	-p string               (short form of --project-path)
 //	--max-warnings int      (default 512)
 //	--no-colors             (disable ANSI colors)
+//	--output-color=false    (cobra-style value form of --no-colors)
 //	--format text|json|sarif|junit ("json" = flat violation array for CI,
 //	                         "sarif" = SARIF 2.1.0 log for code scanning,
 //	                         "junit" = JUnit XML report for test dashboards)
@@ -101,7 +104,7 @@ func OptionsFromFlags(args []string) []Option {
 		opts = append(opts, WithMaxWarnings(maxWarnings))
 	}
 
-	if boolFlag(args, "--no-colors") {
+	if !colorFlagEnabled(args) {
 		opts = append(opts, WithColors(false))
 	}
 
@@ -110,6 +113,44 @@ func OptionsFromFlags(args []string) []Option {
 	}
 
 	return opts
+}
+
+// colorFlagEnabled reports whether ANSI colors stay on. Colors are disabled
+// by the standalone --no-colors flag or by the cobra-style value form
+// --output-color=false (the delegated cobra layer documents --output-color;
+// the scaffold path must honor the same spelling).
+func colorFlagEnabled(args []string) bool {
+	if boolFlag(args, "--no-colors") {
+		return false
+	}
+	if v, ok := boolValueFlag(args, "--output-color"); ok {
+		return v
+	}
+	return true
+}
+
+// boolValueFlag parses a cobra-style "--name=value" (or "--name value")
+// boolean flag. Returns the value and whether the flag was present.
+func boolValueFlag(args []string, name string) (bool, bool) {
+	prefix := name + "="
+	for i, a := range args {
+		if strings.HasPrefix(a, prefix) {
+			v, err := strconv.ParseBool(strings.TrimPrefix(a, prefix))
+			return v, err == nil
+		}
+		if a == name {
+			// "--output-color false" and bare "--output-color" both mean
+			// true (cobra's default), unless the next token parses as a
+			// boolean value.
+			if i+1 < len(args) {
+				if v, err := strconv.ParseBool(args[i+1]); err == nil {
+					return v, true
+				}
+			}
+			return true, true
+		}
+	}
+	return false, false
 }
 
 // stringFlag returns the value of the first "--name value" (or
