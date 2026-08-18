@@ -202,7 +202,7 @@ conventional exit code: `1` on violations, `2` on a configuration error
 | `selfInspect` | Inspect go-arch-lint's own architecture          |
 | `version`     | Print version                                    |
 
-Global flags: `--project-path` (short `-p`), `--max-warnings N`, `--format text|json|sarif|junit` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
+Global flags: `--project-path` (short `-p`), `--max-warnings N`, `--format text|json|sarif|junit|github-actions` (check), `--output-type` (`ascii`/`json`), `--json`, `--output-color` / `--no-colors` (disable ANSI colors).
 
 ### Visibility rules
 
@@ -258,6 +258,18 @@ component 'service'
 ### JSON output for CI
 
 `check --format json` prints a flat JSON array of violations for CI pipelines; `--format sarif` produces a SARIF 2.1.0 log for GitHub Code Scanning; `--format junit` produces a JUnit-style XML report for CI test dashboards. Schemas and recipes: [docs/json-schema.md](docs/json-schema.md).
+
+For pull requests there is an official GitHub Action: `::error` annotations
+directly on the diff lines, binary installed from the release — no JS glue:
+
+```yaml
+- uses: actions/checkout@v7
+- uses: actions/setup-go@v7
+  with: { go-version: '1.25' }
+- uses: vsfedorenko/go-arch-lint@main   # pin @v2.1 after the first release
+```
+
+Details and all inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).
 
 ### Exit codes (check)
 

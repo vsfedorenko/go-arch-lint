@@ -15,12 +15,12 @@ import (
 // WithDriverVersion.
 func TestRenderModel_FormatSARIF_CheckOut(t *testing.T) {
 	out := models.CmdCheckOut{
-		ModuleName: "github.com/x/proj",
+		ModuleName: gaFixtureModule,
 		ArchWarningsDependency: []models.CheckArchWarningDependency{
 			{
-				ComponentName:      "handler",
+				ComponentName:      gaFixtureComponent,
 				FileRelativePath:   "internal/handler/user.go",
-				ResolvedImportName: "github.com/x/proj/internal/repository",
+				ResolvedImportName: gaFixtureImport,
 				Reference:          domain.NewReferenceSingleLine("internal/handler/user.go", 10, 2),
 			},
 		},

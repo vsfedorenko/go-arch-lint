@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Official GitHub Actions action (`action.yml`, composite) with inline PR
+  annotations: installs the released binary, runs
+  `check --format github-actions`, propagates the linter exit codes
+  (roadmap #3). The new `github-actions` format renders one workflow
+  command per violation — `::error` for blocking kinds, `::notice` for the
+  advisory unmatched-file kind — with `file`/`line`/`col`/`title`
+  properties and percent-encoded reserved characters. CI gained an
+  `action smoke` job dogfooding the action on this repo with a locally
+  built binary (`install: false`).
+
 ### Fixed
 - Global flag consistency (roadmap #3): `--output-color=false` (the
   cobra-style spelling the delegated layer documents) was silently ignored

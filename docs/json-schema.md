@@ -52,7 +52,54 @@ Example:
 - `naming` — forbidden package name: `package` set, `rule` carries the
   banned name, package path and file count.
 
-## GitHub Actions
+## GitHub Action with inline annotations
+
+The official composite action renders violations as `::error` / `::notice`
+workflow commands anchored to the offending file and line — they appear
+inline on the PR diff and in the Checks summary, no JS glue required:
+
+```yaml
+name: arch
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.25'
+      - uses: vsfedorenko/go-arch-lint@main   # pin to a tag once released
+```
+
+Inputs: `version` (release to install, default `latest`), `project-path`
+(default `.`), `max-warnings` (default `0` = tool default), `install`
+(`false` skips the install when a `go-arch-lint` binary is already on
+PATH — useful for smoke-testing a locally built one). The action requires
+`go` on PATH (the check delegates to `go run .go-arch-lint/`, see
+[delegation](delegation.md)) and a committed `.go-arch-lint/` scaffold
+(create it once with `go-arch-lint init`).
+
+Exit codes propagate unchanged: `0` green, `1` violations (annotated),
+`2` configuration error (surfaced as a top-level `::error`).
+
+Under the hood the action runs `check --format github-actions`:
+
+```
+::error file=internal/handler/user.go,line=10,col=2,title=go-arch-lint handler::component "handler" may not depend on "github.com/x/proj/internal/repository"
+::notice file=internal/orphan/x.go,title=go-arch-lint::file is not attached to any component
+```
+
+Blocking kinds (dependency, deepscan, naming) annotate as `::error`;
+the advisory "file matched no component" kind annotates as `::notice`.
+Reserved characters in messages are percent-encoded per the
+[workflow-command spec](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions),
+so one violation is always exactly one command.
+
+## Manual recipe (no action)
+
+If you prefer not to use the action, the same annotations can be produced
+from the JSON format directly:
 
 ```yaml
 name: arch
@@ -274,8 +321,8 @@ omitted for brevity — same shape as the `GA002` case above.)
 
 ## Notes
 
-- `--format json`, `--format sarif` and `--format junit` affect only `check`; other commands
-  keep the `--output-type` (`ascii`/`json`) wrapper format (both formats
+- `--format json`, `--format sarif`, `--format junit` and `--format github-actions` affect only `check`; other commands
+  keep the `--output-type` (`ascii`/`json`) wrapper format (all formats
   fall back to it for non-check models).
 - The scaffold `main()` must pass through CLI flags — the modern scaffold
   (`go-arch-lint init`) calls `archlint.MustRun(spec,

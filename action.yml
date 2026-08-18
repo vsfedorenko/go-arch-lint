@@ -1,0 +1,72 @@
+name: 'go-arch-lint'
+description: >-
+  Architecture check for Go with inline PR annotations. Runs go-arch-lint
+  check on your project and renders violations as GitHub Actions
+  annotations (::error / ::notice) anchored to the offending file and line.
+author: 'vsfedorenko'
+
+# The action runs the published go-arch-lint binary and requires go on PATH
+# (the check delegates to `go run .go-arch-lint/`, see docs/delegation.md).
+# It needs the repo checked out and a .go-arch-lint/ scaffold present
+# (create one once with `go-arch-lint init` and commit it).
+
+inputs:
+  version:
+    description: 'go-arch-lint version to install (e.g. "2.1.0", or "latest")'
+    required: false
+    default: 'latest'
+  project-path:
+    description: 'Path to the project root (the directory holding .go-arch-lint/)'
+    required: false
+    default: '.'
+  max-warnings:
+    description: 'Fail when more than N violations (0 = tool default)'
+    required: false
+    default: '0'
+  install:
+    description: 'Skip the install step when a go-arch-lint binary is already on PATH ("false")'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Install go-arch-lint'
+      if: ${{ inputs.install == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        if command -v go-arch-lint >/dev/null 2>&1; then
+          echo "go-arch-lint already on PATH, skipping install"
+          exit 0
+        fi
+        version='${{ inputs.version }}'
+        if [ "$version" = 'latest' ]; then
+          go install github.com/vsfedorenko/go-arch-lint/cmd/arch-lint@latest
+        else
+          go install "github.com/vsfedorenko/go-arch-lint/cmd/arch-lint@v${version#@}"
+        fi
+
+    - name: 'Architecture check (annotations)'
+      shell: bash
+      run: |
+        set -uo pipefail
+        args=(check --format github-actions --project-path '${{ inputs.project-path }}')
+        if [ '${{ inputs.max-warnings }}' != '0' ]; then
+          args+=(--max-warnings '${{ inputs.max-warnings }}')
+        fi
+
+        go-arch-lint "${args[@]}"
+        code=$?
+
+        # Exit codes: 0 = clean, 1 = violations found (already annotated
+        # above), 2 = configuration/system error. Only 2 is unexpected here;
+        # 0 and 1 propagate to the job result unchanged.
+        if [ "$code" -ge 2 ]; then
+          echo "::error ::go-arch-lint failed with exit code $code (config or system error — see log above)"
+        fi
+        exit "$code"
+
+branding:
+  icon: 'check-square'
+  color: 'blue'
