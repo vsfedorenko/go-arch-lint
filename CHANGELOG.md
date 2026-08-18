@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-18
+v1.0 roadmap block complete: stabilization, docs, CI & release hygiene,
+polish. 84 commits since v2.0.0.
+
+
 ### Changed
 - `go-arch-lint init` now scaffolds the spec and the runner as separate
   files: `arch.go` (user-editable spec) + `main.go` (stable runner with
