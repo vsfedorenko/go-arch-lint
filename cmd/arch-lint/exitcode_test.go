@@ -104,3 +104,34 @@ func TestDelegatedExitCode(t *testing.T) {
 		})
 	}
 }
+
+// TestChildExitStatus pins the "did the child actually run" signal the
+// launcher uses to decide whether the "spec did not build" footer applies:
+// an "exit status N" line means the child ran (any exit code, including a
+// config error the renderer already explained); its absence means `go run`
+// failed before the child started.
+func TestChildExitStatus(t *testing.T) {
+	tests := []struct {
+		name     string
+		stderr   string
+		wantCode int
+		wantRan  bool
+	}{
+		{"child ran, exit 1", "violations output\nexit status 1\n", 1, true},
+		{"child ran, exit 2 (config error)", "Error: --output-json-one-line only affects json output\nexit status 2\n", 2, true},
+		{"build failure, child never ran", "# arch-lint-local\n./main.go:12:3: undefined: Component\n", 0, false},
+		{"empty stderr", "", 0, false},
+		{"trailing whitespace tolerated", "exit status 2  \n", 2, true},
+		{"first match wins", "exit status 1\nexit status 3\n", 1, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, ran := childExitStatus(tt.stderr)
+			if code != tt.wantCode || ran != tt.wantRan {
+				t.Errorf("childExitStatus(%q) = (%d, %v), want (%d, %v)",
+					tt.stderr, code, ran, tt.wantCode, tt.wantRan)
+			}
+		})
+	}
+}

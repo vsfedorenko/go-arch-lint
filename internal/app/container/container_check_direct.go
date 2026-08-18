@@ -28,10 +28,20 @@ func (c *Container) RunCheck(ctx context.Context, spec SpecDecoder, opts models.
 		format = models.FormatText
 	}
 
+	// An unset output type means ascii (the human-readable default). The
+	// public archlint package validates user-provided values; anything
+	// arriving here empty falls back rather than being passed to the
+	// renderer, which would otherwise panic on an unknown type.
+	outputType := opts.OutputType
+	if outputType == "" || outputType == models.OutputTypeDefault {
+		outputType = models.OutputTypeASCII
+	}
+
 	c.flags = models.FlagsRoot{
-		UseColors:  opts.UseColors,
-		OutputType: models.OutputTypeASCII,
-		Format:     format,
+		UseColors:         opts.UseColors,
+		OutputType:        outputType,
+		OutputJsonOneLine: opts.OutputJSONOneLine,
+		Format:            format,
 	}
 
 	in := models.CmdCheckIn{
