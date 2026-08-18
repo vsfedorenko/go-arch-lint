@@ -257,6 +257,14 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Fail fast on the incoherent flag combination instead of silently
+	// no-op'ing the run: --baseline-update without --baseline recorded
+	// nothing and the check still ran (violations failed the build with
+	// no baseline written) — confusing in CI.
+	if cfg.baselineUpdate && cfg.baselinePath == "" {
+		return models.NewConfigError("--baseline-update requires --baseline <file> to know where to record the fingerprints")
+	}
+
 	// dsl → services boundary: the public API accepts a dsl.SpecDef, the
 	// internal app layer consumes a services-layer GoDecoder. Converting
 	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
@@ -302,6 +310,12 @@ func ExitCode(err error) int {
 
 // MustRun runs the check and exits the process with a conventional exit code
 // (see ExitCode). This is what a scaffolded `.go-arch-lint/main.go` calls.
+// Errors that fail before the renderer runs (invalid option combinations)
+// are printed to stderr so the exit is never silent.
 func MustRun(spec dsl.SpecDef, opts ...Option) {
-	os.Exit(ExitCode(Run(spec, opts...)))
+	if err := Run(spec, opts...); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err.Error())
+		os.Exit(ExitCode(err))
+	}
+	os.Exit(ExitCodeOK)
 }

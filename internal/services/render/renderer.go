@@ -139,6 +139,42 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 		return err
 	}
 
+	// A config error means the check did NOT run. Rendering the (empty)
+	// check model would print "OK - No warnings found" (ASCII) or an
+	// empty array (json) — actively misleading on a failed run. Formats
+	// with dedicated config-error branches (github-actions, html, sarif)
+	// keep them; everything else gets the plain error text.
+	if configErr {
+		switch r.format {
+		case models.FormatGitHubActions:
+			if renderErr := r.renderGitHubActions(model, err); renderErr != nil {
+				return fmt.Errorf("failed to render model: %w", renderErr)
+			}
+			return err
+		case models.FormatHTML:
+			if renderErr := r.renderHTML(model, err); renderErr != nil {
+				return fmt.Errorf("failed to render model: %w", renderErr)
+			}
+			return err
+		case models.FormatSARIF:
+			if renderErr := r.renderSARIF(model); renderErr != nil {
+				return fmt.Errorf("failed to render model: %w", renderErr)
+			}
+			return err
+		}
+
+		// The check model may carry document notices (spec validation
+		// details like "not found directories for 'x'"); surface them —
+		// they are the actionable part of a config error.
+		if checkOut, ok := model.(models.CmdCheckOut); ok {
+			for _, notice := range checkOut.DocumentNotices {
+				r.emit(fmt.Sprintf("Error: %s", notice.Text))
+			}
+		}
+		r.emit(models.CmdErrorOut{Error: err.Error()}.Error)
+		return err
+	}
+
 	// Fast path: --format json renders check results as a flat JSON array of
 	// violations (one object per violation), which is easier for CI pipelines
 	// and editor integrations to consume than the wrapped {Type, Payload} model.

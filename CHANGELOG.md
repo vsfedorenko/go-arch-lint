@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Baseline-mode DX (found by synthetic probing of the fresh --baseline
+  feature): `--baseline-update` without `--baseline` silently recorded
+  nothing while ordinary violations still failed the run — now a config
+  error naming the missing flag (`--baseline-update requires --baseline
+  <file> ...`, exit 2). And a broken or missing baseline file rendered
+  the empty check model — stdout said `OK - No warnings found` (or `[]`
+  for json) while the process exited 2: config errors now surface the
+  real diagnostic in every format (github-actions/html/sarif keep their
+  dedicated banners; others print the error text plus any document
+  notices such as "not found directories"), and `MustRun` prints
+  pre-renderer errors to stderr so no failure path is silent anymore.
+
 ### Added
 - `go-arch-lint init --recipe clean|hexagonal|ddd`: scaffold `arch.go`
   pre-filled for a known architecture pattern instead of a blank page
