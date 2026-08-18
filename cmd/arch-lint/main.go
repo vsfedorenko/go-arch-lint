@@ -27,6 +27,21 @@ const (
 // failures, which map to config-error (2).
 var childExitStatusRe = regexp.MustCompile(`^exit status (\d+)$`)
 
+// childExitStatus extracts the child process exit code from `go run`'s
+// stderr ("exit status N" as its last line). ok reports whether the child
+// actually ran: absent means `go run` failed earlier — build errors,
+// module resolution, syntax errors in the spec.
+func childExitStatus(stderr string) (code int, ok bool) {
+	for _, line := range strings.Split(stderr, "\n") {
+		if m := childExitStatusRe.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
+			if parsed, parseErr := strconv.Atoi(m[1]); parseErr == nil {
+				return parsed, true
+			}
+		}
+	}
+	return 0, false
+}
+
 // delegatedExitCode maps a `go run` invocation result to the launcher's exit
 // code. stderr is the delegated process's captured stderr.
 func delegatedExitCode(err error, stderr string) int {
@@ -40,12 +55,8 @@ func delegatedExitCode(err error, stderr string) int {
 		return 2
 	}
 
-	for _, line := range strings.Split(stderr, "\n") {
-		if m := childExitStatusRe.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
-			if code, parseErr := strconv.Atoi(m[1]); parseErr == nil {
-				return code
-			}
-		}
+	if code, ran := childExitStatus(stderr); ran {
+		return code
 	}
 
 	// Non-zero exit without an "exit status N" line: the spec failed to
@@ -155,10 +166,19 @@ func cmdDelegate(command string, args []string) int {
 			return code
 		}
 
-		exitErr := &exec.ExitError{}
-		if errors.As(runErr, &exitErr) && code == 2 {
-			fmt.Fprintf(os.Stderr, "---\nThe arch spec at %s did not build.\n", filepath.Join(archDir, "arch.go"))
-			fmt.Fprintf(os.Stderr, "Fix the compile errors above, or regenerate the scaffold with 'go-arch-lint init'.\n")
+		// The "did not build" footer belongs ONLY to the case where the
+		// delegated process never started: `go run` failed at build/module
+		// resolution, so no "exit status N" line exists. When the child DID
+		// run and exited 2, the config error is already printed by the
+		// renderer ("Error: ...") — adding the footer here blamed a
+		// compiling spec (seen with the new --output-json-one-line
+		// validation and the pre-existing --baseline-update one).
+		if _, ran := childExitStatus(stderrBuf.String()); !ran {
+			exitErr := &exec.ExitError{}
+			if errors.As(runErr, &exitErr) {
+				fmt.Fprintf(os.Stderr, "---\nThe arch spec at %s did not build.\n", filepath.Join(archDir, "arch.go"))
+				fmt.Fprintf(os.Stderr, "Fix the compile errors above, or regenerate the scaffold with 'go-arch-lint init'.\n")
+			}
 		}
 	}
 

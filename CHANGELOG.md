@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Output flags are honored on the scaffold (delegated) path — found by
+  probing `check --output-type=json` against the real binary: the flag
+  was silently dropped and the check kept printing ASCII. The scaffolded
+  runner (`archlint.OptionsFromFlags`) now parses `--output-type`,
+  `--json` (alias), and `--output-json-one-line`, with two fail-fast
+  validations instead of silent no-ops (the confusion class reported
+  against the CLI upstream, fe3dback/go-arch-lint#62): unknown
+  `--output-type` values are config errors echoing the bad value, and
+  `--output-json-one-line` without json output (`--output-type=json`,
+  `--json`, or `--format json`) is rejected with the fix spelled out.
+  New public API options `WithOutputType` / `WithOutputJSONOneLine`
+  expose the same control to library users.
+- The launcher's "arch spec did not build" footer is now printed only
+  when the delegated process actually failed to build (no `exit status N`
+  in `go run`'s stderr). Previously ANY exit 2 — including config errors
+  the renderer had already explained (e.g. the baseline and one-line
+  validations above) — was followed by the misleading footer blaming a
+  spec that compiled fine.
 - Baseline-mode DX (found by synthetic probing of the fresh --baseline
   feature): `--baseline-update` without `--baseline` silently recorded
   nothing while ordinary violations still failed the run — now a config

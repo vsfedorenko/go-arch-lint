@@ -44,12 +44,14 @@ import (
 type Option func(*config)
 
 type config struct {
-	projectPath    string
-	maxWarnings    int
-	useColors      bool
-	format         models.Format
-	baselinePath   string
-	baselineUpdate bool
+	projectPath       string
+	maxWarnings       int
+	useColors         bool
+	format            models.Format
+	outputType        models.OutputType
+	outputJSONOneLine bool
+	baselinePath      string
+	baselineUpdate    bool
 }
 
 // WithProjectPath sets the absolute or relative path of the project root to
@@ -79,6 +81,22 @@ func WithColors(b bool) Option {
 // for human-readable ASCII.
 func WithFormat(format models.Format) Option {
 	return func(c *config) { c.format = format }
+}
+
+// WithOutputType selects the wrapper rendering of check results:
+// "ascii" (default, human-readable) or "json" (the {Type, Payload}
+// wrapper model — not the flat violation array; see [WithFormat]).
+// Mirrors the CLI flag --output-type (alias --json).
+func WithOutputType(t models.OutputType) Option {
+	return func(c *config) { c.outputType = t }
+}
+
+// WithOutputJSONOneLine renders the json output type as a single-line
+// payload (no indentation). Mirrors the CLI flag
+// --output-json-one-line. Requires [WithOutputType] json — the run
+// fails fast otherwise instead of silently ignoring the option.
+func WithOutputJSONOneLine() Option {
+	return func(c *config) { c.outputJSONOneLine = true }
 }
 
 // WithBaseline enables the incremental adoption mode: violations whose
@@ -112,6 +130,10 @@ func WithBaselineUpdate() Option {
 //	                         "junit" = JUnit XML report for test dashboards,
 //	                         "github-actions" = workflow-command annotations,
 //	                         "html" = standalone HTML report for humans/archives)
+//	--output-type string   ascii (default) or json — the {Type, Payload} wrapper
+//	                         model; --json is the alias for =json
+//	--output-json-one-line render json output as a single line (no indentation);
+//	                         requires json output, rejected otherwise
 //	--baseline string       (baseline file with known violations; only NEW
 //	                         violations fail the check — incremental adoption)
 //	--baseline-update       (record current violations as the baseline)
@@ -136,6 +158,21 @@ func OptionsFromFlags(args []string) []Option {
 
 	if format := stringFlag(args, "--format"); format != "" {
 		opts = append(opts, WithFormat(format))
+	}
+
+	// --json is the documented alias for --output-type=json; an explicit
+	// --output-type wins (the cobra layer rejects the conflicting pair,
+	// here the alias just yields).
+	outputType := stringFlag(args, "--output-type")
+	if outputType == "" && boolFlag(args, "--json") {
+		outputType = models.OutputTypeJSON
+	}
+	if outputType != "" {
+		opts = append(opts, WithOutputType(outputType))
+	}
+
+	if boolFlag(args, "--output-json-one-line") {
+		opts = append(opts, WithOutputJSONOneLine())
 	}
 
 	if baselinePath := stringFlag(args, "--baseline"); baselinePath != "" {
@@ -265,16 +302,45 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 		return models.NewConfigError("--baseline-update requires --baseline <file> to know where to record the fingerprints")
 	}
 
+	// Same fail-fast contract for the output flags. --output-json-one-line
+	// only affects the json output type; on ascii (or with --format
+	// text/sarif/...) it changed nothing while LOOKING honored — the
+	// exact confusion reported against the CLI upstream ("an error would
+	// have been helpful", fe3dback/go-arch-lint#62). Reject with the fix
+	// spelled out instead.
+	if cfg.outputJSONOneLine {
+		jsonOutput := cfg.outputType == models.OutputTypeJSON
+
+		// --format json (flat violation array) is also JSON on stdout;
+		// compacting it is meaningful there, so accept the combination.
+		if cfg.format == models.FormatJSON {
+			jsonOutput = true
+		}
+
+		if !jsonOutput {
+			return models.NewConfigError("--output-json-one-line only affects json output: add --output-type=json (or --json), or drop the flag")
+		}
+	}
+
+	switch cfg.outputType {
+	case "", models.OutputTypeDefault, models.OutputTypeASCII, models.OutputTypeJSON:
+		// ok — empty/default falls back to ascii downstream
+	default:
+		return models.NewConfigError(fmt.Sprintf("unknown output-type %q: expected %s or %s (see --json)", cfg.outputType, models.OutputTypeASCII, models.OutputTypeJSON))
+	}
+
 	// dsl → services boundary: the public API accepts a dsl.SpecDef, the
 	// internal app layer consumes a services-layer GoDecoder. Converting
 	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
 	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), models.CheckOptions{
-		ProjectPath:    cfg.projectPath,
-		MaxWarnings:    cfg.maxWarnings,
-		UseColors:      cfg.useColors,
-		Format:         cfg.format,
-		BaselinePath:   cfg.baselinePath,
-		BaselineUpdate: cfg.baselineUpdate,
+		ProjectPath:       cfg.projectPath,
+		MaxWarnings:       cfg.maxWarnings,
+		UseColors:         cfg.useColors,
+		Format:            cfg.format,
+		OutputType:        cfg.outputType,
+		OutputJSONOneLine: cfg.outputJSONOneLine,
+		BaselinePath:      cfg.baselinePath,
+		BaselineUpdate:    cfg.baselineUpdate,
 	})
 }
 
