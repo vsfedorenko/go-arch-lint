@@ -270,6 +270,11 @@ GitHub Actions-аннотации, GitLab CI-artifacts, семантика exit-
 `check --format sarif` — лог SARIF 2.1.0 с ruleId, уровнями и координатами
 нарушений: [docs/json-schema.md → SARIF](docs/json-schema.md#sarif-output-for-github-code-scanning).
 
+Для CI-дашбордов тестов (GitLab CI test reports, Jenkins JUnit plugin,
+Buildkite) есть `check --format junit` — JUnit-отчёт в XML: одно нарушение =
+один упавший testcase, у чистого проекта один зелёный `arch-check`.
+Рецепт: [docs/json-schema.md → JUnit](docs/json-schema.md#junit-output-for-ci-test-dashboards).
+
 ### Коды выхода (check)
 
 | Код | Значение                                                        |

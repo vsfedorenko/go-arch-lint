@@ -3,6 +3,7 @@ package render
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -151,6 +152,15 @@ func (r *Renderer) RenderModel(model interface{}, err error) error {
 		return err
 	}
 
+	// Fast path: --format junit renders check results as a JUnit-style XML
+	// report for CI test dashboards (GitLab/Jenkins/Buildkite).
+	if r.format == models.FormatJUnit {
+		if renderErr := r.renderJUnit(model); renderErr != nil {
+			return fmt.Errorf("failed to render model: %w", renderErr)
+		}
+		return err
+	}
+
 	var renderErr error
 
 	switch r.outputType {
@@ -273,6 +283,31 @@ func (r *Renderer) renderSARIF(model interface{}) error {
 	}
 
 	r.emit(string(jsonBuffer))
+	return nil
+}
+
+// renderJUnit renders check results as a JUnit-style XML report (the
+// --format junit output). Non-check models fall back to the generic
+// wrapped JSON so that `--format junit` is still safe on other commands.
+func (r *Renderer) renderJUnit(model interface{}) error {
+	checkOut, ok := model.(models.CmdCheckOut)
+	if !ok {
+		return r.renderJSON(model)
+	}
+
+	report := checkOut.ToJUnitXML()
+
+	xmlBuffer, marshalErr := xml.MarshalIndent(report, "", "  ")
+	if marshalErr != nil {
+		return fmt.Errorf("failed to marshal JUnit report to xml: %w", marshalErr)
+	}
+
+	var doc strings.Builder
+	doc.WriteString(xml.Header)
+	doc.Write(xmlBuffer)
+	doc.WriteByte('\n')
+	r.emit(doc.String())
+
 	return nil
 }
 

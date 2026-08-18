@@ -70,6 +70,7 @@ func WithColors(b bool) Option {
 // WithFormat sets the output format for check results.
 // Use models.FormatJSON for a flat JSON array of violations,
 // models.FormatSARIF for a SARIF 2.1.0 log (GitHub Code Scanning),
+// models.FormatJUnit for a JUnit-style XML report (CI test dashboards),
 // or models.FormatText (the default) for human-readable ASCII.
 func WithFormat(format models.Format) Option {
 	return func(c *config) { c.format = format }
@@ -82,8 +83,9 @@ func WithFormat(format models.Format) Option {
 //	--project-path string   (default "../")
 //	--max-warnings int      (default 512)
 //	--no-colors             (disable ANSI colors)
-//	--format text|json|sarif ("json" = flat violation array for CI,
-//	                         "sarif" = SARIF 2.1.0 log for code scanning)
+//	--format text|json|sarif|junit ("json" = flat violation array for CI,
+//	                         "sarif" = SARIF 2.1.0 log for code scanning,
+//	                         "junit" = JUnit XML report for test dashboards)
 //
 // Unknown flags are ignored rather than rejected: the launcher may pass
 // extra flags meant for other layers.

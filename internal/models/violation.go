@@ -10,10 +10,11 @@ const (
 	FormatText    Format = "text"    // human-readable ASCII (existing templates)
 	FormatJSON    Format = "json"    // flat JSON array of violations
 	FormatSARIF   Format = "sarif"   // SARIF 2.1.0 log for code-scanning tools
+	FormatJUnit   Format = "junit"   // JUnit-style XML report for CI test dashboards
 )
 
 // FormatValues lists every accepted --format value.
-var FormatValues = []string{FormatText, FormatJSON, FormatSARIF}
+var FormatValues = []string{FormatText, FormatJSON, FormatSARIF, FormatJUnit}
 
 // Violation is a single flattened architecture violation, intended for
 // machine consumption (CI pipelines, editor integrations, reporting tools).
