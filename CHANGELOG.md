@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Weird-path format integration tests: a project with spaces and `::`
+  in directory names (legal on unix, hostile to URI encoders,
+  workflow-command parsers, and XML escapers) run through all three
+  machine formats end-to-end. SARIF `artifactLocation.uri` must carry
+  the raw path (it is a string, not URL-encoded), JUnit testcase names
+  and failure messages must survive the XML round-trip, and the
+  GitHub Actions `file=` property must percent-encode `::` (unescaped
+  colons would break workflow-command parsing) while still decoding
+  back to the real path. Found by hand-probing; all formats passed —
+  now pinned so a renderer refactor cannot regress it.
+
+### Added
 - Documentation for the `--max-warnings` display cap (found by the
   540-file synthetic stress run): every output format is capped at the
   limit (default 512); text marks truncation (`omitted: N`) while the
