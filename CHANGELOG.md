@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Nil-pointer panic in project-info assembly when `go.mod` contains a
+  syntax error or no `module` directive: `modfile.ParseLax` results are
+  now nil-checked before dereferencing, producing a clear
+  "should contain valid go.mod syntax and 'module' directive" error
+  instead of a segmentation fault. Found by the new test suite.
+
+### Added
+- Test coverage for six previously untested packages (found by the
+  coverage audit after v2.1.0):
+  `internal/services/suppress` 0%→95% (14 tests: directive parsing edge
+  cases — trailing vs stacked, argument filters, ignore-vs-ignore-file
+  prefix separation, URL-after-comment non-matching, blank-line
+  boundaries, missing files);
+  `internal/services/checker` suppress filter + rule-target extraction
+  59%→68% (12 tests: per-category suppression semantics, cycle/tier/
+  visibility/placement target matching);
+  `internal/services/common/path` 0%→86% (glob resolver: doublestar
+  anchor inclusion and trailing-slash contracts pinned);
+  `internal/services/common/ast` 0%→100%;
+  `internal/services/render/printer` 0%→100% (colors on/off contract);
+  `internal/services/project/info` 0%→87% (7 tests: relative roots,
+  missing/broken/moduleless go.mod, URL arch-file rejection).
+
+### Fixed
 - `go-arch-lint version` now reports the real release build metadata
   (version, commit, build time via goreleaser ldflags) instead of the
   hard-coded `v2.0.0-dev` string. Local builds fall back to `dev`.
