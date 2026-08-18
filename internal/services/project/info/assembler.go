@@ -61,6 +61,13 @@ func checkCmdExtractModuleName(goModPath string) (string, error) {
 		return "", fmt.Errorf("can`t parse gomod: %w", err)
 	}
 
+	// modfile.ParseLax returns (nil, err) on syntax errors and may return
+	// a file without a Module block for files that parse but declare no
+	// module — dereferencing either panics.
+	if goModFile == nil || goModFile.Module == nil {
+		return "", fmt.Errorf("%s should contain valid go.mod syntax and 'module' directive", models.DefaultGoModFileName)
+	}
+
 	moduleName := goModFile.Module.Mod.Path
 	if moduleName == "" {
 		return "", fmt.Errorf("%s should contain module name in 'module'", models.DefaultGoModFileName)
