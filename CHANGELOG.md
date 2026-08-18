@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `go-arch-lint init --recipe clean|hexagonal|ddd`: scaffold `arch.go`
+  pre-filled for a known architecture pattern instead of a blank page
+  (clean: domain <- usecase <- delivery; hexagonal: ports & adapters;
+  ddd: bounded contexts). Every recipe sets
+  `IgnoreNotFoundComponents(true)` so layer directories can be created
+  gradually. Unknown recipe names fail with the recipe list, exit 1.
 - Baseline / incremental adoption mode: `--baseline <file>` +
   `--baseline-update`. Record existing violations into a committed
   baseline file (`go-arch-lint check --baseline

@@ -178,6 +178,7 @@ Usage:
 
 Commands:
 	init          Create .go-arch-lint/ scaffold (go.mod, arch.go + main.go)
+	              init --recipe <clean|hexagonal|ddd> starts from a known pattern
   check         Check project architecture against arch rules
   mapping       Show package-to-component mapping
   graph         Generate dependency graph

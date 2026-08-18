@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 )
 
 const scaffoldGoMod = `module arch-lint-local
@@ -14,6 +16,11 @@ go 1.25
 // scaffoldArchGo holds the user-editable spec. It lives in its own file so
 // the runner (main.go) can be regenerated or upgraded without touching the
 // architecture description.
+//
+// The ExcludeFiles line is assembled from an interpreted string: "\\." renders
+// as the single backslash "\." in the written file — a regex escape for the
+// dot. (A historical version wrote "\\\\.", which rendered a literal backslash
+// that matched no real file names.)
 const scaffoldArchGo = `package main
 
 import (
@@ -28,7 +35,7 @@ var spec = Spec(func() {
 		DepOnAnyVendor(false)
 	})
 
-	ExcludeFiles(` + "`^.*_test\\\\.go$`" + `)
+	ExcludeFiles(` + "`^.*_test\\.go$`" + `)
 
 	// Define your components:
 	// Component("handler", "handlers/*")
@@ -56,15 +63,70 @@ func main() {
 }
 `
 
-func cmdInit(args []string) int {
-	projectPath := "."
-	for i, a := range args {
-		if (a == "--project-path" || a == "-p") && i+1 < len(args) {
-			projectPath = args[i+1]
-			break
+// recipeFlag is the flag selecting a starter spec: init --recipe <name>.
+const recipeFlag = "--recipe"
+
+// parseInitArgs extracts --project-path/-p (space and = forms) and --recipe
+// (space and = forms) from init's args. Unknown --recipe values are reported
+// by the caller via recipeHelp; parsing itself never fails.
+func parseInitArgs(args []string) (projectPath, recipe string) {
+	projectPath = "."
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--project-path" || a == "-p":
+			if i+1 < len(args) {
+				projectPath = args[i+1]
+				i++
+			}
+		case strings.HasPrefix(a, "--project-path="):
+			projectPath = strings.TrimPrefix(a, "--project-path=")
+		case a == recipeFlag:
+			if i+1 < len(args) {
+				recipe = args[i+1]
+				i++
+			}
+		case strings.HasPrefix(a, recipeFlag+"="):
+			recipe = strings.TrimPrefix(a, recipeFlag+"=")
 		}
 	}
+	return projectPath, recipe
+}
 
+// recipeHelp renders the known recipes for error/usage output.
+func recipeHelp() string {
+	names := make([]string, 0, len(knownRecipes))
+	for name := range knownRecipes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	var b strings.Builder
+	b.WriteString("Available recipes:\n")
+	for _, name := range names {
+		fmt.Fprintf(&b, "  %-12s %s\n", name, knownRecipes[name].desc)
+	}
+	return b.String()
+}
+
+func cmdInit(args []string) int {
+	projectPath, recipe := parseInitArgs(args)
+
+	if recipe != "" {
+		archGo, ok := recipeArchGo(recipe)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Error: unknown recipe '%s'\n\n%s", recipe, recipeHelp())
+			return 1
+		}
+		return writeScaffold(projectPath, archGo, fmt.Sprintf(" (%s recipe)", recipe))
+	}
+
+	return writeScaffold(projectPath, scaffoldArchGo, "")
+}
+
+// writeScaffold creates the .go-arch-lint directory with go.mod, arch.go and
+// main.go. archGo is the spec body (plain scaffold or a recipe); label is
+// appended to the final "scaffold created" line, may be empty.
+func writeScaffold(projectPath, archGo, label string) int {
 	archDir := filepath.Join(projectPath, ".go-arch-lint")
 
 	if dirExists(archDir) {
@@ -79,7 +141,7 @@ func cmdInit(args []string) int {
 
 	files := map[string]string{
 		"go.mod":  scaffoldGoMod,
-		"arch.go": scaffoldArchGo,
+		"arch.go": archGo,
 		"main.go": scaffoldMainGo,
 	}
 
@@ -92,7 +154,7 @@ func cmdInit(args []string) int {
 		fmt.Printf("  created %s\n", path)
 	}
 
-	fmt.Printf("\nNext steps:\n")
+	fmt.Printf("\nScaffold created%s. Next steps:\n", label)
 	fmt.Printf("  1. Edit %s/arch.go to describe your architecture\n", archDir)
 	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint dependency\n", archDir)
 	fmt.Printf("  3. Run 'go-arch-lint check' to lint your project\n")

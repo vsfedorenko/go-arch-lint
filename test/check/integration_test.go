@@ -95,6 +95,38 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 	return dir
 }
 
+// offlineGoMod returns a go.mod body for a scaffolded .go-arch-lint/
+// module that resolves WITHOUT network access: it keeps the repo's full
+// require graph (direct + indirect deps) and points the module at the
+// local checkout via a replace directive. A bare `require v0.0.0` forces
+// Go to look up intermediate module versions, which fails under
+// GOPROXY=off in CI (observed: cobra → go-md2man lookup).
+func offlineGoMod(t *testing.T, repoRoot string) string {
+	t.Helper()
+
+	repoGoMod, err := os.ReadFile(filepath.Join(repoRoot, "go.mod"))
+	if err != nil {
+		t.Fatalf("read repo go.mod: %v", err)
+	}
+
+	lines := strings.Split(string(repoGoMod), "\n")
+	var graphLines []string
+	skipping := true
+	for _, ln := range lines {
+		if skipping {
+			if strings.HasPrefix(ln, "go ") {
+				skipping = false
+			}
+		}
+		if !skipping {
+			graphLines = append(graphLines, ln)
+		}
+	}
+
+	return fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint v0.0.0\n\nreplace github.com/vsfedorenko/go-arch-lint => %s\n",
+		strings.Join(graphLines, "\n"), repoRoot)
+}
+
 func runArchLint(t *testing.T, dir string) (stdout, stderr string, exitCode int) {
 	t.Helper()
 
