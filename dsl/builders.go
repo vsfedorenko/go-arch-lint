@@ -8,18 +8,24 @@ import (
 
 // Version sets the DSL schema version (always 1 for v2.0).
 func Version(v int) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	current.spec.Version = domain.NewReferable(v, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // Workdir sets the relative working directory for analysis.
 func Workdir(path string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	current.spec.Workdir = domain.NewReferable(path, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // Allow defines global rules. Call DepOnAnyVendor/DeepScan/IgnoreNotFoundComponents inside fn.
 func Allow(fn func()) {
+	requireSpec()
+
 	current.inAllow = true
 	fn()
 	current.inAllow = false
@@ -27,6 +33,8 @@ func Allow(fn func()) {
 
 // DepOnAnyVendor sets whether any project code may import any vendor lib.
 func DepOnAnyVendor(b bool) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	current.spec.Allow.DepOnAnyVendor = domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 }
@@ -34,6 +42,8 @@ func DepOnAnyVendor(b bool) {
 // DeepScan enables/disables advanced AST analysis.
 // Inside Allow(): sets global default. Inside Deps(): overrides per-component.
 func DeepScan(b bool) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	ref := domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 
@@ -49,12 +59,16 @@ func DeepScan(b bool) {
 
 // IgnoreNotFoundComponents skips components not found by their glob.
 func IgnoreNotFoundComponents(b bool) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	current.spec.Allow.IgnoreNotFoundComponents = domain.NewReferable(b, domain.NewReferenceSingleLine(file, line, 0))
 }
 
 // Exclude adds directories to exclude from analysis.
 func Exclude(paths ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	for _, p := range paths {
 		current.spec.Exclude = append(current.spec.Exclude, domain.NewReferable(p, domain.NewReferenceSingleLine(file, line, 0)))
@@ -63,6 +77,8 @@ func Exclude(paths ...string) {
 
 // ExcludeFiles adds regex patterns to exclude matching files.
 func ExcludeFiles(patterns ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	for _, p := range patterns {
 		current.spec.ExcludeFiles = append(current.spec.ExcludeFiles, domain.NewReferable(p, domain.NewReferenceSingleLine(file, line, 0)))
@@ -71,6 +87,8 @@ func ExcludeFiles(patterns ...string) {
 
 // Component defines a named component mapping to one or more package paths.
 func Component(name string, paths ...string) {
+	requireSpec()
+
 	if name == "" {
 		panic(fmt.Errorf("Component name cannot be empty"))
 	}
@@ -92,6 +110,8 @@ func Component(name string, paths ...string) {
 //	Tier("app", "handler")
 //	Tier("infra", "postgres", "redis")
 func Tiers(names ...string) {
+	requireSpec()
+
 	if len(names) == 0 {
 		panic(fmt.Errorf("Tiers requires at least one layer name"))
 	}
@@ -134,6 +154,8 @@ func Tiers(names ...string) {
 //	    VisibleTo("models", "services", "container")
 //	})
 func Visibility(fn func()) {
+	requireSpec()
+
 	file, line := callerRef(1)
 
 	entry := current.spec.Visibility
@@ -153,6 +175,8 @@ func Visibility(fn func()) {
 // Allowed components (plus the component itself) are the only legal
 // consumers. With no Allowed arguments the component is fully internal.
 func VisibleTo(component string, allowed ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 
 	if component == "" {
@@ -180,6 +204,8 @@ func VisibleTo(component string, allowed ...string) {
 }
 
 func Tier(name string, components ...string) {
+	requireSpec()
+
 	if name == "" {
 		panic(fmt.Errorf("Tier name cannot be empty"))
 	}
@@ -226,6 +252,8 @@ func Tier(name string, components ...string) {
 //
 // Rules apply to every scanned project package, regardless of component.
 func Naming(fn func()) {
+	requireSpec()
+
 	file, line := callerRef(1)
 
 	entry := current.spec.Naming
@@ -246,6 +274,8 @@ func Naming(fn func()) {
 // ForbiddenPackages bans the given package names anywhere in the project
 // (must be called inside Naming()).
 func ForbiddenPackages(names ...string) {
+	requireSpec()
+
 	if len(names) == 0 {
 		panic(fmt.Errorf("ForbiddenPackages requires at least one name"))
 	}
@@ -274,6 +304,8 @@ func ForbiddenPackages(names ...string) {
 //		MustLiveWithConsumer()
 //	})
 func Interfaces(fn func()) {
+	requireSpec()
+
 	file, line := callerRef(1)
 
 	if current.spec.InterfacePlacement == nil {
@@ -293,6 +325,8 @@ func Interfaces(fn func()) {
 // when a single other component is their only consumer (must be called
 // inside Interfaces()).
 func MustLiveWithConsumer() {
+	requireSpec()
+
 	if current.interfaces == nil {
 		panic(fmt.Errorf("MustLiveWithConsumer must be called inside Interfaces()"))
 	}
@@ -304,6 +338,8 @@ func MustLiveWithConsumer() {
 
 // Vendor defines a named vendor mapping to one or more import paths.
 func Vendor(name string, importPaths ...string) {
+	requireSpec()
+
 	if name == "" {
 		panic(fmt.Errorf("Vendor name cannot be empty"))
 	}
@@ -316,6 +352,8 @@ func Vendor(name string, importPaths ...string) {
 
 // CommonComponents marks components as importable by any project package.
 func CommonComponents(names ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	for _, n := range names {
 		current.spec.CommonComponents = append(current.spec.CommonComponents, domain.NewReferable(n, domain.NewReferenceSingleLine(file, line, 0)))
@@ -324,6 +362,8 @@ func CommonComponents(names ...string) {
 
 // CommonVendors marks vendors as importable by any project package.
 func CommonVendors(names ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	for _, n := range names {
 		current.spec.CommonVendors = append(current.spec.CommonVendors, domain.NewReferable(n, domain.NewReferenceSingleLine(file, line, 0)))
@@ -332,6 +372,8 @@ func CommonVendors(names ...string) {
 
 // Deps defines dependency rules for a component. Call MayDependOn/CanUse/etc inside fn.
 func Deps(component string, fn func()) {
+	requireSpec()
+
 	if component == "" {
 		panic(fmt.Errorf("Deps component name cannot be empty"))
 	}
@@ -351,6 +393,8 @@ func Deps(component string, fn func()) {
 
 // MayDependOn lists components that this component may import.
 func MayDependOn(components ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	if current.dep == nil {
 		panic(fmt.Errorf("MayDependOn called outside of Deps() callback"))
@@ -362,6 +406,8 @@ func MayDependOn(components ...string) {
 
 // CanUse lists vendors that this component may import.
 func CanUse(vendors ...string) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	if current.dep == nil {
 		panic(fmt.Errorf("CanUse called outside of Deps() callback"))
@@ -373,6 +419,8 @@ func CanUse(vendors ...string) {
 
 // AnyProjectDeps allows this component to import any other project package.
 func AnyProjectDeps(b bool) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	if current.dep == nil {
 		panic(fmt.Errorf("AnyProjectDeps called outside of Deps() callback"))
@@ -382,6 +430,8 @@ func AnyProjectDeps(b bool) {
 
 // AnyVendorDeps allows this component to import any vendor package.
 func AnyVendorDeps(b bool) {
+	requireSpec()
+
 	file, line := callerRef(1)
 	if current.dep == nil {
 		panic(fmt.Errorf("AnyVendorDeps called outside of Deps() callback"))
