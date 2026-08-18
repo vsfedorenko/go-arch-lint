@@ -21,21 +21,16 @@ func writeStressRing(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module stress.test\n\ngo 1.25\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	const comps = 6 // 6 comps x 4 files = 24 violations — enough to cap at 10
-	const files = 4
+	const comps = 6 // ring of 6 components, one violation file each
 	for c := 0; c < comps; c++ {
 		next := (c + 1) % comps
 		comp := filepath.Join(root, "internal", "c"+string(rune('a'+c)))
 		if err := os.MkdirAll(comp, 0o755); err != nil {
 			t.Fatal(err)
 		}
-		for f := 0; f < files; f++ {
-			body := "package c" + string(rune('a'+c)) + "\n\nimport _ \"stress.test/internal/c" + string(rune('a'+next)) + "\"\n"
-			if err := os.WriteFile(filepath.Join(comp, "f.go"), []byte(body), 0o600); err != nil { //nolint:gosec // test fixture in t.TempDir()
-				t.Fatal(err)
-			}
-			// one file per component is enough; extra files would need distinct names
-			break
+		body := "package c" + string(rune('a'+c)) + "\n\nimport _ \"stress.test/internal/c" + string(rune('a'+next)) + "\"\n"
+		if err := os.WriteFile(filepath.Join(comp, "f.go"), []byte(body), 0o600); err != nil { //nolint:gosec // test fixture in t.TempDir()
+			t.Fatal(err)
 		}
 	}
 	return root
