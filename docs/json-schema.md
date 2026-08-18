@@ -30,6 +30,38 @@ go-arch-lint check --format json --max-warnings=100000 --project-path .
 Programmatic consumers get the same behaviour through
 `archlint.WithMaxWarnings(n)`.
 
+## Baseline mode (`--baseline` / `--baseline-update`)
+
+`--baseline <file>` switches the check to incremental adoption:
+violations whose fingerprints are recorded in the baseline file are
+tolerated as known debt, and the exit code (and the rendered output)
+reflect only NEW violations. `--baseline-update` (together with
+`--baseline`) records the current full violation set instead of
+comparing.
+
+```bash
+# record (commit the file):
+go-arch-lint check --baseline .go-arch-lint/baseline.json --baseline-update
+# compare (CI):
+go-arch-lint check --baseline .go-arch-lint/baseline.json
+```
+
+Contract:
+
+- The baseline file is a JSON document:
+  `{ "schemeVersion": 1, "fingerprints": { "<kind>|<rule>|<file>":
+  "<annotation>" } }`. Fingerprints deliberately exclude line numbers:
+  an edit that only shifts lines never turns known debt "new".
+- The flat violation array contains ONLY the new violations; the
+  `--max-warnings` cap applies to that filtered set.
+- The **text** summary prints `baseline: N new, M known (tolerated)`.
+- Programmatic API: `archlint.WithBaseline(path)` +
+  `archlint.WithBaselineUpdate()`.
+- A missing baseline file in compare mode is a **configuration error
+  (exit 2)** — a missing baseline must never silently pass the check.
+  A wrong `schemeVersion` is likewise a config error; re-record the
+  baseline after upgrading the tool.
+
 ## Violation schema
 
 | Field        | Type   | Always | Description                                                        |

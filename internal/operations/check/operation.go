@@ -8,6 +8,7 @@ import (
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/internal/services/baseline"
 )
 
 type (
@@ -66,6 +67,34 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 		}
 	}
 
+	// Baseline mode: record the full fingerprint set, or filter known
+	// violations out so only NEW ones reach the renderer and the exit
+	// code. Applied BEFORE limiting so the display cap never decides
+	// what gets baselined or compared.
+	knownCount := 0
+	newCount := 0
+	if in.BaselinePath != "" {
+		if in.BaselineUpdate {
+			if err := baseline.Save(in.BaselinePath, baseline.FromResult(result)); err != nil {
+				return models.CmdCheckOut{}, models.NewConfigError(err.Error())
+			}
+		} else {
+			base, exists, err := baseline.Load(in.BaselinePath)
+			switch {
+			case err != nil:
+				return models.CmdCheckOut{}, models.NewConfigError(err.Error())
+			case !exists:
+				return models.CmdCheckOut{}, models.NewConfigError(fmt.Sprintf(
+					"baseline file %s not found — record it first with --baseline-update %s",
+					in.BaselinePath, in.BaselinePath,
+				))
+			}
+			result, knownCount = baseline.FilterResult(result, base)
+			newCount = len(result.DependencyWarnings) + len(result.MatchWarnings) +
+				len(result.DeepscanWarnings) + len(result.NamingWarnings)
+		}
+	}
+
 	limitedResult := o.limitResults(result, in.MaxWarnings)
 
 	model := models.CmdCheckOut{
@@ -78,6 +107,8 @@ func (o *Operation) Behave(ctx context.Context, in models.CmdCheckIn) (models.Cm
 		ArchWarningsNaming:     limitedResult.results.NamingWarnings,
 		OmittedCount:           limitedResult.omittedCount,
 		SuppressedCount:        limitedResult.results.SuppressedCount,
+		BaselineKnownCount:     knownCount,
+		BaselineNewCount:       newCount,
 		Qualities: []models.CheckQuality{
 			{
 				ID:   "component_imports",

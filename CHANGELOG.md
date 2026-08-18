@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Baseline / incremental adoption mode: `--baseline <file>` +
+  `--baseline-update`. Record existing violations into a committed
+  baseline file (`go-arch-lint check --baseline
+  .go-arch-lint/baseline.json --baseline-update`), then CI compares
+  against it — known debt is tolerated, only NEW violations fail the
+  build (exit 1). Fingerprints (`kind|rule|file`) exclude line numbers,
+  so edits above a violation never resurrect it as new. A missing
+  baseline in compare mode is a config error (exit 2), never a silent
+  pass. Programmatic API: `archlint.WithBaseline(path)` /
+  `archlint.WithBaselineUpdate()`. Text summary prints
+  `baseline: N new, M known (tolerated)`; JSON carries
+  `BaselineNewCount` / `BaselineKnownCount`.
+
 ### Fixed
 - Segmentation fault in the DSL: calling any builder function AFTER a
   nested `Spec()` callback crashed with a raw nil-pointer dereference
