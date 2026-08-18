@@ -32,7 +32,7 @@ func (u *utils) assertGlobPathValid(localGlobPath string) error {
 	absPath := filepath.Join(u.projectDir, localGlobPath)
 	resolved, err := u.pathResolver.Resolve(absPath)
 	if err != nil {
-		return fmt.Errorf("failed to resolv path: %w", err)
+		return fmt.Errorf("failed to resolve path: %w", err)
 	}
 
 	if len(resolved) == 0 && !u.document.Options().IgnoreNotFoundComponents().Value {

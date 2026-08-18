@@ -25,7 +25,7 @@ func (v *validatorComponents) Validate(doc spec.Document) []arch.Notice {
 
 	if len(doc.Components()) == 0 {
 		notices = append(notices, arch.Notice{
-			Notice: fmt.Errorf("at least one component should by defined"),
+			Notice: fmt.Errorf("at least one component must be defined"),
 			Ref:    doc.Version().Reference,
 		})
 	}
