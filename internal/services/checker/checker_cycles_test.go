@@ -304,7 +304,7 @@ func TestCycles_deep_ring_handled_iteratively(t *testing.T) {
 	const n = 10_000
 
 	edges := map[string][]string{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		edges[fmt.Sprintf("c%05d", i)] = []string{fmt.Sprintf("c%05d", (i+1)%n)}
 	}
 

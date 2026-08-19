@@ -17,7 +17,7 @@ const (
 )
 
 func makeTestProjectRoot() string {
-	_, filename, _, _ := runtime.Caller(0)
+	_, filename, _, _ := runtime.Caller(0) //nolint:dogsled // runtime.Caller returns 4 values; only the filename matters
 	return filepath.Dir(filename) + "/test"
 }
 
@@ -40,9 +40,9 @@ func makeTestResolvedPath(localPath string) domain.Referable[models.ResolvedPath
 	)
 }
 
-func makeTestResolvedProjectImport(localPath string) models.ResolvedImport {
+func makeTestResolvedProjectImport() models.ResolvedImport {
 	return models.ResolvedImport{
-		Name:       testModulePath + "/" + localPath,
+		Name:       testModulePath + "/needle",
 		ImportType: models.ImportTypeProject,
 	}
 }
@@ -79,7 +79,7 @@ func Test_checkImportPath(t *testing.T) {
 					makeTestResolvedPath("checker"),
 					makeTestResolvedPath("path"),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -91,7 +91,7 @@ func Test_checkImportPath(t *testing.T) {
 					makeTestResolvedPath("path"),
 					makeTestResolvedPath("some"),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -99,7 +99,7 @@ func Test_checkImportPath(t *testing.T) {
 			name: "empty",
 			args: args{
 				componentImports: []domain.Referable[models.ResolvedPath]{},
-				resolvedImport:   makeTestResolvedProjectImport("needle"),
+				resolvedImport:   makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -109,7 +109,7 @@ func Test_checkImportPath(t *testing.T) {
 				componentImports: []domain.Referable[models.ResolvedPath]{
 					makeTestResolvedPath("needle"),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -146,7 +146,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -158,7 +158,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -170,7 +170,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(true),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -184,7 +184,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -200,7 +200,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -215,7 +215,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -231,7 +231,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -246,7 +246,7 @@ func Test_checkProjectImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -284,7 +284,7 @@ func Test_checkVendorImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -296,7 +296,7 @@ func Test_checkVendorImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(false),
 					AllowAllVendorDeps:  makeBool(true),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: true,
 		},
@@ -308,7 +308,7 @@ func Test_checkVendorImport(t *testing.T) {
 					AllowAllProjectDeps: makeBool(true),
 					AllowAllVendorDeps:  makeBool(false),
 				},
-				resolvedImport: makeTestResolvedProjectImport("needle"),
+				resolvedImport: makeTestResolvedProjectImport(),
 			},
 			want: false,
 		},
@@ -357,7 +357,7 @@ func TestChecker_checkImport(t *testing.T) {
 		{
 			name: "allow any vendor / project dep",
 			args: args{
-				resolvedImport:    makeTestResolvedProjectImport("needle"),
+				resolvedImport:    makeTestResolvedProjectImport(),
 				dependOnAnyVendor: true,
 			},
 			want: false,
@@ -373,7 +373,7 @@ func TestChecker_checkImport(t *testing.T) {
 		{
 			name: "project reject",
 			args: args{
-				resolvedImport:    makeTestResolvedProjectImport("needle"),
+				resolvedImport:    makeTestResolvedProjectImport(),
 				dependOnAnyVendor: false,
 			},
 			want: false,

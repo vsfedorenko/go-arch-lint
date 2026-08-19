@@ -113,7 +113,7 @@ func TestWeirdPaths_SARIF(t *testing.T) {
 	require.Equal(t, 1, code, "exit code = %d, want 1\nstdout:\n%s")
 
 	var log sarifWeirdLog
-	assert.Equal(t, nil, json.Unmarshal([]byte(stdout), &log))
+	assert.NoError(t, json.Unmarshal([]byte(stdout), &log))
 	require.Len(t, log.Runs, 1, "expected results, got %+v", log.Runs)
 	require.NotEmpty(t, log.Runs[0].Results, "expected results, got %+v", log.Runs)
 	for _, res := range log.Runs[0].Results {
@@ -147,7 +147,7 @@ func TestWeirdPaths_JUnit(t *testing.T) {
 	require.Equal(t, 1, code, "exit code = %d, want 1\nstdout:\n%s")
 
 	var log junitWeird
-	assert.Equal(t, nil, xml.Unmarshal([]byte(stdout), &log))
+	assert.NoError(t, xml.Unmarshal([]byte(stdout), &log))
 	for _, ts := range log.TestSuites {
 		for _, tc := range ts.TestCases {
 			// The :: and spaces must survive XML escaping round-trip.
@@ -171,8 +171,12 @@ func TestWeirdPaths_GitHubActions(t *testing.T) {
 	require.NotEmpty(t, annotation, "no workflow command in output:\n%s", stdout)
 
 	// Parse ::error file=F,line=N,col=C,title=T::msg
-	propsStr := annotation[strings.Index(annotation, " ")+1:]
-	propsStr = propsStr[:strings.Index(propsStr, "::")]
+	spaceIdx := strings.Index(annotation, " ")
+	require.NotEqual(t, -1, spaceIdx, "workflow command must carry a space: %q", annotation)
+	propsStr := annotation[spaceIdx+1:]
+	sepIdx := strings.Index(propsStr, "::")
+	require.NotEqual(t, -1, sepIdx, "workflow command must carry a :: separator: %q", propsStr)
+	propsStr = propsStr[:sepIdx]
 	for _, part := range strings.Split(propsStr, ",") {
 		k, v, ok := strings.Cut(part, "=")
 		require.True(t, ok, "malformed property %q in %q")

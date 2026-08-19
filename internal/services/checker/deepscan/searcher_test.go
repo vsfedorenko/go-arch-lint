@@ -19,7 +19,7 @@ import (
 func fixtureProject(t *testing.T) string {
 	t.Helper()
 
-	_, callerDir, _, _ := runtime.Caller(0)
+	_, callerDir, _, _ := runtime.Caller(0) //nolint:dogsled // runtime.Caller returns 4 values; only the dir matters
 	return filepath.Join(filepath.Dir(callerDir), "test", "project")
 }
 

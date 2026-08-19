@@ -12,6 +12,7 @@ func newAllowedVendorImportsAssembler() *allowedVendorImportsAssembler {
 	return &allowedVendorImportsAssembler{}
 }
 
+//nolint:unparam // error result is part of the composite assembler contract
 func (aia *allowedVendorImportsAssembler) assemble(
 	yamlDocument spec.Document,
 	vendorNames []string,

@@ -16,12 +16,12 @@ const (
 	tcBetaNm = "beta" //nolint:goconst // fixture name (tcBeta taken by cycles fixtures)
 )
 
-func depWarning(component, file, importName string, line int) models.CheckArchWarningDependency {
+func depWarning(component, importName string, line int) models.CheckArchWarningDependency {
 	return models.CheckArchWarningDependency{
 		ComponentName:      component,
-		FileAbsolutePath:   file,
+		FileAbsolutePath:   tcFileA,
 		ResolvedImportName: importName,
-		Reference:          domain.NewReferenceSingleLine(file, line, 0),
+		Reference:          domain.NewReferenceSingleLine(tcFileA, line, 0),
 	}
 }
 
@@ -32,7 +32,7 @@ func TestSuppressFilter_NoDirectivesPassthrough(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha", tcFileA, "example.com/p/beta", 3),
+			depWarning("alpha", "example.com/p/beta", 3),
 		},
 	}
 	filtered, suppressed := filter.Filter(result)
@@ -50,8 +50,8 @@ func TestSuppressFilter_ImportViolationByLine(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha", tcFileA, "example.com/p/beta", 3),
-			depWarning("alpha", tcFileA, "example.com/p/beta", 4),
+			depWarning("alpha", "example.com/p/beta", 3),
+			depWarning("alpha", "example.com/p/beta", 4),
 		},
 	}
 	filtered, suppressed := filter.Filter(result)
@@ -71,8 +71,8 @@ func TestSuppressFilter_ImportViolationByTargetFilter(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha", tcFileA, "example.com/p/beta", 3),
-			depWarning("alpha", tcFileA, "example.com/p/gamma", 3),
+			depWarning("alpha", "example.com/p/beta", 3),
+			depWarning("alpha", "example.com/p/gamma", 3),
 		},
 	}
 	filtered, suppressed := filter.Filter(result)
@@ -89,7 +89,7 @@ func TestSuppressFilter_FileDirectiveSuppressesAllCategories(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha", tcFileA, "example.com/p/beta", 3),
+			depWarning("alpha", "example.com/p/beta", 3),
 		},
 		MatchWarnings: []models.CheckArchWarningMatch{
 			{FileAbsolutePath: tcFileA},
@@ -112,7 +112,7 @@ func TestSuppressFilter_CycleRuleTarget(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha -> beta (cycle: alpha -> beta -> alpha)", tcFileA, "example.com/p/beta", 7),
+			depWarning("alpha -> beta (cycle: alpha -> beta -> alpha)", "example.com/p/beta", 7),
 		},
 	}
 	filtered, suppressed := filter.Filter(result)
@@ -129,7 +129,7 @@ func TestSuppressFilter_TierRuleTarget(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha (tier 'domain') -> beta (tier 'app') — upward dependency", tcFileA, "example.com/p/beta", 9),
+			depWarning("alpha (tier 'domain') -> beta (tier 'app') — upward dependency", "example.com/p/beta", 9),
 		},
 	}
 	_, suppressed := filter.Filter(result)
@@ -145,7 +145,7 @@ func TestSuppressFilter_VisibilityRuleTarget(t *testing.T) {
 	filter := NewSuppressFilter(index)
 	result := models.CheckResult{
 		DependencyWarnings: []models.CheckArchWarningDependency{
-			depWarning("alpha may not consume 'beta' (restricted API: visible to [gamma])", tcFileA, "example.com/p/beta", 11),
+			depWarning("alpha may not consume 'beta' (restricted API: visible to [gamma])", "example.com/p/beta", 11),
 		},
 	}
 	_, suppressed := filter.Filter(result)

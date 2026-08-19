@@ -22,7 +22,7 @@ func writeStressRing(t *testing.T) string {
 	root := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module stress.test\n\ngo 1.25\n"), 0o600))
 	const comps = 6 // ring of 6 components, one violation file each
-	for c := 0; c < comps; c++ {
+	for c := range comps {
 		next := (c + 1) % comps
 		comp := filepath.Join(root, "internal", "c"+string(rune('a'+c)))
 		require.NoError(t, os.MkdirAll(comp, 0o755))

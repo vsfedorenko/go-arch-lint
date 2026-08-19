@@ -68,8 +68,8 @@ func TestGoSpecDocumentOptions(t *testing.T) {
 	b := buildTestSpec()
 	doc := NewGoSpecDocument(b)
 	opts := doc.Options()
-	assert.Equal(t, false, opts.IsDependOnAnyVendor().Value)
-	assert.Equal(t, true, opts.DeepScan().Value)
+	assert.False(t, opts.IsDependOnAnyVendor().Value)
+	assert.True(t, opts.DeepScan().Value)
 }
 
 func TestGoSpecDocumentEmptyBuilder(t *testing.T) {

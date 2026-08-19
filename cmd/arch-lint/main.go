@@ -119,11 +119,15 @@ func cmdDelegate(command string, args []string) int {
 	delegatedArgs := make([]string, 0, len(args)+4)
 	projectPathSet := false
 	for i := 0; i < len(args); i++ {
-		if (args[i] == flagProjectPath || args[i] == "-p") && i+1 < len(args) {
+		isPathFlag := args[i] == flagProjectPath || args[i] == "-p"
+		hasValue := i+1 < len(args)
+
+		switch {
+		case isPathFlag && hasValue:
 			delegatedArgs = append(delegatedArgs, args[i], absProjectPath)
 			projectPathSet = true
 			i++
-		} else if args[i] == flagBaseline && i+1 < len(args) {
+		case args[i] == flagBaseline && hasValue:
 			// The delegated process runs with cwd=.go-arch-lint/, so a
 			// relative baseline path would resolve against the wrong
 			// directory — absolutize it against the user's cwd first
@@ -134,7 +138,7 @@ func cmdDelegate(command string, args []string) int {
 			}
 			delegatedArgs = append(delegatedArgs, args[i], absBaseline)
 			i++
-		} else {
+		default:
 			delegatedArgs = append(delegatedArgs, args[i])
 		}
 	}
@@ -144,7 +148,7 @@ func cmdDelegate(command string, args []string) int {
 
 	// .go-arch-lint/ has its own go.mod; -C runs go from that directory.
 	goArgs := append([]string{"-C", archDir, "run", ".", command}, delegatedArgs...)
-	cmd := exec.Command("go", goArgs...) //nolint:gosec // intentional: CLI delegates to 'go run .go-arch-lint/' per documented design
+	cmd := exec.Command("go", goArgs...) //nolint:gosec,noctx // intentional: CLI delegates to 'go run .go-arch-lint/' per documented design; signal propagation is handled by the foreground process group
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 

@@ -47,6 +47,20 @@ linters:
     - gochecknoinits                # Запрещает init(): больше предсказуемости и тестопригодности
     - gosec                         # Статический анализ на уязвимости (безопасность)
 
+    # Тесты / testify-гигиена
+    - testifylint                   # Идиоматичные testify-ассерты (Empty вместо Len(x,0) и т.д.)
+    - thelper                       # t.Helper() в тестовых хелперах
+
+    # Качество кода
+    - gocritic                      # Доп. диагностики (ifElseChain, offBy1, ...)
+    - intrange                      # for i := range N вместо классических циклов (Go 1.22+)
+    - usestdlibvars                 # http.MethodGet вместо "GET" и др.
+    - dogsled                       # Не более 2 пустых идентификаторов в присваивании
+    - unparam                       # Параметры, которые всегда получают одно значение
+    - noctx                         # http-запросы без context
+    - contextcheck                  # Потеря context в цепочках вызовов
+    - nilerr                        # return nil при ненулевой ошибке
+
   settings:
     revive:
       rules:
@@ -54,6 +68,17 @@ linters:
           disabled: true
     unused:
       field-writes-are-uses: false
+    testifylint:
+      enable-all: true
+      disable:
+        - require-error # require vs assert — уже закреплено ревью; смешение допустимо по контексту
+    gocritic:
+      # diagnostic = потенциальные баги (реальные находки: ifElseChain, offBy1, sprintfQuotedString).
+      # performance-тег (hugeParam/rangeValCopy) и style-тег (paramTypeCombine/unnamedResult)
+      # слишком шумные для этого кода — не включены осознанно.
+      enable-all: false
+      enabled-tags:
+        - diagnostic
   exclusions:
     generated: lax
     presets:
@@ -65,6 +90,12 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      # CLI-делегация через exec.Command("go", ...) — осознанный дизайн (docs/delegation.md);
+      # e2e-тесты гоняют собранный бинарь тем же способом.
+      - linters:
+          - noctx
+        path: _test\.go
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

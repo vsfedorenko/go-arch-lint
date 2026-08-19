@@ -97,6 +97,7 @@ func MergeSpecs(specs ...SpecDef) SpecDef {
 	return SpecDef{builder: merged}
 }
 
+//nolint:unparam // skip depth kept constant: all DSL builders report from the same stack level
 func callerRef(skip int) (file string, line int) {
 	_, file, line, ok := runtime.Caller(skip + 1)
 	if !ok {

@@ -230,7 +230,7 @@ func boolValueFlag(args []string, name string) (bool, bool) {
 // write flags both ways, and silently dropping one spelling makes CI
 // pipelines misbehave (see the --output-color fix for the same class).
 func stringFlag(args []string, names ...string) string {
-	for i := 0; i < len(args); i++ {
+	for i := range args {
 		for _, name := range names {
 			if args[i] == name && i+1 < len(args) {
 				return args[i+1]
