@@ -245,10 +245,43 @@ func TestParseInitArgs(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			p, r := parseInitArgs(tc.args)
+			p, r, parseErr := parseInitArgs(tc.args)
+			if parseErr != nil {
+				t.Fatal(parseErr)
+			}
 			if p != tc.wantPath || r != tc.wantRecipe {
 				t.Errorf("parseInitArgs(%v) = (%q, %q), want (%q, %q)", tc.args, p, r, tc.wantPath, tc.wantRecipe)
 			}
 		})
+	}
+}
+
+// Regression: `init --help` previously scaffolded a project instead of
+// showing help; `--recipe` without a value silently created the DEFAULT
+// spec while the user believed they had chosen a recipe.
+func TestCmdInit_HelpDoesNotScaffold(t *testing.T) {
+	_, cleanup := chdirTemp(t)
+	defer cleanup()
+
+	if code := cmdInit([]string{flagHelp}); code != 0 {
+		t.Fatalf("init --help must exit 0, got %d", code)
+	}
+	if _, err := os.Stat(".go-arch-lint"); !os.IsNotExist(err) {
+		t.Fatal("init --help must not create the scaffold")
+	}
+}
+
+func TestCmdInit_ValuelessFlagsFailFast(t *testing.T) {
+	for _, args := range [][]string{{"--recipe"}, {"-p"}, {"--project-path"}} {
+		_, cleanup := chdirTemp(t)
+		func() {
+			defer cleanup()
+			if code := cmdInit(args); code != 1 {
+				t.Fatalf("init %v must fail with exit 1, got %d", args, code)
+			}
+			if _, err := os.Stat(".go-arch-lint"); !os.IsNotExist(err) {
+				t.Fatalf("init %v must not create the scaffold", args)
+			}
+		}()
 	}
 }
