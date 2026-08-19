@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit suite for the code-snippet renderer
+  (`internal/services/render/code`): coverage 24.3% → 91.9%. Pins the
+  rendering contracts: empty output for invalid references and missing
+  files, exact range extraction with line numbers, a single pointer
+  marker on the violation line, column caret, tab expansion, clamping
+  of out-of-range references, and chroma highlighting (ANSI-safe
+  assertion — the highlighter interleaves escapes inside tokens).
+
+### Added
 - Unit suite for the baseline service (`internal/services/baseline`):
   14 tests, coverage 0% → 92.1%. Pins the contracts the e2e tests exercise
   only indirectly: fingerprint stability, per-kind constructors, sorted
