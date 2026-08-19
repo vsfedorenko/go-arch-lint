@@ -45,13 +45,13 @@ cd ~/code/my-project
 go-arch-lint init
 ```
 
-Creates `.go-arch-lint/` with `go.mod`, `arch.go` (your spec) and `main.go` (the stable runner):
+Creates `.go-arch-lint/` with three files. The spec and the runner are separate: `arch.go` is yours to edit, `main.go` is generated plumbing you never touch:
 
 ```go
+// arch.go — describe your architecture here
 package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
 	. "github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
@@ -72,9 +72,20 @@ var spec = Spec(func() {
 		MayDependOn("repository")
 	})
 })
+```
+
+```go
+// main.go — generated, do not edit: forwards CLI flags into the check
+package main
+
+import (
+	"os"
+
+	"github.com/vsfedorenko/go-arch-lint"
+)
 
 func main() {
-	archlint.MustRun(spec)
+	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
 }
 ```
 
@@ -110,10 +121,13 @@ The linter builds an import graph from the actual code, compares it to the confi
 
 ![Check output](docs/images/check-example.png)
 
-| Exit code | Meaning                    |
-|-----------|----------------------------|
-| 0         | No violations              |
-| 1         | Violations found           |
+| Exit code | Meaning                                                     |
+|-----------|-------------------------------------------------------------|
+| 0         | No violations                                               |
+| 1         | Violations found                                            |
+| 2         | Broken config: arch.go does not compile, or the project is unreadable |
+
+Exit code 2 means "the check did not run" — fix the config, not the code.
 
 Use `--json` for machine-readable output in CI pipelines, `--format sarif`
 for a SARIF 2.1.0 log that GitHub Code Scanning and other code-scanning

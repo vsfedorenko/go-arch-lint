@@ -1,7 +1,10 @@
 # Документация
 
-- [синтаксис](syntax/README.md)
-- [migration-v2](migration-v2.md)
+- [Синтаксис DSL](syntax/README.md) — все функции с примерами
+- [Миграция с YAML на Go DSL](migration-v2.md) — для проектов на v1.x
+- [Кукбук архитектурных паттернов](cookbook.md) — готовые конфиги: clean, DDD, feature-based и другие
+- [JSON и другие форматы для CI](json-schema.md) — json/sarif/junit/github-actions, коды выхода, лимиты вывода
+- [Модель делегирования](delegation.md) — как CLI запускает вашу спеку через `go run`
 
 ## Расширенное использование
 

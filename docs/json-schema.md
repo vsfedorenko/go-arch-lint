@@ -1,10 +1,12 @@
-# JSON Output for CI Integrations
+# CI Output Formats: json, sarif, junit, github-actions, html
 
-`go-arch-lint check --format json` prints a **flat JSON array of
-violations** to stdout — one object per violation, no wrapper, stable
-order (grouped by kind, sorted by file then line). The process exit code
-follows the linter convention: `0` no violations, `1` violations found,
-`2` configuration/system error (broken spec, unreadable project).
+One page for everything a pipeline consumes: the five `check --format`
+outputs, the baseline mode for incremental adoption, exit codes, and the
+official GitHub Action.
+
+`--format json` prints a **flat JSON array of violations** to stdout — one
+object per violation, no wrapper, stable order (grouped by kind, sorted by
+file then line).
 
 ```bash
 go-arch-lint check --format json --project-path .
@@ -439,5 +441,5 @@ arch-report:
   (`go-arch-lint init`) calls `archlint.MustRun(spec,
   archlint.OptionsFromFlags(os.Args[1:])...)`. If your scaffold predates
   this, add `archlint.OptionsFromFlags(os.Args[1:])...` to `MustRun`.
-- Exit code `2` means the check did not run: fix the spec first (a broken
-  config lints nothing — don't treat it as "clean").
+- Exit code `2` means the check did not run. Fix the spec first — a broken
+  config lints nothing, so `2` is never "clean".

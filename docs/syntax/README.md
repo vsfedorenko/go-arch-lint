@@ -9,13 +9,12 @@ Arch конфигурация это Go файл (`.go-arch-lint/arch.go`), ис
 
 ### `func Spec(fn func()) struct{}`
 
-Регистрирует новый построитель спецификации, устанавливает его как текущий контекст и выполняет `fn`.
-Функции DSL, вызванные внутри `fn`, заполняют построитель. Возвращает нулевое
-значение `struct{}`, чтобы паттерн `var _ = Spec(...)` срабатывал при инициализации
-пакета, до `main()`.
+Главная точка входа. Всё, что вы напишете внутри `fn`, попадает в спеку.
+Вызывайте на уровне пакета: `var spec = Spec(func() { ... })` — так спека соберётся
+при старте программы, до `main()`.
 
 ```go
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
     Component("main", "app")
@@ -100,8 +99,8 @@ ExcludeFiles(`^.*_test\.go$`, `^.*\/mock\/.*$`)
 
 ### `func Component(name string, paths ...string)`
 
-Определяет именованный компонент, сопоставленный с одним или несколькими относительными
-путями пакетов. Поддерживает glob маски (`src/*/engine/**`).
+Именует компонент и привязывает его к одному или нескольким путям пакетов
+относительно `Workdir`. Пути — glob-маски: `src/*/engine/**` и т.п.
 
 ```go
 Component("handler", "handlers/*")
@@ -114,8 +113,8 @@ Vendors это внешние библиотеки из `go.mod`.
 
 ### `func Vendor(name string, importPaths ...string)`
 
-Определяет именованный vendor, сопоставленный с одним или несколькими import путями.
-Поддерживает glob маски (`github.com/abc/*/engine/**`).
+Именует стороннюю библиотеку из `go.mod` и привязывает её к import-путям
+(можно нескольким). Пути — glob-маски: `github.com/abc/*/engine/**`.
 
 ```go
 Vendor("cobra", "github.com/spf13/cobra")
@@ -145,9 +144,9 @@ CommonVendors("go-common")
 
 ### `func Deps(component string, fn func())`
 
-Определяет правила зависимостей для компонента. Вызывайте `MayDependOn`, `CanUse`,
-`AnyProjectDeps`, `AnyVendorDeps` и `DeepScan` внутри `fn`. Имя компонента
-должно совпадать с одним из определённых через `Component`.
+Разрешает компоненту зависеть от других. Внутри `fn` вызывайте `MayDependOn`,
+`CanUse`, `AnyProjectDeps`, `AnyVendorDeps` и `DeepScan`. Компонент должен быть
+объявлен через `Component` — иначе спека не соберётся.
 
 ```go
 Deps("handler", func() {
@@ -231,10 +230,10 @@ Naming(func() {
 
 ### `func Interfaces(fn func())` / `func MustLiveWithConsumer()`
 
-Правило гексагональных портов: интерфейс, потребляемый ровно одной другой
-компонентой, должен быть объявлен у потребителя — а не рядом с реализацией.
-Общие интерфейсы (2+ потребителя) остаются на месте. Синтакс-анализ без
-type-checking.
+Правило гексагональных портов: если интерфейс нужен ровно одному другому
+компоненту, объявите его у этого потребителя, а не рядом с реализацией.
+Интерфейсы с двумя и больше потребителями остаются где есть. Анализ
+синтаксический, типы не грузятся — работает быстро.
 
 ```go
 Interfaces(func() {
@@ -263,7 +262,7 @@ package main
 
 import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
 
