@@ -8,7 +8,8 @@ and guidance on when to use it.
 
 All examples assume your project lives under `internal/` and that your `arch.go`
 file sits at `.go-arch-lint/arch.go`. Adjust `Workdir` and component paths to match
-your layout.
+your layout. Snippets show the `arch.go` part only — the generated `main.go` runner
+stays as `go-arch-lint init` wrote it.
 
 ---
 
@@ -62,7 +63,7 @@ package main
 
 import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
 
@@ -150,7 +151,7 @@ package main
 
 import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
 
@@ -228,7 +229,7 @@ package main
 
 import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
 
@@ -318,7 +319,7 @@ package main
 
 import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
 
@@ -385,7 +386,7 @@ package main
 
 import . "github.com/vsfedorenko/go-arch-lint/dsl"
 
-var _ = Spec(func() {
+var spec = Spec(func() {
     Version(1)
     Workdir("internal")
 

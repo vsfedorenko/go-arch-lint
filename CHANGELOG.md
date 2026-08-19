@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Refreshed and de-bureaucratized the docs to match the code:
+  - README RU/EN scaffold example updated for the arch.go/main.go split
+    (the old example still showed `func main()` inside arch.go and a
+    bare `MustRun(spec)` without flag passthrough)
+  - Exit-code tables now include `2` — "the check did not run" — with a
+    one-line explanation, in both languages
+  - migration-v2.md: plain-language rewrite of the intro and
+    troubleshooting; the "after" example completed with the generated
+    runner note
+  - docs/README.md index now lists all five documents (cookbook,
+    json-schema, delegation were missing)
+  - cookbook/syntax examples migrated from the legacy `var _ = Spec`
+    idiom to the scaffold's `var spec = Spec` (both work; docs now match
+    what `init` writes)
+  - json-schema.md retitled: the page covers five formats + baseline +
+    the GitHub Action, not just JSON
+  - dogfood `.go-arch-lint/` itself split into arch.go + main.go — the
+    repo's own spec now matches the layout `init` scaffolds (the
+    syntax docs link to `.go-arch-lint/arch.go` was broken until now)
+  - all internal doc links verified (0 broken across 15 files)
+
 ### Fixed
 - `init` flag DX (found by synthetic probing of the fresh --recipe
   feature): `init --help` scaffolded a project instead of showing help;
