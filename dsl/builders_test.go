@@ -29,7 +29,7 @@ func TestAllowDepOnAnyVendor(t *testing.T) {
 			DepOnAnyVendor(false)
 		})
 	}).Builder()
-	assert.Equal(t, false, b.Allow.DepOnAnyVendor.Value)
+	assert.False(t, b.Allow.DepOnAnyVendor.Value)
 }
 
 func TestAllowDeepScan(t *testing.T) {
@@ -38,7 +38,7 @@ func TestAllowDeepScan(t *testing.T) {
 			DeepScan(true)
 		})
 	}).Builder()
-	assert.Equal(t, true, b.Allow.DeepScan.Value)
+	assert.True(t, b.Allow.DeepScan.Value)
 }
 
 func TestAllowIgnoreNotFoundComponents(t *testing.T) {
@@ -47,7 +47,7 @@ func TestAllowIgnoreNotFoundComponents(t *testing.T) {
 			IgnoreNotFoundComponents(true)
 		})
 	}).Builder()
-	assert.Equal(t, true, b.Allow.IgnoreNotFoundComponents.Value)
+	assert.True(t, b.Allow.IgnoreNotFoundComponents.Value)
 }
 
 func TestExclude(t *testing.T) {
@@ -138,7 +138,7 @@ func TestDepsAnyVendorDeps(t *testing.T) {
 			AnyVendorDeps(true)
 		})
 	}).Builder()
-	assert.Equal(t, true, b.Deps["container"].AnyVendorDeps.Value)
+	assert.True(t, b.Deps["container"].AnyVendorDeps.Value)
 }
 
 func TestDepsAnyProjectDeps(t *testing.T) {
@@ -147,7 +147,7 @@ func TestDepsAnyProjectDeps(t *testing.T) {
 			AnyProjectDeps(true)
 		})
 	}).Builder()
-	assert.Equal(t, true, b.Deps["main"].AnyProjectDeps.Value)
+	assert.True(t, b.Deps["main"].AnyProjectDeps.Value)
 }
 
 func TestDepsDeepScanOverride(t *testing.T) {
@@ -156,7 +156,7 @@ func TestDepsDeepScanOverride(t *testing.T) {
 			DeepScan(false)
 		})
 	}).Builder()
-	assert.Equal(t, false, b.Deps["operations"].DeepScan.Value)
+	assert.False(t, b.Deps["operations"].DeepScan.Value)
 }
 
 func TestBuilderPositionsAreFromTestFile(t *testing.T) {
@@ -166,7 +166,7 @@ func TestBuilderPositionsAreFromTestFile(t *testing.T) {
 	ref := b.Components["main"].Reference
 	assert.True(t, ref.Valid)
 	assert.Equal(t, "builders_test.go", ref.File)
-	assert.Greater(t, ref.Line, 0)
+	assert.Positive(t, ref.Line)
 }
 
 func TestMultipleDeps(t *testing.T) {

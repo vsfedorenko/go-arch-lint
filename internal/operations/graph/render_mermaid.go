@@ -60,7 +60,7 @@ func mermaidNodeID(name string, seen map[string]string) string {
 
 	id := fmt.Sprintf("n%d", len(seen))
 	seen[name] = id
-	return fmt.Sprintf(`%s["%s"]`, id, name)
+	return fmt.Sprintf(`%s[%q]`, id, name)
 }
 
 func isAlnum(s string) bool {

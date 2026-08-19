@@ -71,11 +71,12 @@ func TestCheckGitHubActionsFormat(t *testing.T) {
 		}
 
 		require.True(t, strings.HasPrefix(line, "::"), "non workflow-command line in output: %q\nstdout:\n%s")
-		if strings.HasPrefix(line, "::error ") {
+		switch {
+		case strings.HasPrefix(line, "::error "):
 			errors++
-		} else if strings.HasPrefix(line, "::notice ") {
+		case strings.HasPrefix(line, "::notice "):
 			notices++
-		} else {
+		default:
 			require.FailNow(t, "unexpected workflow command (want ::error or ::notice)", "%q", line)
 		}
 

@@ -18,7 +18,7 @@ import (
 // (leftover from the upstream layout shuffles) and every implementation
 // lookup silently returned zero results.
 func TestFixtureModuleResolvable(t *testing.T) {
-	_, callerDir, _, _ := runtime.Caller(0)
+	_, callerDir, _, _ := runtime.Caller(0) //nolint:dogsled // runtime.Caller returns 4 values; only the dir matters
 	projectDir := filepath.Join(filepath.Dir(callerDir), "project")
 
 	searcher := deepscan.NewSearcher()
@@ -51,7 +51,7 @@ func TestIssue85MultiReturnTuple(t *testing.T) {
 	// Regression for issue #85: a multi-value return spread as a single
 	// argument tuple (foo(bar())) gives callExpr.Args fewer entries than the
 	// callee has parameters, which used to panic the deep-scan argument walk.
-	_, callerDir, _, _ := runtime.Caller(0)
+	_, callerDir, _, _ := runtime.Caller(0) //nolint:dogsled // runtime.Caller returns 4 values; only the dir matters
 	projectDir := filepath.Join(filepath.Dir(callerDir), "project_issue85")
 
 	searcher := deepscan.NewSearcher()

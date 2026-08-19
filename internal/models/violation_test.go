@@ -14,7 +14,7 @@ func TestToViolations_Empty(t *testing.T) {
 	violations := out.ToViolations()
 
 	assert.NotNil(t, violations)
-	assert.Len(t, violations, 0)
+	assert.Empty(t, violations)
 }
 
 func TestToViolations_DependencyWarnings(t *testing.T) {

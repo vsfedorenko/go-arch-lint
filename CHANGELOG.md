@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- golangci-lint suite expanded with 11 linters: testifylint (idiomatic
+  testify assertions — enforces the repo's assert/require standard
+  mechanically), thelper (t.Helper in test helpers), gocritic (diagnostic
+  tag: ifElseChain, offBy1, sprintfQuotedString, filepathJoin), intrange
+  (Go 1.22 range-over-int), usestdlibvars, dogsled, unparam, noctx,
+  contextcheck, nilerr. Real findings fixed by the expansion: two
+  if-else chains rewritten as switches (flag delegation in the launcher,
+  workflow-command classification), a %q formatting bug in the mermaid
+  renderer, two unguarded strings.Index calls that could slice to [-1:]
+  on malformed input, three pre-1.22 loop-var idioms, 30+ non-idiomatic
+  testify forms normalized (Empty/NoError/True/Positive/ErrorAs/
+  LessOrEqual/Contains instead of Equal/Len equivalents), missing
+  t.Helper() in test helpers, and over-parameterized test fixtures.
+  noctx excluded for the documented exec.Command delegation design;
+  gocritic performance/style tags deliberately not enabled (hugeParam/
+  rangeValCopy/paramTypeCombine are too noisy for this codebase).
+
+### Changed
 - Test assertions migrated to testify exclusively: every manual
   `if got != want { t.Fatal }` comparison (456 occurrences across 42
   test files) replaced with `assert`/`require` calls — `require` for

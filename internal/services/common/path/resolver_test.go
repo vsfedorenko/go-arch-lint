@@ -42,7 +42,7 @@ func TestResolve_DoubleStarRecurses(t *testing.T) {
 	mkdirs(t, root, "a/b/c", "a/d")
 
 	r := NewResolver()
-	got, err := r.Resolve(filepath.Join(root, "a/**"))
+	got, err := r.Resolve(filepath.Join(root, "a/**")) //nolint:gocritic // glob patterns, not literal paths
 	require.NoError(t, err, "Resolve")
 	assertDirs(t, got, []string{
 		filepath.Join(root, "a"),
@@ -80,7 +80,7 @@ func TestResolve_NestedDoubleStarSegments(t *testing.T) {
 	mkdirs(t, root, "x/p1/inner", "x/p2/inner")
 
 	r := NewResolver()
-	got, err := r.Resolve(filepath.Join(root, "x/**/inner"))
+	got, err := r.Resolve(filepath.Join(root, "x/**/inner")) //nolint:gocritic // glob patterns, not literal paths
 	require.NoError(t, err, "Resolve")
 	assertDirs(t, got, []string{
 		filepath.Join(root, "x", "p1", "inner"),

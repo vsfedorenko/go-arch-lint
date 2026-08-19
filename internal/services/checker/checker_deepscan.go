@@ -212,6 +212,7 @@ func (c *DeepScan) checkGate(_ context.Context, cmp *arch.Component, gate *deeps
 	return nil
 }
 
+//nolint:unparam // error result is part of the composite check contract; implementations may fail
 func (c *DeepScan) checkImplementation(
 	cmp *arch.Component,
 	gate *deepscan.Gate,

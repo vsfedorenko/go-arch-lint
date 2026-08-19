@@ -24,6 +24,7 @@ func (s *Searcher) extractMethodsFromPackage(astPackage *packages.Package) ([]In
 	return result, nil
 }
 
+//nolint:unparam // error result kept for symmetry with the file-walker contract
 func (s *Searcher) extractMethodsFromFile(astPackage *packages.Package, astFile *ast.File) ([]InjectionMethod, error) {
 	list := make([]InjectionMethod, 0)
 

@@ -2,7 +2,6 @@ package checker
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +57,7 @@ func TestTierRules_upward_dependency_is_violation(t *testing.T) {
 	assert.Contains(t, w.ComponentName, "beta (tier 'app')")
 	assert.Contains(t, w.ComponentName, "alpha (tier 'domain')")
 	assert.Contains(t, w.ComponentName, "downward")
-	assert.Equal(t, w.ResolvedImportName, cyclesTestModule+"/"+tcPkgAlpha)
+	assert.Equal(t, cyclesTestModule+"/"+tcPkgAlpha, w.ResolvedImportName)
 }
 
 func TestTierRules_downward_and_same_tier_allowed(t *testing.T) {
@@ -132,5 +131,5 @@ func TestTierRules_message_lists_full_tier_chain(t *testing.T) {
 	result, err := NewTierRules().Check(context.Background(), spec, resolver.holds)
 	require.NoError(t, err)
 	require.Len(t, result.DependencyWarnings, 1)
-	assert.True(t, strings.Contains(result.DependencyWarnings[0].ComponentName, "domain -> app -> infra"))
+	assert.Contains(t, result.DependencyWarnings[0].ComponentName, "domain -> app -> infra")
 }

@@ -116,7 +116,7 @@ func TestNaming_Check_multiple_packages_deterministic_order(t *testing.T) {
 	require.Len(t, result.NamingWarnings, 2)
 
 	// sorted by package path
-	assert.True(t, result.NamingWarnings[0].PackagePath <= result.NamingWarnings[1].PackagePath)
+	assert.LessOrEqual(t, result.NamingWarnings[0].PackagePath, result.NamingWarnings[1].PackagePath)
 	assert.Equal(t, "utils", result.NamingWarnings[0].PackageName)
 	assert.Equal(t, "helpers", result.NamingWarnings[1].PackageName)
 }

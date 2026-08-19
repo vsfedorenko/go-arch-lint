@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"os"
 	"os/exec"
 	"testing"
@@ -90,7 +89,7 @@ func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
 	err := cmd.Run()
 	require.Error(t, err)
 	var exitErr *exec.ExitError
-	require.True(t, errors.As(err, &exitErr), "expected ExitError, got ")
+	require.ErrorAs(t, err, &exitErr)
 
 	out := stderr.String()
 	assert.Contains(t, out, "did not build", "expected 'did not build' context on stderr")

@@ -36,7 +36,7 @@ const (
 
 func TestOptionsFromFlags_empty(t *testing.T) {
 	opts := archlint.OptionsFromFlags(nil)
-	require.Len(t, opts, 0, "no args must yield no options")
+	require.Empty(t, opts, "no args must yield no options")
 }
 
 func TestOptionsFromFlags_full_surface(t *testing.T) {
@@ -59,7 +59,7 @@ func TestOptionsFromFlags_ignores_unknown(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{
 		"--verbose", // not part of the scaffold surface
 	})
-	require.Len(t, opts, 0, "unknown flags must be ignored")
+	require.Empty(t, opts, "unknown flags must be ignored")
 }
 
 // The scaffold path must honor the output flags the launcher documents as
@@ -171,7 +171,7 @@ func TestRun_OutputTypeJSON_renders_wrapper_model(t *testing.T) {
 	var wrapper struct {
 		Type string `json:"Type"`
 	}
-	assert.Equal(t, nil, json.Unmarshal([]byte(strings.TrimSpace(out)), &wrapper))
+	assert.NoError(t, json.Unmarshal([]byte(strings.TrimSpace(out)), &wrapper))
 	require.NotEmpty(t, wrapper.Type, "wrapper must carry a Type field, got %q", out)
 }
 
@@ -235,7 +235,7 @@ func TestRun_UnknownOutputType_is_config_error(t *testing.T) {
 
 func TestOptionsFromFlags_invalid_int_ignored(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{flMaxWarnings, "abc"})
-	require.Len(t, opts, 0, "invalid int must be dropped")
+	require.Empty(t, opts, "invalid int must be dropped")
 }
 
 func TestOptionsFromFlags_output_color_value_form(t *testing.T) {

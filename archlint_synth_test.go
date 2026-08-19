@@ -58,5 +58,5 @@ func TestOptionsFromFlags_SpaceAndEqualsMixed(t *testing.T) {
 func TestOptionsFromFlags_MaxWarningsOverflow(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{flMaxWarnings, "99999999999999999999"})
 	// strconv.Atoi fails on overflow -> flag dropped silently.
-	require.Len(t, opts, 0, "overflow max-warnings must be dropped")
+	require.Empty(t, opts, "overflow max-warnings must be dropped")
 }

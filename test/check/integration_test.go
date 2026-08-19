@@ -347,7 +347,7 @@ func TestCheckSARIFFormat(t *testing.T) {
 	require.Equal(t, 1, exitCode, "exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s; stdout:\n%s\nstderr:\n%s", stdout, stderr)
 
 	var log sarifLog
-	assert.Equal(t, nil, json.Unmarshal([]byte(stdout), &log))
+	assert.NoError(t, json.Unmarshal([]byte(stdout), &log))
 	assert.Equal(t, "2.1.0", log.Version, "SARIF version")
 	require.Len(t, log.Runs, 1, "expected 1 run\nstdout:\n%s", stdout)
 	require.NotEmpty(t, log.Runs[0].Results, "expected results\nstdout:\n%s", stdout)
@@ -458,7 +458,7 @@ func TestCheckJUnitFormat(t *testing.T) {
 	require.Equal(t, 1, exitCode, "exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s; stdout:\n%s\nstderr:\n%s", stdout, stderr)
 
 	var report junitReport
-	assert.Equal(t, nil, xml.Unmarshal([]byte(stdout), &report))
+	assert.NoError(t, xml.Unmarshal([]byte(stdout), &report))
 	require.Len(t, report.Suites, 1, "expected 1 testsuite\nstdout:\n%s", stdout)
 
 	suite := report.Suites[0]

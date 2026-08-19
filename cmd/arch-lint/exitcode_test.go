@@ -15,21 +15,19 @@ import (
 // own helper — `go test` compiles a test binary, and `os/exec` on it with an
 // unknown flag exits with code 1 deterministically. To obtain other codes we
 // spawn the binary with -test.run for a helper that exits with a given code.
-func exitErrorWithCode(t *testing.T, code int) *exec.ExitError {
+func exitErrorWithCode(t *testing.T) *exec.ExitError {
 	t.Helper()
-
-	require.NotEqual(t, 0, code, "code 0 never produces an ExitError")
 
 	// Re-run this very test binary as a child with GO_HELPER_EXIT set: the
 	// TestMain-free trick below uses -test.run to select a helper test that
 	// exits with the requested code.
 	//nolint:gosec // intentional: re-executes the test binary itself (os.Args[0]) with fixed flags — the env-var code is a controlled test input
 	cmd := exec.Command(os.Args[0], "-test.run=TestHelperExitProcess", "-test.v")
-	cmd.Env = append(os.Environ(), "GO_HELPER_EXIT="+strconv.Itoa(code))
+	cmd.Env = append(os.Environ(), "GO_HELPER_EXIT=1")
 	err := cmd.Run()
 
 	var exitErr *exec.ExitError
-	require.True(t, errors.As(err, &exitErr), "expected ExitError for code %d, got ")
+	require.ErrorAs(t, err, &exitErr)
 	return exitErr
 }
 
@@ -63,25 +61,25 @@ func TestDelegatedExitCode(t *testing.T) {
 		},
 		{
 			name:   "child violations (exit 1)",
-			errGen: func(t *testing.T) error { return exitErrorWithCode(t, 1) },
+			errGen: func(t *testing.T) error { t.Helper(); return exitErrorWithCode(t) },
 			stderr: "some warning output\nexit status 1\n",
 			want:   1,
 		},
 		{
 			name:   "child config error (exit 2)",
-			errGen: func(t *testing.T) error { return exitErrorWithCode(t, 1) },
+			errGen: func(t *testing.T) error { t.Helper(); return exitErrorWithCode(t) },
 			stderr: "ERR: spec is broken\nexit status 2\n",
 			want:   2,
 		},
 		{
 			name:   "compile failure maps to config error",
-			errGen: func(t *testing.T) error { return exitErrorWithCode(t, 1) },
+			errGen: func(t *testing.T) error { t.Helper(); return exitErrorWithCode(t) },
 			stderr: "# arch-lint-local\n./main.go:12:3: undefined: Component\n",
 			want:   2,
 		},
 		{
 			name:   "exit status line with trailing whitespace",
-			errGen: func(t *testing.T) error { return exitErrorWithCode(t, 1) },
+			errGen: func(t *testing.T) error { t.Helper(); return exitErrorWithCode(t) },
 			stderr: "exit status 2  \n",
 			want:   2,
 		},

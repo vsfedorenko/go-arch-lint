@@ -97,7 +97,7 @@ func TestOutputFlags_output_type_json_renders_wrapper(t *testing.T) {
 	var wrapper struct {
 		Type string `json:"Type"`
 	}
-	assert.Equal(t, nil, json.Unmarshal([]byte(strings.TrimSpace(stdout)), &wrapper))
+	assert.NoError(t, json.Unmarshal([]byte(strings.TrimSpace(stdout)), &wrapper))
 	assert.Contains(t, wrapper.Type, "Check", "wrapper Type must name the check model, got ")
 	require.Equal(t, 0, code, "clean fixture must exit 0, got ")
 }

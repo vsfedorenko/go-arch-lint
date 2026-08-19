@@ -10,19 +10,19 @@ import (
 )
 
 // chdirTemp creates a temp dir, chdirs into it, and returns a cleanup func.
-func chdirTemp(t *testing.T) (dir string, cleanup func()) {
+func chdirTemp(t *testing.T) (cleanup func()) {
 	t.Helper()
-	dir = t.TempDir()
+	dir := t.TempDir()
 	orig, err := os.Getwd()
 	require.NoError(t, err, "getwd")
-	assert.Equal(t, nil, os.Chdir(dir))
-	return dir, func() {
-		assert.Equal(t, nil, os.Chdir(orig))
+	require.NoError(t, os.Chdir(dir))
+	return func() {
+		assert.NoError(t, os.Chdir(orig))
 	}
 }
 
 func TestCmdInit_CreatesScaffold(t *testing.T) {
-	_, cleanup := chdirTemp(t)
+	cleanup := chdirTemp(t)
 	defer cleanup()
 
 	assert.Equal(t, 0, cmdInit(nil))
@@ -61,7 +61,7 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 // (`\.`), so it actually matches *_test.go files. A historical double escape
 // (`\\.`) required a literal backslash in file names and never matched.
 func TestScaffold_ExcludeFilesRegexEscapesDotOnce(t *testing.T) {
-	_, cleanup := chdirTemp(t)
+	cleanup := chdirTemp(t)
 	defer cleanup()
 
 	assert.Equal(t, 0, cmdInit(nil))
@@ -73,7 +73,7 @@ func TestScaffold_ExcludeFilesRegexEscapesDotOnce(t *testing.T) {
 }
 
 func TestCmdInit_AlreadyExists(t *testing.T) {
-	_, cleanup := chdirTemp(t)
+	cleanup := chdirTemp(t)
 	defer cleanup()
 
 	// First init succeeds
@@ -88,7 +88,7 @@ func TestCmdInit_AlreadyExists(t *testing.T) {
 // user's spec: overwriting main.go with a fresh scaffold copy must keep
 // arch.go byte-identical.
 func TestScaffoldSplit_RegenerateRunnerKeepsSpec(t *testing.T) {
-	_, cleanup := chdirTemp(t)
+	cleanup := chdirTemp(t)
 	defer cleanup()
 
 	assert.Equal(t, 0, cmdInit(nil))
@@ -122,7 +122,7 @@ const (
 func TestCmdInit_Recipes(t *testing.T) {
 	for _, recipe := range []string{tcRecipeClean, tcRecipeHexagonal, tcRecipeDDD} {
 		t.Run(recipe, func(t *testing.T) {
-			_, cleanup := chdirTemp(t)
+			cleanup := chdirTemp(t)
 			defer cleanup()
 
 			code := cmdInit([]string{recipeFlag, recipe})
@@ -150,7 +150,7 @@ func TestCmdInit_Recipes(t *testing.T) {
 }
 
 func TestCmdInit_UnknownRecipe(t *testing.T) {
-	_, cleanup := chdirTemp(t)
+	cleanup := chdirTemp(t)
 	defer cleanup()
 
 	code := cmdInit([]string{recipeFlag, "bogus"})
@@ -189,7 +189,7 @@ func TestParseInitArgs(t *testing.T) {
 // showing help; `--recipe` without a value silently created the DEFAULT
 // spec while the user believed they had chosen a recipe.
 func TestCmdInit_HelpDoesNotScaffold(t *testing.T) {
-	_, cleanup := chdirTemp(t)
+	cleanup := chdirTemp(t)
 	defer cleanup()
 
 	assert.Equal(t, 0, cmdInit([]string{flagHelp}))
@@ -199,7 +199,7 @@ func TestCmdInit_HelpDoesNotScaffold(t *testing.T) {
 
 func TestCmdInit_ValuelessFlagsFailFast(t *testing.T) {
 	for _, args := range [][]string{{"--recipe"}, {"-p"}, {"--project-path"}} {
-		_, cleanup := chdirTemp(t)
+		cleanup := chdirTemp(t)
 		func() {
 			defer cleanup()
 			assert.Equal(t, 1, cmdInit(args))

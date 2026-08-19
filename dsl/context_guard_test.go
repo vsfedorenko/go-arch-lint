@@ -46,7 +46,7 @@ func TestBuildersAfterNestedSpec_PanicWithMessage(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			msg := callAfterNested(fn)
-			require.NotEqual(t, "", msg, "expected a panic with a message, got none")
+			require.NotEmpty(t, msg, "expected a panic with a message, got none")
 			assert.Contains(t, msg, "inside Spec(func(){...})", "panic must be actionable, got: %s")
 		})
 	}
