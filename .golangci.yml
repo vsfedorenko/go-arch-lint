@@ -72,8 +72,6 @@ linters:
       enable-all: true
       disable:
         - require-error # require vs assert — уже закреплено ревью; смешение допустимо по контексту
-    thelper:
-      thin-checks: false
     gocritic:
       # diagnostic = потенциальные баги (реальные находки: ifElseChain, offBy1, sprintfQuotedString).
       # performance-тег (hugeParam/rangeValCopy) и style-тег (paramTypeCombine/unnamedResult)
@@ -120,12 +118,6 @@ formatters:
       - third_party$
       - builtin$
       - examples$
-    rules:
-      # CLI-делегация через exec.Command("go", ...) — осознанный дизайн (docs/delegation.md);
-      # e2e-тесты гоняют собранный бинарь тем же способом.
-      - linters:
-          - noctx
-        path: _test\.go
       - bin
       - var
       - tmp
