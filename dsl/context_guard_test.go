@@ -1,8 +1,10 @@
 package dsl_test
 
 import (
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 )
@@ -44,12 +46,8 @@ func TestBuildersAfterNestedSpec_PanicWithMessage(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			msg := callAfterNested(fn)
-			if msg == "" {
-				t.Fatal("expected a panic with a message, got none")
-			}
-			if !strings.Contains(msg, "inside Spec(func(){...})") {
-				t.Fatalf("panic must be actionable, got: %s", msg)
-			}
+			require.NotEqual(t, "", msg, "expected a panic with a message, got none")
+			assert.Contains(t, msg, "inside Spec(func(){...})", "panic must be actionable, got: %s")
 		})
 	}
 }
@@ -69,10 +67,11 @@ func TestNestedCallbacks_StillWork(t *testing.T) {
 		})
 	})
 	b := spec.Builder()
-	if b == nil || len(b.Components) != 1 || len(b.Deps) != 1 {
-		t.Fatalf("normal nesting broke: %+v", b)
-	}
-	if got := b.Deps["handler"].MayDependOn; len(got) != 1 || got[0].Value != "service" {
-		t.Fatalf("MayDependOn lost: %+v", got)
-	}
+	require.NotNil(t, b, "normal nesting broke")
+	require.Len(t, b.Components, 1, "normal nesting broke: %+v", b)
+	require.Len(t, b.Deps, 1, "normal nesting broke: %+v", b)
+
+	got := b.Deps["handler"].MayDependOn
+	require.Len(t, got, 1, "MayDependOn lost: %+v", got)
+	assert.Equal(t, "service", got[0].Value, "MayDependOn lost: %+v", got)
 }

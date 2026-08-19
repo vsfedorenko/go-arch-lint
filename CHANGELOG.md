@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Test assertions migrated to testify exclusively: every manual
+  `if got != want { t.Fatal }` comparison (456 occurrences across 42
+  test files) replaced with `assert`/`require` calls — `require` for
+  failures that void the rest of a test (errors, lengths, exit codes),
+  `assert` for accumulating checks. Interface doubles are driven
+  strictly via mockery's `EXPECT()` (no `.On()` in hand-written tests).
+  CONTRIBUTING documents the standard. No test logic changed: fixture
+  setup, subtests, and helper structure are byte-identical; only the
+  assertion form moved.
+
+### Changed
 - Testing stack standardised on testify + mockery: default `.mockery.yml`
   (testify template, in-package `mocks_test.go`), `make mocks` target,
   committed generated mocks for SpecDecoder, SuppressIndex and the

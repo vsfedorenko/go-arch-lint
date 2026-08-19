@@ -1,8 +1,10 @@
 package archlint_test
 
 import (
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	archlint "github.com/vsfedorenko/go-arch-lint"
 	"github.com/vsfedorenko/go-arch-lint/dsl"
@@ -27,13 +29,7 @@ func TestRun_BaselineUpdateWithoutBaseline_IsConfigError(t *testing.T) {
 		archlint.WithProjectPath("../"),
 		archlint.WithBaselineUpdate(),
 	)
-	if err == nil {
-		t.Fatal("--baseline-update without --baseline must fail")
-	}
-	if archlint.ExitCode(err) != archlint.ExitCodeConfigError {
-		t.Fatalf("must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
-	}
-	if !strings.Contains(err.Error(), "requires --baseline") {
-		t.Fatalf("error must name the missing flag: %v", err)
-	}
+	require.Error(t, err)
+	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
+	assert.Contains(t, err.Error(), "requires --baseline", "error must name the missing flag: ")
 }

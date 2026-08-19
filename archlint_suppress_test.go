@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	archlint "github.com/vsfedorenko/go-arch-lint"
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
@@ -26,12 +29,8 @@ func writeSuppressProject(t *testing.T, alphaDirective, gammaDirective string) s
 	root := t.TempDir()
 	write := func(rel, content string) {
 		path := filepath.Join(root, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	}
 
 	write("go.mod", "module example.com/suppress\n\ngo 1.25\n")
@@ -71,12 +70,8 @@ func TestRun_ignore_directive_suppresses_violation(t *testing.T) {
 	root := writeSuppressProject(t, "", "//go-arch-lint:ignore")
 
 	err := archlint.Run(suppressSpec(), archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected a violations error (alpha's violation must stay)")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("violations must be a UserSpaceError, got %T: %v", err, err)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "violations must be a UserSpaceError, got %T: ")
 }
 
 func TestRun_ignore_directive_on_same_line_suppresses_violation(t *testing.T) {
@@ -84,12 +79,8 @@ func TestRun_ignore_directive_on_same_line_suppresses_violation(t *testing.T) {
 	root := writeSuppressProject(t, "", "import _ \"example.com/suppress/internal/alpha\" //go-arch-lint:ignore")
 
 	err := archlint.Run(suppressSpec(), archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected a violations error (alpha's violation must stay)")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("violations must be a UserSpaceError, got %T: %v", err, err)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "violations must be a UserSpaceError, got %T: ")
 }
 
 func TestRun_ignore_directive_with_target_argument(t *testing.T) {
@@ -98,12 +89,8 @@ func TestRun_ignore_directive_with_target_argument(t *testing.T) {
 	root := writeSuppressProject(t, "", "//go-arch-lint:ignore beta")
 
 	err := archlint.Run(suppressSpec(), archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("mismatched target argument must not suppress the violation")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("violations must be a UserSpaceError, got %T: %v", err, err)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "violations must be a UserSpaceError, got %T: ")
 }
 
 func TestRun_ignore_file_directive_suppresses_whole_file(t *testing.T) {
@@ -111,19 +98,13 @@ func TestRun_ignore_file_directive_suppresses_whole_file(t *testing.T) {
 	root := writeSuppressProject(t, "", "//go-arch-lint:ignore-file")
 
 	err := archlint.Run(suppressSpec(), archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected a violations error (alpha's violation must stay)")
-	}
+	require.Error(t, err)
 }
 
 func TestRun_all_violations_suppressed_passes(t *testing.T) {
 	root := writeSuppressProject(t, "//go-arch-lint:ignore", "//go-arch-lint:ignore alpha")
 
 	err := archlint.Run(suppressSpec(), archlint.WithProjectPath(root))
-	if err != nil {
-		t.Fatalf("fully suppressed project must pass, got: %v", err)
-	}
-	if code := archlint.ExitCode(err); code != archlint.ExitCodeOK {
-		t.Fatalf("exit code: want 0, got %d", code)
-	}
+	require.NoError(t, err, "fully suppressed project must pass, got")
+	assert.Equal(t, archlint.ExitCodeOK, archlint.ExitCode(err))
 }

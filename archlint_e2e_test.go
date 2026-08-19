@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	archlint "github.com/vsfedorenko/go-arch-lint"
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
@@ -26,12 +29,8 @@ func writeProject(t *testing.T, withCycle bool) string {
 	root := t.TempDir()
 	write := func(rel, content string) {
 		path := filepath.Join(root, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	}
 
 	write("go.mod", "module example.com/e2e\n\ngo 1.25\n")
@@ -60,12 +59,8 @@ func TestRun_clean_project_passes(t *testing.T) {
 	root := writeProject(t, false)
 
 	err := archlint.Run(twoComponentSpec(), archlint.WithProjectPath(root))
-	if err != nil {
-		t.Fatalf("clean project must pass, got: %v", err)
-	}
-	if code := archlint.ExitCode(err); code != archlint.ExitCodeOK {
-		t.Fatalf("exit code: want 0, got %d", code)
-	}
+	require.NoError(t, err, "clean project must pass, got")
+	assert.Equal(t, archlint.ExitCodeOK, archlint.ExitCode(err))
 }
 
 func TestRun_violations_fail_with_userspace_error(t *testing.T) {
@@ -84,62 +79,38 @@ func TestRun_violations_fail_with_userspace_error(t *testing.T) {
 	})
 
 	err := archlint.Run(spec, archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected a violations error")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("violations must be a UserSpaceError, got %T: %v", err, err)
-	}
-	if code := archlint.ExitCode(err); code != archlint.ExitCodeViolations {
-		t.Fatalf("exit code: want 1, got %d", code)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "violations must be a UserSpaceError, got %T: ")
+	assert.Equal(t, archlint.ExitCodeViolations, archlint.ExitCode(err))
 }
 
 func TestRun_cycle_detected(t *testing.T) {
 	root := writeProject(t, true)
 
 	err := archlint.Run(twoComponentSpec(), archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected cycle violation")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("cycle must surface as UserSpaceError, got %T", err)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "cycle must surface as UserSpaceError, got ")
 }
 
 func TestRun_missing_project_is_config_error(t *testing.T) {
 	err := archlint.Run(twoComponentSpec(), archlint.WithProjectPath(t.TempDir()+"/nonexistent"))
-	if err == nil {
-		t.Fatal("expected an error for a missing project")
-	}
-	if code := archlint.ExitCode(err); code != archlint.ExitCodeConfigError {
-		t.Fatalf("missing project: want exit 2, got %d", code)
-	}
-	if !models.IsConfigError(err) {
-		t.Fatalf("missing project must be a config error, got %T: %v", err, err)
-	}
+	require.Error(t, err)
+	assert.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err))
+	require.True(t, models.IsConfigError(err), "missing project must be a config error, got %T: %v")
 }
 
 func TestRun_empty_spec_rejected(t *testing.T) {
 	err := archlint.Run(dsl.SpecDef{})
-	if err == nil {
-		t.Fatal("empty spec must be rejected")
-	}
-	if code := archlint.ExitCode(err); code != archlint.ExitCodeConfigError {
-		t.Fatalf("empty spec: want exit 2, got %d", code)
-	}
+	require.Error(t, err)
+	assert.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err))
 }
 
 func TestRun_naming_rule_flows_through_public_api(t *testing.T) {
 	root := t.TempDir()
 	write := func(rel, content string) {
 		path := filepath.Join(root, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	}
 
 	write("go.mod", "module example.com/naming\n\ngo 1.25\n")
@@ -156,24 +127,16 @@ func TestRun_naming_rule_flows_through_public_api(t *testing.T) {
 	})
 
 	err := archlint.Run(spec, archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected naming violation")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("naming violation must be UserSpaceError, got %T", err)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "naming violation must be UserSpaceError, got ")
 }
 
 func TestRun_tier_rule_flows_through_public_api(t *testing.T) {
 	root := t.TempDir()
 	write := func(rel, content string) {
 		path := filepath.Join(root, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	}
 
 	// domain -> infra (downward, allowed); infra -> domain (upward, violation).
@@ -196,12 +159,8 @@ func TestRun_tier_rule_flows_through_public_api(t *testing.T) {
 	})
 
 	err := archlint.Run(spec, archlint.WithProjectPath(root))
-	if err == nil {
-		t.Fatal("expected upward-tier violation")
-	}
-	if !models.IsUserSpaceError(err) {
-		t.Fatalf("tier violation must be UserSpaceError, got %T", err)
-	}
+	require.Error(t, err)
+	require.True(t, models.IsUserSpaceError(err), "tier violation must be UserSpaceError, got ")
 }
 
 func TestRun_json_format_emits_violations(t *testing.T) {
@@ -218,20 +177,13 @@ func TestRun_json_format_emits_violations(t *testing.T) {
 
 	// JSON format must not change the error classification.
 	err := archlint.Run(spec, archlint.WithProjectPath(root), archlint.WithFormat(models.FormatJSON))
-	if err == nil || !models.IsUserSpaceError(err) {
-		t.Fatalf("json run: expected UserSpaceError, got %v", err)
-	}
+	require.Error(t, err, "json run: expected UserSpaceError")
+	require.True(t, models.IsUserSpaceError(err), "json run: expected UserSpaceError, got %v", err)
 }
 
 // errors classification through the public surface.
 func TestExitCode_plain_errors_are_config(t *testing.T) {
-	if code := archlint.ExitCode(errors.New("boom")); code != archlint.ExitCodeConfigError {
-		t.Fatalf("plain error: want 2, got %d", code)
-	}
-	if code := archlint.ExitCode(nil); code != archlint.ExitCodeOK {
-		t.Fatalf("nil: want 0, got %d", code)
-	}
-	if code := archlint.ExitCode(models.NewUserSpaceError("v")); code != archlint.ExitCodeViolations {
-		t.Fatalf("userspace: want 1, got %d", code)
-	}
+	assert.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(errors.New("boom")))
+	assert.Equal(t, archlint.ExitCodeOK, archlint.ExitCode(nil))
+	assert.Equal(t, archlint.ExitCodeViolations, archlint.ExitCode(models.NewUserSpaceError("v")))
 }

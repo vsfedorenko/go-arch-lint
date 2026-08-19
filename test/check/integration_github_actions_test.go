@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // archGitHubActionsTpl mirrors archJUnitTpl but renders the GitHub Actions
@@ -57,9 +60,8 @@ func TestCheckGitHubActionsFormat(t *testing.T) {
 	dir := scaffoldArch(t, root, fmt.Sprintf(archGitHubActionsTpl, project))
 
 	stdout, stderr, exitCode := runArchLint(t, dir)
-	if exitCode != 1 {
-		t.Fatalf("exit code = %d, want 1 (violations found)\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
-	}
+	require.Equal(t, 1, exitCode,
+		"want exit 1 (violations found); stdout:\n%s\nstderr:\n%s", stdout, stderr)
 
 	var errors, notices int
 	for _, line := range strings.Split(strings.TrimSpace(stdout), "\n") {
@@ -68,38 +70,29 @@ func TestCheckGitHubActionsFormat(t *testing.T) {
 			continue
 		}
 
-		if !strings.HasPrefix(line, "::") {
-			t.Fatalf("non workflow-command line in output: %q\nstdout:\n%s", line, stdout)
-		}
+		require.True(t, strings.HasPrefix(line, "::"), "non workflow-command line in output: %q\nstdout:\n%s")
 		if strings.HasPrefix(line, "::error ") {
 			errors++
 		} else if strings.HasPrefix(line, "::notice ") {
 			notices++
 		} else {
-			t.Fatalf("unexpected workflow command (want ::error or ::notice): %q", line)
+			require.FailNow(t, "unexpected workflow command (want ::error or ::notice)", "%q", line)
 		}
 
 		// Annotation files must be workspace-relative: GitHub resolves them
 		// against the checkout root, so a leading '/' breaks the annotation.
 		if prop, ok := workflowProperty(line, "file"); ok {
-			if prop == "" || strings.HasPrefix(prop, "/") {
-				t.Errorf("annotation file must be non-empty and relative, got %q in %q", prop, line)
-			}
+			assert.NotEmpty(t, prop, "annotation file must be non-empty, got %q in %q", prop, line)
+			assert.False(t, strings.HasPrefix(prop, "/"), "annotation file must be relative, got %q in %q", prop, line)
 		}
 
 		// Exactly one "::" separator pair per command — a raw ':' in a value
 		// would split the command.
-		if strings.Count(line, "::") != 2 {
-			t.Errorf("command must contain exactly two '::' delimiters, got %q", line)
-		}
+		assert.Equal(t, 2, strings.Count(line, "::"), "command must contain exactly two '::' delimiters, got %q", line)
 	}
 
-	if errors == 0 {
-		t.Fatalf("expected ::error annotations for fixture violations, got none\nstdout:\n%s", stdout)
-	}
-	if notices == 0 {
-		t.Errorf("expected at least one ::notice for the unmatched-file advisory, got none\nstdout:\n%s", stdout)
-	}
+	require.NotZero(t, errors, "expected ::error annotations for fixture violations, got none\nstdout:\n%s", stdout)
+	assert.NotZero(t, notices, "expected at least one ::notice for the unmatched-file advisory, got none\nstdout:\n%s", stdout)
 }
 
 // workflowProperty extracts a property value from a workflow-command line

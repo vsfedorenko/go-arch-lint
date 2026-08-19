@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
@@ -35,27 +38,23 @@ func TestRenderModel_FormatSARIF_CheckOut(t *testing.T) {
 	// UserSpaceError is expected: it means "violations found". RenderModel
 	// renders the model AND returns the error for exit-code mapping.
 	if err := r.RenderModel(out, models.NewUserSpaceError("check not successful")); err != nil {
-		if !models.IsUserSpaceError(err) {
-			t.Fatalf("RenderModel: unexpected error: %v", err)
-		}
+		require.True(t, models.IsUserSpaceError(err), "RenderModel: unexpected error: %v", err)
 	}
 
 	output := strings.TrimSpace(buf.String())
-	assertTrue(t, strings.HasPrefix(output, "{"), "expected SARIF JSON object, got: %s", firstRunes(output, 40))
+	assert.True(t, strings.HasPrefix(output, "{"), "expected SARIF JSON object, got: %s", firstRunes(output, 40))
 
 	var log models.SARIFLog
-	if err := json.Unmarshal([]byte(output), &log); err != nil {
-		t.Fatalf("failed to unmarshal SARIF log: %v\noutput: %s", err, output)
-	}
+	require.NoError(t, json.Unmarshal([]byte(output), &log), "failed to unmarshal SARIF log\noutput: %s", output)
 
-	assertTrue(t, log.Version == "2.1.0", "expected SARIF version 2.1.0, got %s", log.Version)
-	assertTrue(t, len(log.Runs) == 1, "expected 1 run, got %d", len(log.Runs))
+	assert.Equal(t, "2.1.0", log.Version, "SARIF version")
+	require.Len(t, log.Runs, 1, "runs")
 
 	run := log.Runs[0]
-	assertTrue(t, run.Tool.Driver.Name == "go-arch-lint", "unexpected driver name: %s", run.Tool.Driver.Name)
-	assertTrue(t, run.Tool.Driver.Version == "v9.9.9", "expected injected driver version v9.9.9, got %s", run.Tool.Driver.Version)
-	assertTrue(t, len(run.Results) == 2, "expected 2 results, got %d", len(run.Results))
-	assertTrue(t, run.Results[0].RuleID == models.SARIFRuleDependency, "first result must be the dependency rule, got %s", run.Results[0].RuleID)
+	assert.Equal(t, "go-arch-lint", run.Tool.Driver.Name, "driver name")
+	assert.Equal(t, "v9.9.9", run.Tool.Driver.Version, "injected driver version")
+	require.Len(t, run.Results, 2, "results")
+	assert.Equal(t, models.SARIFRuleDependency, run.Results[0].RuleID, "first result must be the dependency rule")
 }
 
 // TestRenderModel_FormatSARIF_EmptyResults verifies the clean-project
@@ -63,21 +62,17 @@ func TestRenderModel_FormatSARIF_CheckOut(t *testing.T) {
 func TestRenderModel_FormatSARIF_EmptyResults(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatSARIF)
 
-	if err := r.RenderModel(models.CmdCheckOut{}, nil); err != nil {
-		t.Fatalf("RenderModel: %v", err)
-	}
+	require.NoError(t, r.RenderModel(models.CmdCheckOut{}, nil))
 
 	output := strings.TrimSpace(buf.String())
-	assertTrue(t, strings.HasPrefix(output, "{"), "expected SARIF JSON object, got: %s", firstRunes(output, 40))
+	assert.True(t, strings.HasPrefix(output, "{"), "expected SARIF JSON object, got: %s", firstRunes(output, 40))
 
 	var log models.SARIFLog
-	if err := json.Unmarshal([]byte(output), &log); err != nil {
-		t.Fatalf("failed to unmarshal SARIF log: %v\noutput: %s", err, output)
-	}
+	require.NoError(t, json.Unmarshal([]byte(output), &log), "failed to unmarshal SARIF log\noutput: %s", output)
 
-	assertTrue(t, len(log.Runs) == 1, "expected 1 run, got %d", len(log.Runs))
-	assertTrue(t, len(log.Runs[0].Results) == 0, "expected 0 results")
-	assertTrue(t, strings.Contains(output, "\"results\": []"), "results must serialize as [] not null, got: %s", output)
+	require.Len(t, log.Runs, 1, "runs")
+	assert.Empty(t, log.Runs[0].Results, "results")
+	assert.Contains(t, output, `"results": []`, "results must serialize as [] not null")
 }
 
 // TestRenderModel_FormatSARIF_DefaultDriverVersion verifies the fallback
@@ -85,16 +80,12 @@ func TestRenderModel_FormatSARIF_EmptyResults(t *testing.T) {
 func TestRenderModel_FormatSARIF_DefaultDriverVersion(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatSARIF)
 
-	if err := r.RenderModel(models.CmdCheckOut{}, nil); err != nil {
-		t.Fatalf("RenderModel: %v", err)
-	}
+	require.NoError(t, r.RenderModel(models.CmdCheckOut{}, nil))
 
 	var log models.SARIFLog
-	if err := json.Unmarshal(buf.Bytes(), &log); err != nil {
-		t.Fatalf("failed to unmarshal SARIF log: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &log), "failed to unmarshal SARIF log")
 
-	assertTrue(t, log.Runs[0].Tool.Driver.Version == "dev", "expected default driver version 'dev', got %q", log.Runs[0].Tool.Driver.Version)
+	assert.Equal(t, "dev", log.Runs[0].Tool.Driver.Version, "default driver version")
 }
 
 // TestRenderModel_FormatSARIF_NonCheckModelFallsBackToJSON verifies that
@@ -105,11 +96,9 @@ func TestRenderModel_FormatSARIF_NonCheckModelFallsBackToJSON(t *testing.T) {
 	r.asciiTemplates = map[string]string{} // irrelevant for the fallback
 
 	model := models.CmdVersionOut{LinterVersion: "1.0.0"}
-	if err := r.RenderModel(model, nil); err != nil {
-		t.Fatalf("RenderModel: %v", err)
-	}
+	require.NoError(t, r.RenderModel(model, nil))
 
 	output := strings.TrimSpace(buf.String())
-	assertTrue(t, strings.HasPrefix(output, "{"), "expected wrapped JSON object, got: %s", firstRunes(output, 40))
-	assertTrue(t, strings.Contains(output, "\"Type\": \"models.Version\""), "expected wrapped model Type, got: %s", output)
+	assert.True(t, strings.HasPrefix(output, "{"), "expected wrapped JSON object, got: %s", firstRunes(output, 40))
+	assert.Contains(t, output, `"Type": "models.Version"`, "expected wrapped model Type")
 }

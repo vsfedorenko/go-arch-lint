@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/services/project/scanner"
 )
@@ -24,20 +27,14 @@ func TestScan_SkipsUnreadableExcludedDir(t *testing.T) {
 	projectDir := t.TempDir()
 
 	goFile := filepath.Join(projectDir, "main.go")
-	if err := os.WriteFile(goFile, []byte("package main\n"), 0o644); err != nil { //nolint:gosec // test fixture: source file needs 0644 to be readable
-		t.Fatalf("write source file: %v", err)
-	}
+	require.NoError(t, os.WriteFile(goFile, []byte("package main\n"), 0o644), "write source file") //nolint:gosec // test fixture: source file needs 0644 to be readable
 
 	excludedDir := filepath.Join(projectDir, ".data")
-	if err := os.Mkdir(excludedDir, 0o755); err != nil {
-		t.Fatalf("mkdir excluded dir: %v", err)
-	}
+	require.NoError(t, os.Mkdir(excludedDir, 0o755), "mkdir excluded dir")
 	// A subdir the walker would try to readdir into; made unreadable so that
 	// descending into it fails, mirroring the root-owned postgres data dir.
 	unreadable := filepath.Join(excludedDir, "pgdata")
-	if err := os.Mkdir(unreadable, 0o000); err != nil {
-		t.Fatalf("mkdir unreadable dir: %v", err)
-	}
+	require.NoError(t, os.Mkdir(unreadable, 0o000), "mkdir unreadable dir")
 	// Restore perms so t.TempDir cleanup can remove it.
 	t.Cleanup(func() { _ = os.Chmod(unreadable, 0o755) })
 
@@ -47,13 +44,10 @@ func TestScan_SkipsUnreadableExcludedDir(t *testing.T) {
 	}}
 
 	files, err := scanner.NewScanner().Scan(context.Background(), projectDir, "example.com/proj", excludePaths, nil)
-	if err != nil {
-		t.Fatalf("scan should skip the excluded unreadable dir, got error: %v", err)
-	}
+	require.NoError(t, err, "scan should skip the excluded unreadable dir")
 
-	if len(files) != 1 || files[0].Path != goFile {
-		t.Fatalf("expected only %q to be scanned, got %+v", goFile, files)
-	}
+	require.Len(t, files, 1, "scanned files")
+	assert.Equal(t, goFile, files[0].Path, "expected only the source file to be scanned")
 }
 
 // TestScan_DoesNotDescendIntoExcludedDir asserts that .go files living inside
@@ -62,17 +56,11 @@ func TestScan_DoesNotDescendIntoExcludedDir(t *testing.T) {
 	projectDir := t.TempDir()
 
 	kept := filepath.Join(projectDir, "keep.go")
-	if err := os.WriteFile(kept, []byte("package main\n"), 0o644); err != nil { //nolint:gosec // test fixture: source file needs 0644 to be readable
-		t.Fatalf("write kept file: %v", err)
-	}
+	require.NoError(t, os.WriteFile(kept, []byte("package main\n"), 0o644), "write kept file") //nolint:gosec // test fixture: source file needs 0644 to be readable
 
 	excludedDir := filepath.Join(projectDir, "vendor")
-	if err := os.Mkdir(excludedDir, 0o755); err != nil {
-		t.Fatalf("mkdir excluded dir: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(excludedDir, "dep.go"), []byte("package vendor\n"), 0o644); err != nil { //nolint:gosec // test fixture: source file needs 0644 to be readable
-		t.Fatalf("write excluded file: %v", err)
-	}
+	require.NoError(t, os.Mkdir(excludedDir, 0o755), "mkdir excluded dir")
+	require.NoError(t, os.WriteFile(filepath.Join(excludedDir, "dep.go"), []byte("package vendor\n"), 0o644), "write excluded file") //nolint:gosec // test fixture: source file needs 0644 to be readable
 
 	excludePaths := []models.ResolvedPath{{
 		LocalPath: "vendor",
@@ -80,11 +68,8 @@ func TestScan_DoesNotDescendIntoExcludedDir(t *testing.T) {
 	}}
 
 	files, err := scanner.NewScanner().Scan(context.Background(), projectDir, "example.com/proj", excludePaths, nil)
-	if err != nil {
-		t.Fatalf("unexpected scan error: %v", err)
-	}
+	require.NoError(t, err, "unexpected scan error")
 
-	if len(files) != 1 || files[0].Path != kept {
-		t.Fatalf("expected only %q to be scanned, got %+v", kept, files)
-	}
+	require.Len(t, files, 1, "scanned files")
+	assert.Equal(t, kept, files[0].Path, "expected only the kept file to be scanned")
 }

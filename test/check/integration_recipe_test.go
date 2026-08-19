@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // integration_recipe_test.go pins the `init --recipe <name>` black-box
@@ -25,15 +28,11 @@ func writeRecipeProject(t *testing.T, dir string, violate bool) {
 		"internal/adapter/http",
 		"internal/adapter/db",
 	} {
-		if err := os.MkdirAll(filepath.Join(dir, d), 0o755); err != nil { //nolint:gosec // test fixture dirs
-			t.Fatalf("mkdir %s: %v", d, err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, d), 0o755), "mkdir %s", d) //nolint:gosec // test fixture dirs
 	}
 	write := func(rel, body string) {
 		t.Helper()
-		if err := os.WriteFile(filepath.Join(dir, rel), []byte(body), 0o600); err != nil { //nolint:gosec // test fixture in t.TempDir()
-			t.Fatalf("write %s: %v", rel, err)
-		}
+		require.NoError(t, os.WriteFile(filepath.Join(dir, rel), []byte(body), 0o600), "write %s", rel) //nolint:gosec // test fixture in t.TempDir()
 	}
 	write("go.mod", "module fixt\n\ngo 1.25\n")
 	write("internal/domain/model.go", "package domain\n\ntype User struct{ ID string }\n")
@@ -74,9 +73,7 @@ func runRecipeCheck(t *testing.T, projectDir string) (string, int) {
 func scaffoldRecipeArchDir(t *testing.T, projectDir, repoRoot string) {
 	t.Helper()
 	archDir := filepath.Join(projectDir, ".go-arch-lint")
-	if err := os.MkdirAll(archDir, 0o755); err != nil { //nolint:gosec // test fixture dirs
-		t.Fatalf("mkdir arch dir: %v", err)
-	}
+	require.NoError(t, os.MkdirAll(archDir, 0o755), "mkdir arch dir") //nolint:gosec // test fixture dirs
 
 	goMod := offlineGoMod(t, repoRoot)
 	files := map[string]string{
@@ -85,18 +82,12 @@ func scaffoldRecipeArchDir(t *testing.T, projectDir, repoRoot string) {
 		"main.go": "package main\n\nimport (\n\t\"os\"\n\n\tarchlint \"github.com/vsfedorenko/go-arch-lint\"\n)\n\nfunc main() {\n\tarchlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)\n}\n",
 	}
 	for name, content := range files {
-		if err := os.WriteFile(filepath.Join(archDir, name), []byte(content), 0o600); err != nil { //nolint:gosec // test fixture
-			t.Fatalf("write %s: %v", name, err)
-		}
+		require.NoError(t, os.WriteFile(filepath.Join(archDir, name), []byte(content), 0o600), "write %s", name) //nolint:gosec // test fixture
 	}
 
 	sum, err := os.ReadFile(filepath.Join(repoRoot, "go.sum"))
-	if err != nil {
-		t.Fatalf("read repo go.sum: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(archDir, "go.sum"), sum, 0o600); err != nil { //nolint:gosec // test fixture
-		t.Fatalf("write go.sum: %v", err)
-	}
+	require.NoError(t, err, "read repo go.sum")
+	require.NoError(t, os.WriteFile(filepath.Join(archDir, "go.sum"), sum, 0o600), "write go.sum") //nolint:gosec // test fixture
 }
 
 // hexagonalRecipeSpec is byte-identical in shape to the recipe the launcher
@@ -158,23 +149,16 @@ func TestRecipeHexagonal_BlackBox(t *testing.T) {
 	writeRecipeProject(t, okDir, false)
 	scaffoldRecipeArchDir(t, okDir, root)
 	out, code := runRecipeCheck(t, okDir)
-	if code != 0 {
-		t.Errorf("conforming project: exit %d, want 0.\noutput:\n%s", code, out)
-	}
-	if !strings.Contains(out, "No warnings found") {
-		t.Errorf("conforming project: expected OK output, got:\n%s", out)
-	}
+	assert.Equal(t, 0, code, "conforming project: exit %d, want 0.\noutput:\n%s")
+	assert.Contains(t, out, "No warnings found", "conforming project: expected OK output")
 
 	badDir := t.TempDir()
 	writeRecipeProject(t, badDir, true)
 	scaffoldRecipeArchDir(t, badDir, root)
 	out, code = runRecipeCheck(t, badDir)
-	if code != 1 {
-		t.Errorf("violating project: exit %d, want 1.\noutput:\n%s", code, out)
-	}
-	if !strings.Contains(out, "adapter/http") || !strings.Contains(out, "repo.go") {
-		t.Errorf("violating project: db→http violation not surfaced:\n%s", out)
-	}
+	assert.Equal(t, 1, code, "violating project: exit %d, want 1.\noutput:\n%s")
+	assert.Contains(t, out, "adapter/http", "violating project: db→http violation not surfaced")
+	assert.Contains(t, out, "repo.go", "violating project: db→http violation not surfaced")
 }
 
 // TestRecipeHexagonal_PartialTree verifies the recipe's
@@ -186,14 +170,10 @@ func TestRecipeHexagonal_PartialTree(t *testing.T) {
 
 	dir := t.TempDir()
 	writeRecipeProject(t, dir, false)
-	if err := os.RemoveAll(filepath.Join(dir, "internal", "adapter")); err != nil {
-		t.Fatalf("remove adapter dir: %v", err)
-	}
+	require.NoError(t, os.RemoveAll(filepath.Join(dir, "internal", "adapter")), "remove adapter dir")
 	scaffoldRecipeArchDir(t, dir, root)
 	out, code := runRecipeCheck(t, dir)
-	if code != 0 {
-		t.Errorf("partial tree: exit %d, want 0.\noutput:\n%s", code, out)
-	}
+	assert.Equal(t, 0, code, "partial tree: want exit 0.\noutput:\n%s", out)
 }
 
 // TestRecipeSpecMatchesLauncher guards against drift between the recipe
@@ -210,21 +190,15 @@ func TestRecipeSpecMatchesLauncher(t *testing.T) {
 	launcher := filepath.Join(t.TempDir(), "arch-lint")
 	build := exec.Command("go", "build", "-o", launcher, "./cmd/arch-lint")
 	build.Dir = root
-	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("build launcher: %v\n%s", err, out)
-	}
+	_, err := build.CombinedOutput()
+	require.NoError(t, err, "build launcher")
 
 	proj := t.TempDir()
 	init := exec.Command(launcher, "init", "--recipe", "hexagonal", "-p", proj)
-	if out, err := init.CombinedOutput(); err != nil {
-		t.Fatalf("init --recipe hexagonal: %v\n%s", err, out)
-	}
+	_, err2 := init.CombinedOutput()
+	require.NoError(t, err2, "launcher init --recipe hexagonal")
 
 	got, err := os.ReadFile(filepath.Join(proj, ".go-arch-lint", "arch.go"))
-	if err != nil {
-		t.Fatalf("read scaffolded arch.go: %v", err)
-	}
-	if string(got) != hexagonalRecipeSpec() {
-		t.Errorf("launcher recipe drifted from the pinned black-box spec.\nlauncher:\n%s\npinned:\n%s", got, hexagonalRecipeSpec())
-	}
+	require.NoError(t, err, "read scaffolded arch.go")
+	assert.Equal(t, hexagonalRecipeSpec(), string(got), "launcher recipe drifted from the pinned black-box spec")
 }

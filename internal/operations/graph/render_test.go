@@ -1,8 +1,9 @@
 package graph
 
 import (
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
@@ -73,9 +74,7 @@ func TestRenderPlantUML(t *testing.T) {
 			got := op.renderPlantUML(tt.edges, tt.opts)
 
 			for _, want := range tt.want {
-				if !strings.Contains(got, want) {
-					t.Errorf("plantuml output missing %q\nGot:\n%s", want, got)
-				}
+				assert.Contains(t, got, want, "plantuml output")
 			}
 		})
 	}
@@ -148,9 +147,7 @@ func TestRenderMermaid(t *testing.T) {
 			got := op.renderMermaid(tt.edges, tt.opts)
 
 			for _, want := range tt.want {
-				if !strings.Contains(got, want) {
-					t.Errorf("mermaid output missing %q\nGot:\n%s", want, got)
-				}
+				assert.Contains(t, got, want, "mermaid output")
 			}
 		})
 	}
@@ -167,11 +164,6 @@ func TestRenderD2(t *testing.T) {
 	op := &Operation{}
 	got := op.renderD2(edges, models.CmdGraphIn{Type: models.GraphTypeFlow})
 
-	if !strings.Contains(got, "handler -> service") {
-		t.Errorf("d2 output missing component edge\nGot:\n%s", got)
-	}
-
-	if !strings.Contains(got, "source-arrowhead") {
-		t.Errorf("d2 output missing vendor styling\nGot:\n%s", got)
-	}
+	assert.Contains(t, got, "handler -> service", "d2 output component edge")
+	assert.Contains(t, got, "source-arrowhead", "d2 output vendor styling")
 }

@@ -55,7 +55,7 @@ func findMethod(t *testing.T, methods []deepscan.InjectionMethod, name string) d
 		}
 	}
 
-	t.Fatalf("method %q not found in scan result: %v", name, methodNames(methods))
+	require.Failf(t, "method %q not found in scan result: %v", name, methodNames(methods))
 	return deepscan.InjectionMethod{}
 }
 

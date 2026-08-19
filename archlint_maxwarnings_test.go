@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	archlint "github.com/vsfedorenko/go-arch-lint"
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
@@ -18,20 +20,14 @@ import (
 func writeStressRing(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module stress.test\n\ngo 1.25\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module stress.test\n\ngo 1.25\n"), 0o600))
 	const comps = 6 // ring of 6 components, one violation file each
 	for c := 0; c < comps; c++ {
 		next := (c + 1) % comps
 		comp := filepath.Join(root, "internal", "c"+string(rune('a'+c)))
-		if err := os.MkdirAll(comp, 0o755); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(comp, 0o755))
 		body := "package c" + string(rune('a'+c)) + "\n\nimport _ \"stress.test/internal/c" + string(rune('a'+next)) + "\"\n"
-		if err := os.WriteFile(filepath.Join(comp, "f.go"), []byte(body), 0o600); err != nil { //nolint:gosec // test fixture in t.TempDir()
-			t.Fatal(err)
-		}
+		require.NoError(t, os.WriteFile(filepath.Join(comp, "f.go"), []byte(body), 0o600)) //nolint:gosec // test fixture in t.TempDir()
 	}
 	return root
 }
@@ -56,19 +52,15 @@ func TestRun_MaxWarningsCapKeepsExitCode(t *testing.T) {
 	root := writeStressRing(t)
 
 	// Default cap path: 6 violations < 512 — baseline error.
-	if err := archlint.Run(stressRingSpec(), archlint.WithProjectPath(root)); err == nil {
-		t.Fatal("ring spec with disallowed deps must fail")
-	}
+	err := archlint.Run(stressRingSpec(), archlint.WithProjectPath(root))
+	require.Error(t, err, "ring spec with disallowed deps must fail")
 
 	// Tight cap: still an error (violations exist regardless of cap).
-	if err := archlint.Run(stressRingSpec(), archlint.WithProjectPath(root), archlint.WithMaxWarnings(1)); err == nil {
-		t.Fatal("tight cap must not turn violations into a pass")
-	}
+	err = archlint.Run(stressRingSpec(), archlint.WithProjectPath(root), archlint.WithMaxWarnings(1))
+	require.Error(t, err, "tight cap must not turn violations into a pass")
 
 	// Both are user-space errors (exit 1), not config errors (exit 2).
-	if archlint.ExitCode(archlint.Run(stressRingSpec(), archlint.WithProjectPath(root))) != archlint.ExitCodeViolations {
-		t.Fatal("violation error must map to exit code 1")
-	}
+	require.Equal(t, archlint.ExitCodeViolations, archlint.ExitCode(archlint.Run(stressRingSpec(), archlint.WithProjectPath(root))), "violation error must map to exit code 1")
 }
 
 // TestRun_JSONShapeUnderCap drives the JSON renderer through the public
@@ -85,12 +77,8 @@ func TestRun_JSONShapeUnderCap(t *testing.T) {
 		archlint.WithFormat(models.FormatJSON),
 		archlint.WithMaxWarnings(3),
 	)
-	if err == nil {
-		t.Fatal("violations must fail regardless of format")
-	}
-	if archlint.ExitCode(err) != archlint.ExitCodeViolations {
-		t.Fatal("JSON format violation error must map to exit 1")
-	}
+	require.Error(t, err)
+	require.Equal(t, archlint.ExitCodeViolations, archlint.ExitCode(err), "JSON format violation error must map to exit 1")
 
 	// FormatJSON produced output is not captured by Run (it prints); the
 	// contract worth pinning at unit level is the cap arithmetic itself:

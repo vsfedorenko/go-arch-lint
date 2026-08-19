@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
@@ -42,23 +45,19 @@ func TestRenderModel_FormatJUnit_CheckOut(t *testing.T) {
 	// UserSpaceError is expected: it means "violations found". RenderModel
 	// renders the model AND returns the error for exit-code mapping.
 	if err := r.RenderModel(out, models.NewUserSpaceError("check not successful")); err != nil {
-		if !models.IsUserSpaceError(err) {
-			t.Fatalf("RenderModel: unexpected error: %v", err)
-		}
+		require.True(t, models.IsUserSpaceError(err), "RenderModel: unexpected error: %v", err)
 	}
 
 	output := strings.TrimSpace(buf.String())
-	assertTrue(t, strings.HasPrefix(output, xml.Header), "expected XML header, got: %s", firstRunes(output, 80))
+	assert.True(t, strings.HasPrefix(output, xml.Header), "expected XML header, got: %s", firstRunes(output, 80))
 
 	var report models.JUnitXML
-	if err := xml.Unmarshal(buf.Bytes(), &report); err != nil {
-		t.Fatalf("failed to unmarshal JUnit report: %v\noutput: %s", err, output)
-	}
+	require.NoError(t, xml.Unmarshal(buf.Bytes(), &report), "failed to unmarshal JUnit report\noutput: %s", output)
 
-	assertTrue(t, len(report.Suites) == 1, "expected 1 suite, got %d", len(report.Suites))
-	assertTrue(t, report.Failures == 2, "expected 2 failures, got %d", report.Failures)
-	assertTrue(t, len(report.Suites[0].Cases) == 2, "expected 2 testcases, got %d", len(report.Suites[0].Cases))
-	assertTrue(t, report.Suites[0].Cases[0].Failure != nil, "first testcase must carry a failure")
+	require.Len(t, report.Suites, 1, "suites")
+	assert.Equal(t, 2, report.Failures, "failures")
+	require.Len(t, report.Suites[0].Cases, 2, "testcases")
+	assert.NotNil(t, report.Suites[0].Cases[0].Failure, "first testcase must carry a failure")
 }
 
 // TestRenderModel_FormatJUnit_EmptyResults verifies the clean-project
@@ -66,19 +65,15 @@ func TestRenderModel_FormatJUnit_CheckOut(t *testing.T) {
 func TestRenderModel_FormatJUnit_EmptyResults(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatJUnit)
 
-	if err := r.RenderModel(models.CmdCheckOut{}, nil); err != nil {
-		t.Fatalf("RenderModel: %v", err)
-	}
+	require.NoError(t, r.RenderModel(models.CmdCheckOut{}, nil))
 
 	var report models.JUnitXML
-	if err := xml.Unmarshal(buf.Bytes(), &report); err != nil {
-		t.Fatalf("failed to unmarshal JUnit report: %v\noutput: %s", err, buf.String())
-	}
+	require.NoError(t, xml.Unmarshal(buf.Bytes(), &report), "failed to unmarshal JUnit report\noutput: %s", buf.String())
 
-	assertTrue(t, len(report.Suites) == 1, "expected 1 suite, got %d", len(report.Suites))
-	assertTrue(t, report.Failures == 0, "expected 0 failures, got %d", report.Failures)
-	assertTrue(t, len(report.Suites[0].Cases) == 1, "clean project must emit the green arch-check testcase")
-	assertTrue(t, report.Suites[0].Cases[0].Failure == nil, "green testcase must not carry a failure")
+	require.Len(t, report.Suites, 1, "suites")
+	assert.Equal(t, 0, report.Failures, "failures")
+	require.Len(t, report.Suites[0].Cases, 1, "clean project must emit the green arch-check testcase")
+	assert.Nil(t, report.Suites[0].Cases[0].Failure, "green testcase must not carry a failure")
 }
 
 // TestRenderModel_FormatJUnit_NonCheckModelFallsBackToJSON verifies that
@@ -89,11 +84,9 @@ func TestRenderModel_FormatJUnit_NonCheckModelFallsBackToJSON(t *testing.T) {
 	r.asciiTemplates = map[string]string{} // irrelevant for the fallback
 
 	model := models.CmdVersionOut{LinterVersion: "1.0.0"}
-	if err := r.RenderModel(model, nil); err != nil {
-		t.Fatalf("RenderModel: %v", err)
-	}
+	require.NoError(t, r.RenderModel(model, nil))
 
 	output := strings.TrimSpace(buf.String())
-	assertTrue(t, strings.HasPrefix(output, "{"), "expected wrapped JSON object, got: %s", firstRunes(output, 40))
-	assertTrue(t, strings.Contains(output, "\"Type\": \"models.Version\""), "expected wrapped model Type, got: %s", output)
+	assert.True(t, strings.HasPrefix(output, "{"), "expected wrapped JSON object, got: %s", firstRunes(output, 40))
+	assert.Contains(t, output, `"Type": "models.Version"`, "expected wrapped model Type")
 }

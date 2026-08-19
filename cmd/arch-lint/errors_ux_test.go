@@ -5,8 +5,10 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 /**
@@ -23,9 +25,8 @@ func buildLauncher(t *testing.T) string {
 
 	bin := t.TempDir() + "/archlint-launcher"
 	cmd := exec.Command("go", "build", "-o", bin, ".")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("build launcher: %v\n%s", err, out)
-	}
+	_, err := cmd.CombinedOutput()
+	require.NoError(t, err)
 
 	return bin
 }
@@ -36,21 +37,11 @@ func writeFixture(t *testing.T, specMain string) string {
 
 	dir := t.TempDir()
 
-	if err := os.MkdirAll(dir+"/.go-arch-lint", 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(dir+"/main.go", []byte("package main\n\nfunc main() {}\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(dir+"/go.mod", []byte("module example.com/fixture\n\ngo 1.25\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(dir+"/.go-arch-lint/go.mod", []byte("module example.com/fixture/.go-arch-lint\n\ngo 1.25\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(dir+"/.go-arch-lint/arch.go", []byte(specMain), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.MkdirAll(dir+"/.go-arch-lint", 0o755))
+	require.NoError(t, os.WriteFile(dir+"/main.go", []byte("package main\n\nfunc main() {}\n"), 0o600))
+	require.NoError(t, os.WriteFile(dir+"/go.mod", []byte("module example.com/fixture\n\ngo 1.25\n"), 0o600))
+	require.NoError(t, os.WriteFile(dir+"/.go-arch-lint/go.mod", []byte("module example.com/fixture/.go-arch-lint\n\ngo 1.25\n"), 0o600))
+	require.NoError(t, os.WriteFile(dir+"/.go-arch-lint/arch.go", []byte(specMain), 0o600))
 
 	return dir
 }
@@ -77,9 +68,7 @@ func TestLauncher_GoNotOnPath_PrintsHint(t *testing.T) {
 	_ = cmd.Run()
 
 	out := stderr.String()
-	if !strings.Contains(out, "'go' is not on PATH") {
-		t.Errorf("expected PATH hint on stderr, got:\n%s", out)
-	}
+	assert.Contains(t, out, "'go' is not on PATH", "expected PATH hint on stderr")
 }
 
 func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
@@ -99,19 +88,11 @@ func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-	if err == nil {
-		t.Fatal("expected non-zero exit")
-	}
+	require.Error(t, err)
 	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) {
-		t.Fatalf("expected ExitError, got %T", err)
-	}
+	require.True(t, errors.As(err, &exitErr), "expected ExitError, got ")
 
 	out := stderr.String()
-	if !strings.Contains(out, "did not build") {
-		t.Errorf("expected 'did not build' context on stderr, got:\n%s", out)
-	}
-	if !strings.Contains(out, "go-arch-lint init") {
-		t.Errorf("expected init hint on stderr, got:\n%s", out)
-	}
+	assert.Contains(t, out, "did not build", "expected 'did not build' context on stderr")
+	assert.Contains(t, out, "go-arch-lint init", "expected init hint on stderr")
 }

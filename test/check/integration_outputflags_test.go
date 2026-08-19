@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	archlint "github.com/vsfedorenko/go-arch-lint"
 )
 
@@ -68,7 +71,7 @@ func runArchLintArgs(t *testing.T, dir string, args ...string) (stdout, stderr s
 		if errors.As(err, &exitErr) {
 			exitCode = parseChildExitCode(errb.String(), exitErr.ExitCode())
 		} else {
-			t.Fatalf("go run: %v\nstderr:\n%s", err, errb.String())
+			require.NoError(t, err, "go run:\nstderr:\n%s", errb.String())
 		}
 	}
 	return out.String(), errb.String(), exitCode
@@ -94,56 +97,37 @@ func TestOutputFlags_output_type_json_renders_wrapper(t *testing.T) {
 	var wrapper struct {
 		Type string `json:"Type"`
 	}
-	if err := json.Unmarshal([]byte(strings.TrimSpace(stdout)), &wrapper); err != nil {
-		t.Fatalf("--output-type=json must render the {Type, Payload} wrapper, got %q: %v", stdout, err)
-	}
-	if !strings.Contains(wrapper.Type, "Check") {
-		t.Fatalf("wrapper Type must name the check model, got %q", wrapper.Type)
-	}
-	if code != 0 {
-		t.Fatalf("clean fixture must exit 0, got %d", code)
-	}
+	assert.Equal(t, nil, json.Unmarshal([]byte(strings.TrimSpace(stdout)), &wrapper))
+	assert.Contains(t, wrapper.Type, "Check", "wrapper Type must name the check model, got ")
+	require.Equal(t, 0, code, "clean fixture must exit 0, got ")
 }
 
 func TestOutputFlags_json_alias_matches_output_type(t *testing.T) {
 	stdoutAlias, _, _ := runOutputFlagsFixture(t, "--json", "--no-colors")
 	stdoutExplicit, _, _ := runOutputFlagsFixture(t, "--output-type=json", "--no-colors")
 
-	if strings.TrimSpace(stdoutAlias) != strings.TrimSpace(stdoutExplicit) {
-		t.Fatalf("--json must alias --output-type=json:\nalias:    %q\nexplicit: %q", stdoutAlias, stdoutExplicit)
-	}
+	require.Equal(t, strings.TrimSpace(stdoutExplicit), strings.TrimSpace(stdoutAlias),
+		"--json must alias --output-type=json:\nalias:    %q\nexplicit: %q", stdoutAlias, stdoutExplicit)
 }
 
 func TestOutputFlags_one_line_without_json_is_config_error(t *testing.T) {
 	_, stderr, code := runOutputFlagsFixture(t, "--output-json-one-line")
 
-	if code != archlint.ExitCodeConfigError {
-		t.Fatalf("one-line without json output must exit 2, got %d (stderr: %s)", code, stderr)
-	}
-	if !strings.Contains(stderr, "--output-json-one-line only affects json output") {
-		t.Fatalf("stderr must carry the actionable error, got: %s", stderr)
-	}
+	require.Equal(t, archlint.ExitCodeConfigError, code, "one-line without json output must exit 2 (config error)")
+	assert.Contains(t, stderr, "--output-json-one-line only affects json output", "stderr must carry the actionable error, got: %s")
 }
 
 func TestOutputFlags_one_line_compacts_wrapper(t *testing.T) {
 	stdout, _, _ := runOutputFlagsFixture(t, "--json", "--output-json-one-line", "--no-colors")
 
 	lines := strings.Split(strings.TrimRight(stdout, "\n"), "\n")
-	if len(lines) != 1 {
-		t.Fatalf("one-line JSON must be a single line, got %d: %q", len(lines), stdout)
-	}
-	if strings.Contains(lines[0], "  ") {
-		t.Fatalf("one-line JSON must not be indented: %q", lines[0])
-	}
+	require.Len(t, lines, 1, "one-line JSON must be a single line, got %d: %q", len(lines), stdout)
+	assert.NotContains(t, lines[0], "  ", "one-line JSON must not be indented: ")
 }
 
 func TestOutputFlags_unknown_output_type_is_config_error(t *testing.T) {
 	_, stderr, code := runOutputFlagsFixture(t, "--output-type=yaml")
 
-	if code != archlint.ExitCodeConfigError {
-		t.Fatalf("unknown output-type must exit 2, got %d", code)
-	}
-	if !strings.Contains(stderr, "unknown output-type") {
-		t.Fatalf("stderr must name the problem, got: %s", stderr)
-	}
+	require.Equal(t, archlint.ExitCodeConfigError, code, "unknown output-type must exit 2 (config error)")
+	assert.Contains(t, stderr, "unknown output-type", "stderr must name the problem, got: %s")
 }

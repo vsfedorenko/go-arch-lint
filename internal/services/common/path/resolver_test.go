@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // The glob resolver underlies component path resolution ("internal/**",
@@ -16,9 +19,7 @@ func TestResolve_PlainGlobMatchesDirectories(t *testing.T) {
 
 	r := NewResolver()
 	got, err := r.Resolve(filepath.Join(root, "*"))
-	if err != nil {
-		t.Fatalf("Resolve: %v", err)
-	}
+	require.NoError(t, err, "Resolve")
 	assertDirs(t, got, []string{filepath.Join(root, "alpha"), filepath.Join(root, "beta")})
 }
 
@@ -29,9 +30,7 @@ func TestResolve_FilesAreFilteredOut(t *testing.T) {
 
 	r := NewResolver()
 	got, err := r.Resolve(filepath.Join(root, "*"))
-	if err != nil {
-		t.Fatalf("Resolve: %v", err)
-	}
+	require.NoError(t, err, "Resolve")
 	// Only the directory matches; the file is dropped.
 	assertDirs(t, got, []string{filepath.Join(root, "alpha")})
 }
@@ -44,9 +43,7 @@ func TestResolve_DoubleStarRecurses(t *testing.T) {
 
 	r := NewResolver()
 	got, err := r.Resolve(filepath.Join(root, "a/**"))
-	if err != nil {
-		t.Fatalf("Resolve: %v", err)
-	}
+	require.NoError(t, err, "Resolve")
 	assertDirs(t, got, []string{
 		filepath.Join(root, "a"),
 		filepath.Join(root, "a", "b"),
@@ -59,12 +56,8 @@ func TestResolve_NoMatchIsEmpty(t *testing.T) {
 	root := t.TempDir()
 	r := NewResolver()
 	got, err := r.Resolve(filepath.Join(root, "nothing-*"))
-	if err != nil {
-		t.Fatalf("Resolve: %v", err)
-	}
-	if len(got) != 0 {
-		t.Fatalf("expected no matches, got %v", got)
-	}
+	require.NoError(t, err, "Resolve")
+	assert.Empty(t, got, "expected no matches")
 }
 
 func TestResolve_DotSuffixTrimmed(t *testing.T) {
@@ -78,9 +71,7 @@ func TestResolve_DotSuffixTrimmed(t *testing.T) {
 
 	r := NewResolver()
 	got, err := r.Resolve(filepath.Join(root, "alpha") + "/.")
-	if err != nil {
-		t.Fatalf("Resolve: %v", err)
-	}
+	require.NoError(t, err, "Resolve")
 	assertDirs(t, got, []string{filepath.Join(root, "alpha") + "/"})
 }
 
@@ -90,9 +81,7 @@ func TestResolve_NestedDoubleStarSegments(t *testing.T) {
 
 	r := NewResolver()
 	got, err := r.Resolve(filepath.Join(root, "x/**/inner"))
-	if err != nil {
-		t.Fatalf("Resolve: %v", err)
-	}
+	require.NoError(t, err, "Resolve")
 	assertDirs(t, got, []string{
 		filepath.Join(root, "x", "p1", "inner"),
 		filepath.Join(root, "x", "p2", "inner"),
@@ -104,31 +93,23 @@ func TestResolve_NestedDoubleStarSegments(t *testing.T) {
 func mkdirs(t *testing.T, root string, dirs ...string) {
 	t.Helper()
 	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(d)), 0o755); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Join(root, filepath.FromSlash(d)), 0o755))
 	}
 }
 
 func writeFile(t *testing.T, path, body string) {
 	t.Helper()
-	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(path, []byte(body), 0o600))
 }
 
 func assertDirs(t *testing.T, got []string, want []string) {
 	t.Helper()
-	if len(got) != len(want) {
-		t.Fatalf("resolve got %v, want %v", got, want)
-	}
+	require.Len(t, got, len(want), "resolve got %v, want ")
 	set := map[string]bool{}
 	for _, w := range want {
 		set[w] = true
 	}
 	for _, g := range got {
-		if !set[g] {
-			t.Fatalf("resolve got unexpected %v, want %v", got, want)
-		}
+		assert.Contains(t, set, g, "resolve got unexpected %v, want ")
 	}
 }

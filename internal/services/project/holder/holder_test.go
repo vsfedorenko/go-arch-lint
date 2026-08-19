@@ -1,8 +1,9 @@
 package holder
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
@@ -60,9 +61,8 @@ func Test_packageMathPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := packageMathPath(tt.args.packagePath, tt.args.path); got != tt.want {
-				t.Errorf("packageMathPath() = %v, want %v", got, tt.want)
-			}
+			got := packageMathPath(tt.args.packagePath, tt.args.path)
+			assert.Equal(t, tt.want, got, "packageMathPath()")
 		})
 	}
 }
@@ -129,9 +129,8 @@ func Test_componentMatchPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := componentMatchPackage(tt.args.packagePath, tt.args.component); got != tt.want {
-				t.Errorf("componentMatchPackage() = %v, want %v", got, tt.want)
-			}
+			got := componentMatchPackage(tt.args.packagePath, tt.args.component)
+			assert.Equal(t, tt.want, got, "componentMatchPackage()")
 		})
 	}
 }
@@ -194,9 +193,8 @@ func Test_componentsMatchesFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := componentsMatchesFile(tt.args.filePath, tt.args.components); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("componentsMatchesFile() = %v, want %v", got, tt.want)
-			}
+			got := componentsMatchesFile(tt.args.filePath, tt.args.components)
+			assert.Equal(t, tt.want, got, "componentsMatchesFile()")
 		})
 	}
 }
@@ -286,9 +284,8 @@ func Test_compare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := compare(tt.args.a, tt.args.b); got != tt.bIsBetter {
-				t.Errorf("compare() = %v, want %v", got, tt.bIsBetter)
-			}
+			got := compare(tt.args.a, tt.args.b)
+			assert.Equal(t, tt.bIsBetter, got, "compare()")
 		})
 	}
 }
