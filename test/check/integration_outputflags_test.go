@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint"
+	archlint "github.com/vsfedorenko/go-arch-lint/v2"
 )
 
 // End-to-end contracts for the output flags on the scaffold path — the
@@ -26,8 +26,8 @@ const archOutputFlagsTpl = `package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func main() {

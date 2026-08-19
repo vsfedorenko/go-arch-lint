@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/app/container"
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/app/container"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
 )
 
 // newContainer wires the DI container with build-time constants.

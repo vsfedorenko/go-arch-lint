@@ -20,7 +20,7 @@ and dependency-injection violations automatically.
 ## Install
 
 ```bash
-go install github.com/vsfedorenko/go-arch-lint@latest
+go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
 ```
 
 Or use [Docker](https://github.com/vsfedorenko/go-arch-lint/pkgs/container/go-arch-lint):
@@ -30,6 +30,10 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 ```
 
 Or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/releases).
+
+> The module path is `github.com/vsfedorenko/go-arch-lint/v2` (the suffix is
+> mandatory for Go major versions). Upgrading from v2.0/v2.1: update the
+> imports in `.go-arch-lint/` to `/v2`, or just re-run `go-arch-lint init`.
 
 ## Requirements
 
@@ -52,7 +56,7 @@ Creates `.go-arch-lint/` with three files. The spec and the runner are separate:
 package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 var spec = Spec(func() {
@@ -81,7 +85,7 @@ package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint"
+	"github.com/vsfedorenko/go-arch-lint/v2"
 )
 
 func main() {
@@ -97,7 +101,7 @@ How this works:
 — `CommonComponents` — components available to everyone (utilities, models).
 — `Vendor` and `CanUse` — third-party libraries allowed for a specific component.
 
-Full DSL function reference: [syntax docs](docs/syntax/README.md) or `go doc github.com/vsfedorenko/go-arch-lint/dsl`.
+Full DSL function reference: [syntax docs](docs/syntax/README.md) or `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
 
 ### Init recipes
 
@@ -219,8 +223,8 @@ go-arch-lint is not just a CLI — it's a library. Run checks from Go code:
 
 ```go
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func runArchCheck() error {

@@ -47,7 +47,7 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	archgo, err := os.ReadFile(filepath.Join(archDir, "arch.go"))
 	require.NoError(t, err, "read arch.go")
 	assert.Contains(t, string(archgo), "Spec(func()", "arch.go missing Spec entry: %s", archgo)
-	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/dsl"`, "arch.go missing dsl import: %s", archgo)
+	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v2/dsl"`, "arch.go missing dsl import: %s", archgo)
 	assert.NotContains(t, string(archgo), "func main()", "arch.go must not contain the runner: %s", archgo)
 
 	// main.go is the stable runner: flag passthrough, NO spec definition.
@@ -95,7 +95,7 @@ func TestScaffoldSplit_RegenerateRunnerKeepsSpec(t *testing.T) {
 
 	// Simulate the user editing their spec.
 	archPath := filepath.Join(".go-arch-lint", "arch.go")
-	edited := "package main\n\nimport (\n\t. \"github.com/vsfedorenko/go-arch-lint/dsl\"\n)\n\nvar spec = Spec(func() {\n\tVersion(1)\n\tComponent(\"mine\", \"internal/mine/*\")\n})\n"
+	edited := "package main\n\nimport (\n\t. \"github.com/vsfedorenko/go-arch-lint/v2/dsl\"\n)\n\nvar spec = Spec(func() {\n\tVersion(1)\n\tComponent(\"mine\", \"internal/mine/*\")\n})\n"
 	require.NoError(t, os.WriteFile(archPath, []byte(edited), 0o600), "write edited arch.go") //nolint:gosec // test fixture in t.TempDir()
 
 	// Regenerate ONLY the runner, as an upgrade would.
@@ -132,7 +132,7 @@ func TestCmdInit_Recipes(t *testing.T) {
 			require.NoError(t, err, "read arch.go")
 			s := string(archgo)
 			assert.Contains(t, s, "Spec(func()", "%s: arch.go missing Spec entry", recipe)
-			assert.Contains(t, s, `. "github.com/vsfedorenko/go-arch-lint/dsl"`, "%s: arch.go missing dsl import", recipe)
+			assert.Contains(t, s, `. "github.com/vsfedorenko/go-arch-lint/v2/dsl"`, "%s: arch.go missing dsl import", recipe)
 			assert.NotContains(t, s, "func main()", "%s: arch.go must not contain the runner", recipe)
 			assert.NotContains(t, s, `\\.`, "%s: ExcludeFiles double-backslash bug present", recipe)
 			// Recipes tolerate not-yet-created directories.

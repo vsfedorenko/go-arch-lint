@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint"
-	"github.com/vsfedorenko/go-arch-lint/dsl"
+	archlint "github.com/vsfedorenko/go-arch-lint/v2"
+	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 // Synthetic baseline-mode contracts (found by probing the freshly merged

@@ -1,6 +1,6 @@
 package dsl
 
-import "github.com/vsfedorenko/go-arch-lint/internal/models/domain"
+import "github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
 
 // SpecBuilder is the in-memory representation of the user's arch config,
 // populated by DSL functions. It replaces the YAML decoder's ArchV3 struct.

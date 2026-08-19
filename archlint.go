@@ -7,8 +7,8 @@
 // A minimal check looks like:
 //
 //	import (
-//		"github.com/vsfedorenko/go-arch-lint"
-//		. "github.com/vsfedorenko/go-arch-lint/dsl"
+//		"github.com/vsfedorenko/go-arch-lint/v2"
+//		. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 //	)
 //
 //	spec := Spec(func() {
@@ -34,10 +34,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/dsl"
-	"github.com/vsfedorenko/go-arch-lint/internal/app"
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec/decoder"
+	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/app"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/decoder"
 )
 
 // Option customizes a [Run] call.

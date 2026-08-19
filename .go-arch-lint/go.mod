@@ -2,7 +2,7 @@ module arch-lint-local
 
 go 1.25.0
 
-require github.com/vsfedorenko/go-arch-lint v0.0.0
+require github.com/vsfedorenko/go-arch-lint/v2 v2.0.0-dev
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0 // indirect
@@ -36,4 +36,4 @@ require (
 	oss.terrastruct.com/util-go v0.0.0-20250213174338-243d8661088a // indirect
 )
 
-replace github.com/vsfedorenko/go-arch-lint => ..
+replace github.com/vsfedorenko/go-arch-lint/v2 => ..

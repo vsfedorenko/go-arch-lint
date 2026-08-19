@@ -79,7 +79,7 @@ func scaffoldRecipeArchDir(t *testing.T, projectDir, repoRoot string) {
 	files := map[string]string{
 		"go.mod":  goMod,
 		"arch.go": hexagonalRecipeSpec(),
-		"main.go": "package main\n\nimport (\n\t\"os\"\n\n\tarchlint \"github.com/vsfedorenko/go-arch-lint\"\n)\n\nfunc main() {\n\tarchlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)\n}\n",
+		"main.go": "package main\n\nimport (\n\t\"os\"\n\n\tarchlint \"github.com/vsfedorenko/go-arch-lint/v2\"\n)\n\nfunc main() {\n\tarchlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)\n}\n",
 	}
 	for name, content := range files {
 		require.NoError(t, os.WriteFile(filepath.Join(archDir, name), []byte(content), 0o600), "write %s", name) //nolint:gosec // test fixture
@@ -99,7 +99,7 @@ func hexagonalRecipeSpec() string {
 	return `package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 // Ports & adapters: the domain and core logic sit at the center; HTTP and DB

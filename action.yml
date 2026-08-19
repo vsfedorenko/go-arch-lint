@@ -42,9 +42,9 @@ runs:
         fi
         version='${{ inputs.version }}'
         if [ "$version" = 'latest' ]; then
-          go install github.com/vsfedorenko/go-arch-lint/cmd/arch-lint@latest
+          go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
         else
-          go install "github.com/vsfedorenko/go-arch-lint/cmd/arch-lint@v${version#@}"
+          go install "github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@v${version#@}"
         fi
 
     - name: 'Architecture check (annotations)'

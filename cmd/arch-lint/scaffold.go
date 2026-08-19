@@ -24,7 +24,7 @@ go 1.25
 const scaffoldArchGo = `package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 var spec = Spec(func() {
@@ -55,7 +55,7 @@ const scaffoldMainGo = `package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint"
+	"github.com/vsfedorenko/go-arch-lint/v2"
 )
 
 func main() {
@@ -185,7 +185,7 @@ func writeScaffold(projectPath, archGo, label string) int {
 
 	fmt.Printf("\nScaffold created%s. Next steps:\n", label)
 	fmt.Printf("  1. Edit %s/arch.go to describe your architecture\n", archDir)
-	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint dependency\n", archDir)
+	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint/v2 dependency\n", archDir)
 	fmt.Printf("  3. Run 'go-arch-lint check' to lint your project\n")
 
 	return 0

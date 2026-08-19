@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/dsl"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec/decoder"
+	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/decoder"
 )
 
 // The validator suite exercises the real Document implementation

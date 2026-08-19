@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
 )
 
 func TestVersion(t *testing.T) {

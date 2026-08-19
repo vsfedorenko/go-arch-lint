@@ -1,7 +1,7 @@
 package container
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
 )
 
 type Container struct {

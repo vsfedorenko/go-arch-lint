@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
 )
 
 type (
