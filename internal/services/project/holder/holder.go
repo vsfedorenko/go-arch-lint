@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
 )
 
 type (

@@ -1,8 +1,8 @@
 package di
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/services/checker/deepscan/test/project/internal/operations"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/checker/deepscan/test/project/internal/repository"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker/deepscan/test/project/internal/operations"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker/deepscan/test/project/internal/repository"
 )
 
 func TestCases() {

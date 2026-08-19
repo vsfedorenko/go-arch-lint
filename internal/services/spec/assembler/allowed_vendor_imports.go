@@ -1,9 +1,9 @@
 package assembler
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
 )
 
 type allowedVendorImportsAssembler struct{}

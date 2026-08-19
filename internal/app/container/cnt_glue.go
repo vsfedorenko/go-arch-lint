@@ -1,17 +1,17 @@
 package container
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/checker"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/common/path"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/project/holder"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/project/info"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/project/resolver"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/project/scanner"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/render/code"
-	specassembler "github.com/vsfedorenko/go-arch-lint/internal/services/spec/assembler"
-	specvalidator "github.com/vsfedorenko/go-arch-lint/internal/services/spec/validator"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/suppress"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/common/path"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/holder"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/info"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/resolver"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/scanner"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/render/code"
+	specassembler "github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/assembler"
+	specvalidator "github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/validator"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/suppress"
 )
 
 func (c *Container) provideSpecAssembler() *specassembler.Assembler {

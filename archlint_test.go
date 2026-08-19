@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func TestRunEmptySpecDefReturnsError(t *testing.T) {

@@ -1,14 +1,10 @@
 packages:
-  github.com/vsfedorenko/go-arch-lint/internal/app/container:
-    config:
-      all: false
+  github.com/vsfedorenko/go-arch-lint/v2/internal/app/container:
     interfaces:
       SpecDecoder:
-  github.com/vsfedorenko/go-arch-lint/internal/services/checker:
-    config:
-      all: false
+  github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker:
     interfaces:
       SuppressIndex:
-  github.com/vsfedorenko/go-arch-lint/internal/services/spec/assembler:
+  github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/assembler:
     config:
       all: true

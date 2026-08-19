@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint"
+	"github.com/vsfedorenko/go-arch-lint/v2"
 )
 
 func main() {

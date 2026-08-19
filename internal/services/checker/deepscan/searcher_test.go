@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/services/checker/deepscan"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker/deepscan"
 )
 
 // fixtureProject is the nested test module with a rich set of injectable

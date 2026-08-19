@@ -1,8 +1,8 @@
 package validator
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
 )
 
 type validatorCommonVendors struct {

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/app"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/app"
 )
 
 const (

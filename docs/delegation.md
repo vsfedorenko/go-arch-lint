@@ -2,7 +2,7 @@
 
 `go-arch-lint` is two programs, not one:
 
-1. **The launcher** (`go install github.com/vsfedorenko/go-arch-lint/cmd/arch-lint@latest`)
+1. **The launcher** (`go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest`)
    — a tiny, dependency-free binary. It handles `init`, `version`, `help`, and
    delegates everything else.
 2. **The arch spec** (`.go-arch-lint/`) — *your* Go module, scaffolded by

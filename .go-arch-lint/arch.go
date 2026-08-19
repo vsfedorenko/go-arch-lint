@@ -1,7 +1,7 @@
 package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 var spec = Spec(func() {

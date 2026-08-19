@@ -10,22 +10,22 @@
 
 ### Справка по DSL API
 
-Схема конфигурации определяется пакетом `github.com/vsfedorenko/go-arch-lint/dsl`.
+Схема конфигурации определяется пакетом `github.com/vsfedorenko/go-arch-lint/v2/dsl`.
 Поскольку конфигурация теперь чистый Go, компилятор и автодополнение IDE
 заменяют старый слой JSON Schema.
 
 Чтобы посмотреть полное API с сигнатурами и документацией, выполните:
 
 ```bash
-go doc github.com/vsfedorenko/go-arch-lint/dsl
+go doc github.com/vsfedorenko/go-arch-lint/v2/dsl
 ```
 
 Или посмотрите конкретную функцию:
 
 ```bash
-go doc github.com/vsfedorenko/go-arch-lint/dsl.Spec
-go doc github.com/vsfedorenko/go-arch-lint/dsl.Component
-go doc github.com/vsfedorenko/go-arch-lint/dsl.Deps
+go doc github.com/vsfedorenko/go-arch-lint/v2/dsl.Spec
+go doc github.com/vsfedorenko/go-arch-lint/v2/dsl.Component
+go doc github.com/vsfedorenko/go-arch-lint/v2/dsl.Deps
 ```
 
 Описание с примерами см. в [syntax/README.md](syntax/README.md).

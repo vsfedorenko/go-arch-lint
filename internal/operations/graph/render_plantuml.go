@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
 )
 
 // renderPlantUML generates PlantUML component diagram text from edges.

@@ -20,7 +20,7 @@
 ## Установка
 
 ```bash
-go install github.com/vsfedorenko/go-arch-lint@latest
+go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
 ```
 
 Или через [Docker](https://github.com/vsfedorenko/go-arch-lint/pkgs/container/go-arch-lint):
@@ -30,6 +30,10 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 ```
 
 Или [бинарник из релизов](https://github.com/vsfedorenko/go-arch-lint/releases).
+
+> Путь модуля — `github.com/vsfedorenko/go-arch-lint/v2` (суффикс обязателен для
+> мажорных версий Go-семвера). Если вы обновляетесь с v2.0/v2.1: замените импорты
+> в `.go-arch-lint/` на `/v2` (или просто перезапустите `go-arch-lint init`).
 
 ## Требования
 
@@ -53,7 +57,7 @@ go-arch-lint init
 package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 var spec = Spec(func() {
@@ -82,7 +86,7 @@ package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint"
+	"github.com/vsfedorenko/go-arch-lint/v2"
 )
 
 func main() {
@@ -98,7 +102,7 @@ func main() {
 — `CommonComponents` — компоненты, доступные всем (утилиты, модели).
 — `Vendor` и `CanUse` — сторонние библиотеки, разрешённые конкретному компоненту.
 
-Полный список функций DSL — в [документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/dsl`.
+Полный список функций DSL — в [документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
 
 ### Рецепты init
 
@@ -212,8 +216,8 @@ go-arch-lint — не только CLI, но и библиотека. Вызов
 
 ```go
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func runArchCheck() error {

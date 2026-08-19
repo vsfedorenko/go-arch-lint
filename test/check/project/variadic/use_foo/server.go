@@ -1,7 +1,7 @@
 package use_foo
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/test/check/project/variadic/foo"
+	"github.com/vsfedorenko/go-arch-lint/v2/test/check/project/variadic/foo"
 )
 
 var (

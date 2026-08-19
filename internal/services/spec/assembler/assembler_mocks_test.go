@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
 )
 
 // The assembler drives the whole spec pipeline through three ports

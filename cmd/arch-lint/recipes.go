@@ -26,7 +26,7 @@ var knownRecipes = map[string]recipe{
 		archGo: `package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 // Clean architecture: the domain layer depends on nothing; use cases
@@ -66,7 +66,7 @@ var spec = Spec(func() {
 		archGo: `package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 // Ports & adapters: the domain and core logic sit at the center; HTTP and DB
@@ -110,7 +110,7 @@ var spec = Spec(func() {
 		archGo: `package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 // Domain-Driven Design: bounded contexts under contexts/, each split

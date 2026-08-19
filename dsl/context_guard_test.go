@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 // Regression: calling any builder AFTER a nested Spec() crashed with a

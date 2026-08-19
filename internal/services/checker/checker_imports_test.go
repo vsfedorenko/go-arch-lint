@@ -7,13 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
 )
 
 const (
-	testModulePath = "github.com/vsfedorenko/go-arch-lint/checker/test"
+	testModulePath = "github.com/vsfedorenko/go-arch-lint/v2/checker/test"
 )
 
 func makeTestProjectRoot() string {

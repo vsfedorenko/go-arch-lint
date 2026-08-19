@@ -65,7 +65,7 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 		}
 	}
 
-	goMod := fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint v0.0.0\n\nreplace github.com/vsfedorenko/go-arch-lint => %s\n",
+	goMod := fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint/v2 v2.0.0-dev\n\nreplace github.com/vsfedorenko/go-arch-lint/v2 => %s\n",
 		strings.Join(graphLines, "\n"), repoRoot)
 
 	files := map[string]string{
@@ -112,7 +112,7 @@ func offlineGoMod(t *testing.T, repoRoot string) string {
 		}
 	}
 
-	return fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint v0.0.0\n\nreplace github.com/vsfedorenko/go-arch-lint => %s\n",
+	return fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint/v2 v2.0.0-dev\n\nreplace github.com/vsfedorenko/go-arch-lint/v2 => %s\n",
 		strings.Join(graphLines, "\n"), repoRoot)
 }
 
@@ -163,8 +163,8 @@ func parseChildExitCode(stderr string, fallback int) int {
 const archOKTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func main() {
@@ -196,8 +196,8 @@ func main() {
 const archWarningsTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func main() {
@@ -231,8 +231,8 @@ func main() {
 const archInvalidSpecTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func main() {
@@ -257,8 +257,8 @@ func main() {
 const archSARIFTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func main() {
@@ -388,8 +388,8 @@ type sarifLog struct {
 const archJUnitTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint"
-	. "github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/vsfedorenko/go-arch-lint
+module github.com/vsfedorenko/go-arch-lint/v2
 
 go 1.25.0
 

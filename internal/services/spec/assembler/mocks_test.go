@@ -6,8 +6,8 @@ package assembler
 
 import (
 	mock "github.com/stretchr/testify/mock"
-	"github.com/vsfedorenko/go-arch-lint/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
 )
 
 // newMockassembler creates a new instance of mockassembler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

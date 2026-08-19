@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/app/container"
-	"github.com/vsfedorenko/go-arch-lint/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/app/container"
+	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
 )
 
 // RunCheck executes a check driven by an in-process spec. The decoder (which

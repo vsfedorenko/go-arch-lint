@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Module path now matches the major version**: `go.mod` declares
+  `github.com/vsfedorenko/go-arch-lint/v2`. Before this change `go
+  install github.com/vsfedorenko/go-arch-lint@v2.1.0` failed with
+  `module path must match major version`, and worse, `@latest` silently
+  resolved to the old v1.0.0 release (Go's version resolver skips
+  v2+ tags that don't match the module path). Install paths change:
+  - `go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest`
+  - library imports: `github.com/vsfedorenko/go-arch-lint/v2` and
+    `.../v2/dsl`
+  The GitHub repository URL, releases, and Docker images are unchanged.
+  For existing `.go-arch-lint/` scaffolds: update the module require +
+  import lines (one sed) or re-run `go-arch-lint init`.
+
 ### Changed
 - `.mockery.yml` minimized to the essentials: every key whose value
   equals the mockery v3 default (`dir`, `filename`, `structname`,
