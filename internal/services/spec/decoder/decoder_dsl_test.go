@@ -3,11 +3,10 @@ package decoder
 import (
 	"testing"
 
-	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vsfedorenko/go-arch-lint/dsl"
+	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
 // buildSpecThroughDSL assembles a SpecBuilder by running the real DSL
