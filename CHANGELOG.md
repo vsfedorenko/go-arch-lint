@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit suite for the spec decoder (`internal/services/spec/decoder`):
+  coverage 37.3% → 86.6%. The new tests build the SpecBuilder through the
+  REAL DSL functions (same path as a user's arch.go) and decode it back:
+  every block round-trips — options, excludes, vendors, common lists,
+  tiers, deps, interface placement, naming, visibility. Pins the
+  documented defaults (global DeepScan=true, per-component DeepScan=false,
+  IgnoreNotFoundComponents=false) and the defensive-copy contract of
+  Tiers().
+
+### Added
 - Unit suite for the code-snippet renderer
   (`internal/services/render/code`): coverage 24.3% → 91.9%. Pins the
   rendering contracts: empty output for invalid references and missing
