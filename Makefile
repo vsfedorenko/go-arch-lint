@@ -1,3 +1,6 @@
+mocks:
+	mockery
+
 tests:
 	go test ./...
 

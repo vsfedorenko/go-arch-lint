@@ -1,0 +1,38 @@
+all: false
+dir: '{{.InterfaceDir}}'
+filename: mocks_test.go
+force-file-write: true
+formatter: goimports
+formatter-options:
+  goimports:
+    all-errors: false
+    comments: true
+    format-only: true
+    fragment: false
+    local-prefix: ""
+    tab-indent: true
+    tab-width: 8
+generate: true
+include-auto-generated: false
+log-level: info
+structname: '{{.Mock}}{{.InterfaceName}}'
+pkgname: '{{.SrcPackageName}}'
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
+packages:
+  github.com/vsfedorenko/go-arch-lint/internal/app/container:
+    config:
+      all: false
+    interfaces:
+      SpecDecoder:
+  github.com/vsfedorenko/go-arch-lint/internal/services/checker:
+    config:
+      all: false
+    interfaces:
+      SuppressIndex:
+  github.com/vsfedorenko/go-arch-lint/internal/services/spec/assembler:
+    config:
+      all: true
+      filename: mocks_test.go
