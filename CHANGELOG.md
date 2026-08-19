@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Testing stack standardised on testify + mockery: default `.mockery.yml`
+  (testify template, in-package `mocks_test.go`), `make mocks` target,
+  committed generated mocks for SpecDecoder, SuppressIndex and the
+  assembler ports (archDecoder, archValidator, pathResolver, composite
+  assembler). The hand-rolled `fakeSuppressIndex` is replaced by the
+  generated `NewMockSuppressIndex`; suppress-filter tests now assert
+  exact call contracts (HasDirectives once, per-warning
+  IsFileSuppressed → IsLineSuppressed). New assembler orchestration
+  tests (previously 0% coverage): decode-error propagation,
+  scheme-notices short-circuit the validator, nil document stops after
+  validation. CONTRIBUTING documents the convention.
+
 ### Added
 - Unit suite for the spec decoder (`internal/services/spec/decoder`):
   coverage 37.3% → 86.6%. The new tests build the SpecBuilder through the
