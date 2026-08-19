@@ -13,6 +13,12 @@ import (
 // buildSpecThroughDSL assembles a SpecBuilder by running the real DSL
 // functions inside Spec() — the same path a user's arch.go takes. This
 // exercises the builders → decoder bridge, not just hand-filled structs.
+// Component names used across the suite (goconst: 3+ occurrences).
+const (
+	compApp       = "app"
+	compContainer = "container"
+)
+
 func buildSpecThroughDSL(t *testing.T) *dsl.SpecBuilder {
 	t.Helper()
 	def := dsl.Spec(func() {
@@ -26,14 +32,14 @@ func buildSpecThroughDSL(t *testing.T) *dsl.SpecBuilder {
 		dsl.ExcludeFiles(`^.*_test\.go$`, `^mock/.*$`)
 		dsl.Vendor("cobra", "github.com/spf13/cobra")
 		dsl.CommonVendors("cobra")
-		dsl.Component("app", "app")
-		dsl.Component("container", "app/container")
+		dsl.Component(compApp, "app")
+		dsl.Component(compContainer, "app/container")
 		dsl.CommonComponents("models")
 		dsl.Tiers("high", "low")
-		dsl.Tier("high", "app")
-		dsl.Tier("low", "container")
-		dsl.Deps("app", func() {
-			dsl.MayDependOn("container")
+		dsl.Tier("high", compApp)
+		dsl.Tier("low", compContainer)
+		dsl.Deps(compApp, func() {
+			dsl.MayDependOn(compContainer)
 			dsl.CanUse("cobra")
 		})
 		dsl.Interfaces(func() {
@@ -43,7 +49,7 @@ func buildSpecThroughDSL(t *testing.T) *dsl.SpecBuilder {
 			dsl.ForbiddenPackages("utils", "helpers")
 		})
 		dsl.Visibility(func() {
-			dsl.VisibleTo("app", "container")
+			dsl.VisibleTo(compApp, compContainer)
 		})
 	})
 	return def.Builder()
@@ -68,10 +74,10 @@ func TestDecode_FullSpec(t *testing.T) {
 	assert.True(t, containsReferable(doc.CommonVendors(), "cobra"), "common vendors must include cobra")
 
 	comps := doc.Components()
-	assert.Contains(t, comps, "app")
+	assert.Contains(t, comps, compApp)
 	paths := comps["app"].Value.RelativePaths()
 	if assert.Len(t, paths, 1) {
-		assert.Equal(t, "app", string(paths[0]))
+		assert.Equal(t, compApp, string(paths[0]))
 	}
 
 	assert.True(t, containsReferable(doc.CommonComponents(), "models"), "common components must include models")
@@ -79,16 +85,16 @@ func TestDecode_FullSpec(t *testing.T) {
 	tiers := doc.Tiers()
 	if assert.Len(t, tiers, 2) {
 		assert.Equal(t, "high", tiers[0].Name)
-		assert.Equal(t, []string{"app"}, tiers[0].Components)
+		assert.Equal(t, []string{compApp}, tiers[0].Components)
 		assert.Equal(t, "low", tiers[1].Name)
-		assert.Equal(t, []string{"container"}, tiers[1].Components)
+		assert.Equal(t, []string{compContainer}, tiers[1].Components)
 	}
 
 	deps := doc.Dependencies()
-	if assert.Contains(t, deps, "app") {
+	if assert.Contains(t, deps, compApp) {
 		rule := deps["app"].Value
 		assert.Len(t, rule.MayDependOn(), 1)
-		assert.Equal(t, "container", rule.MayDependOn()[0].Value)
+		assert.Equal(t, compContainer, rule.MayDependOn()[0].Value)
 		assert.Equal(t, "cobra", rule.CanUse()[0].Value)
 	}
 
@@ -109,8 +115,8 @@ func TestDecode_FullSpec(t *testing.T) {
 	if assert.NotNil(t, vis) {
 		rules := vis.Rules()
 		if assert.Len(t, rules, 1) {
-			assert.Equal(t, "app", rules[0].Component)
-			assert.Equal(t, []string{"container"}, rules[0].Allowed)
+			assert.Equal(t, compApp, rules[0].Component)
+			assert.Equal(t, []string{compContainer}, rules[0].Allowed)
 		}
 	}
 }
@@ -158,7 +164,7 @@ func TestDecode_TiersAreCopies(t *testing.T) {
 	// (decoder promises defensive copies).
 	tiers[0].Components[0] = "mutated"
 	fresh := doc.Tiers()
-	assert.Equal(t, "app", fresh[0].Components[0], "Tiers() must return defensive copies")
+	assert.Equal(t, compApp, fresh[0].Components[0], "Tiers() must return defensive copies")
 }
 
 func containsReferable(refs []domain.Referable[string], want string) bool {

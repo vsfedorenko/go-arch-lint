@@ -21,12 +21,12 @@ func buildTestSpec() *dsl.SpecBuilder {
 	b.Allow.DepOnAnyVendor = domain.NewEmptyReferable(false)
 	b.Allow.DeepScan = domain.NewEmptyReferable(true)
 	b.Components["main"] = dsl.ComponentEntry{
-		RelativePaths: []string{"app"},
+		RelativePaths: []string{compApp},
 		Reference:     domain.NewReferenceSingleLine("arch.go", 5, 0),
 	}
 	b.Deps["main"] = dsl.DepEntry{
 		MayDependOn: []domain.Referable[string]{
-			{Value: "container", Reference: domain.NewReferenceSingleLine("arch.go", 10, 0)},
+			{Value: compContainer, Reference: domain.NewReferenceSingleLine("arch.go", 10, 0)},
 		},
 		Reference: domain.NewReferenceSingleLine("arch.go", 9, 0),
 	}
@@ -51,7 +51,7 @@ func TestGoSpecDocumentComponents(t *testing.T) {
 	comps := doc.Components()
 	assert.Contains(t, comps, "main")
 	paths := comps["main"].Value.RelativePaths()
-	assert.Equal(t, []models.Glob{"app"}, paths)
+	assert.Equal(t, []models.Glob{models.Glob(compApp)}, paths)
 }
 
 func TestGoSpecDocumentDeps(t *testing.T) {
@@ -61,7 +61,7 @@ func TestGoSpecDocumentDeps(t *testing.T) {
 	assert.Contains(t, deps, "main")
 	rule := deps["main"].Value
 	assert.Len(t, rule.MayDependOn(), 1)
-	assert.Equal(t, "container", rule.MayDependOn()[0].Value)
+	assert.Equal(t, compContainer, rule.MayDependOn()[0].Value)
 }
 
 func TestGoSpecDocumentOptions(t *testing.T) {
