@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Unit suite for the baseline service (`internal/services/baseline`):
+  14 tests, coverage 0% → 92.1%. Pins the contracts the e2e tests exercise
+  only indirectly: fingerprint stability, per-kind constructors, sorted
+  deterministic output, save/load round-trip (incl. missing parent dir and
+  bare filenames), human-readable annotations for every violation kind,
+  missing/broken/unreadable/future-scheme baseline files, known-vs-new
+  comparison, and result filtering with SuppressedCount passthrough.
+
 ### Documentation
 - Refreshed and de-bureaucratized the docs to match the code:
   - README RU/EN scaffold example updated for the arch.go/main.go split
