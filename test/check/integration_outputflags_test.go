@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	archlint "github.com/vsfedorenko/go-arch-lint"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	archlint "github.com/vsfedorenko/go-arch-lint"
 )
 
 // End-to-end contracts for the output flags on the scaffold path — the

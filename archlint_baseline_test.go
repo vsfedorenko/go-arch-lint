@@ -3,11 +3,11 @@ package archlint_test
 import (
 	"testing"
 
-	archlint "github.com/vsfedorenko/go-arch-lint"
-	"github.com/vsfedorenko/go-arch-lint/dsl"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	archlint "github.com/vsfedorenko/go-arch-lint"
+	"github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 // Synthetic baseline-mode contracts (found by probing the freshly merged

@@ -3,10 +3,10 @@ package dsl_test
 import (
 	"testing"
 
-	"github.com/vsfedorenko/go-arch-lint/dsl"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/vsfedorenko/go-arch-lint/dsl"
 )
 
 // Regression: calling any builder AFTER a nested Spec() crashed with a

@@ -3,9 +3,9 @@ package archlint_test
 import (
 	"testing"
 
-	archlint "github.com/vsfedorenko/go-arch-lint"
-
 	"github.com/stretchr/testify/require"
+
+	archlint "github.com/vsfedorenko/go-arch-lint"
 )
 
 // Synthetic probes for OptionsFromFlags with hostile/odd inputs.
