@@ -1,51 +1,50 @@
 package test
 
 import (
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/services/checker/deepscan"
 )
 
-func Test1(t *testing.T) {
-	// assemble
+// The nested fixture module must stay resolvable: its go.mod module path
+// matches the import paths used by its own sources, so the searcher can
+// find cross-package implementations. This is the regression pin for a
+// long-standing rot where the module path drifted from the import paths
+// (leftover from the upstream layout shuffles) and every implementation
+// lookup silently returned zero results.
+func TestFixtureModuleResolvable(t *testing.T) {
 	_, callerDir, _, _ := runtime.Caller(0)
-	fmt.Println("called from: " + callerDir)
-
 	projectDir := filepath.Join(filepath.Dir(callerDir), "project")
-	fmt.Println("project root dir: " + projectDir)
 
 	searcher := deepscan.NewSearcher()
 	criteria, err := deepscan.NewCriteria(
 		deepscan.WithPackagePath(filepath.Join(projectDir, "internal", "operations")),
 		deepscan.WithAnalyseScope(filepath.Join(projectDir, "internal")),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	// act
-	expected := test1Expected()
-	actual, err := searcher.Usages(criteria)
+	methods, err := searcher.Usages(criteria)
+	require.NoError(t, err)
 
-	// assert
-	assert.NoError(t, err)
+	found := false
+	for _, method := range methods {
+		if method.Name != "NewProcessorBasic1" {
+			continue
+		}
 
-	// todo: write tests for this test project
-	_, _ = expected, actual
-	// assert.Equal(t, expected, actual)
-}
-
-func test1Expected() []deepscan.InjectionMethod {
-	return []deepscan.InjectionMethod{
-		{
-			Name:       "hello",
-			Definition: deepscan.Source{},
-			Gates:      nil,
-		},
+		require.Len(t, method.Gates, 1)
+		gate := method.Gates[0]
+		require.Len(t, gate.Implementations, 1)
+		assert.Equal(t, "Memory", gate.Implementations[0].Target.StructName)
+		found = true
 	}
+
+	assert.True(t, found, "NewProcessorBasic1 must be discovered with its repository.Memory injection")
 }
 
 func TestIssue85MultiReturnTuple(t *testing.T) {
@@ -58,9 +57,8 @@ func TestIssue85MultiReturnTuple(t *testing.T) {
 	searcher := deepscan.NewSearcher()
 	criteria, err := deepscan.NewCriteria(
 		deepscan.WithPackagePath(filepath.Join(projectDir, "internal")),
-		deepscan.WithAnalyseScope(projectDir),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = searcher.Usages(criteria)
 	assert.NoError(t, err)
