@@ -17,6 +17,7 @@ import (
 const (
 	flagProjectPath = "--project-path"
 	flagBaseline    = "--baseline"
+	flagHelp        = "--help"
 )
 
 // `go run` does not propagate the child's exit code: any non-zero child exit
@@ -83,7 +84,7 @@ func run() int {
 		return 0
 	case "init":
 		return cmdInit(os.Args[2:])
-	case "help", "--help", "-h":
+	case "help", flagHelp, "-h":
 		printUsage()
 		return 0
 	default:

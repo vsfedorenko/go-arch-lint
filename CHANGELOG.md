@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `init` flag DX (found by synthetic probing of the fresh --recipe
+  feature): `init --help` scaffolded a project instead of showing help;
+  `--recipe` (and `-p`/`--project-path`) without a value silently fell
+  back to the DEFAULT spec — a user who typo'd their recipe invocation
+  got a generic scaffold while believing they had chosen a pattern.
+  Now: `init --help` prints usage (recipes listed, nothing written),
+  value-less flags fail fast with exit 1 naming the flag.
+
+### Fixed
 - Output flags are honored on the scaffold (delegated) path — found by
   probing `check --output-type=json` against the real binary: the flag
   was silently dropped and the check kept printing ASCII. The scaffolded

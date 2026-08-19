@@ -67,30 +67,33 @@ func main() {
 const recipeFlag = "--recipe"
 
 // parseInitArgs extracts --project-path/-p (space and = forms) and --recipe
-// (space and = forms) from init's args. Unknown --recipe values are reported
-// by the caller via recipeHelp; parsing itself never fails.
-func parseInitArgs(args []string) (projectPath, recipe string) {
+// (space and = forms) from init's args. A flag present without its value is
+// an error — silently scaffolding the DEFAULT spec when the user asked for a
+// recipe (but typo'd the invocation) writes the wrong starting point.
+func parseInitArgs(args []string) (projectPath, recipe string, err error) {
 	projectPath = "."
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		switch {
 		case a == "--project-path" || a == "-p":
-			if i+1 < len(args) {
-				projectPath = args[i+1]
-				i++
+			if i+1 >= len(args) {
+				return "", "", fmt.Errorf("%s requires a value (the project directory)", a)
 			}
+			projectPath = args[i+1]
+			i++
 		case strings.HasPrefix(a, "--project-path="):
 			projectPath = strings.TrimPrefix(a, "--project-path=")
 		case a == recipeFlag:
-			if i+1 < len(args) {
-				recipe = args[i+1]
-				i++
+			if i+1 >= len(args) {
+				return "", "", fmt.Errorf("%s requires a value; pick one of the names below", recipeFlag)
 			}
+			recipe = args[i+1]
+			i++
 		case strings.HasPrefix(a, recipeFlag+"="):
 			recipe = strings.TrimPrefix(a, recipeFlag+"=")
 		}
 	}
-	return projectPath, recipe
+	return projectPath, recipe, nil
 }
 
 // recipeHelp renders the known recipes for error/usage output.
@@ -108,8 +111,34 @@ func recipeHelp() string {
 	return b.String()
 }
 
+// printInitUsage explains init's flags without touching the filesystem —
+// `init --help` previously scaffolded a project instead of showing help.
+func printInitUsage() {
+	fmt.Print(`go-arch-lint init — create the .go-arch-lint/ scaffold
+
+Usage:
+  go-arch-lint init [flags]
+
+Flags:
+  --recipe string        starter spec for a known pattern
+  -p, --project-path     project directory (default "./")
+
+` + recipeHelp())
+}
+
 func cmdInit(args []string) int {
-	projectPath, recipe := parseInitArgs(args)
+	for _, a := range args {
+		if a == flagHelp || a == "-h" {
+			printInitUsage()
+			return 0
+		}
+	}
+
+	projectPath, recipe, err := parseInitArgs(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n\n%s", err, recipeHelp())
+		return 1
+	}
 
 	if recipe != "" {
 		archGo, ok := recipeArchGo(recipe)
