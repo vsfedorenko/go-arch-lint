@@ -12,19 +12,18 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
+	require.True(t, ok, "runtime.Caller failed")
 	root := filepath.Join(filepath.Dir(file), "..", "..")
 	abs, err := filepath.Abs(root)
-	if err != nil {
-		t.Fatalf("abs: %v", err)
-	}
+	require.NoError(t, err, "abs")
 	return abs
 }
 
@@ -33,9 +32,7 @@ func testProjectDir(t *testing.T) string {
 	root := repoRoot(t)
 	dir := filepath.Join(root, "test", "check", "project")
 	abs, err := filepath.Abs(dir)
-	if err != nil {
-		t.Fatalf("abs: %v", err)
-	}
+	require.NoError(t, err, "abs")
 	return abs
 }
 
@@ -48,9 +45,7 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 	// never needs to look up intermediate versions over the network — which
 	// would fail under GOPROXY=off in CI.
 	repoGoMod, err := os.ReadFile(filepath.Join(repoRoot, "go.mod"))
-	if err != nil {
-		t.Fatalf("read repo go.mod: %v", err)
-	}
+	require.NoError(t, err, "read repo go.mod")
 
 	// Extract everything after the module/require directives we want to
 	// override: take the `go` line and all require/replace/exclude blocks
@@ -79,18 +74,14 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 	}
 	for name, content := range files {
 		path := filepath.Join(dir, name)
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil { //nolint:gosec // test fixture: generated source files use 0644
-			t.Fatalf("write %s: %v", path, err)
-		}
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o644), "write %s", path) //nolint:gosec // test fixture: generated source files use 0644
 	}
 
 	// Copy the repo's go.sum so checksum verification passes offline.
 	srcSum := filepath.Join(repoRoot, "go.sum")
-	if data, err := os.ReadFile(srcSum); err != nil {
-		t.Fatalf("read repo go.sum: %v", err)
-	} else if err := os.WriteFile(filepath.Join(dir, "go.sum"), data, 0o644); err != nil { //nolint:gosec // test fixture
-		t.Fatalf("write go.sum: %v", err)
-	}
+	data, err := os.ReadFile(srcSum)
+	require.NoError(t, err, "read go.sum")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "go.sum"), data, 0o644), "write go.sum") //nolint:gosec // test fixture
 
 	return dir
 }
@@ -105,9 +96,7 @@ func offlineGoMod(t *testing.T, repoRoot string) string {
 	t.Helper()
 
 	repoGoMod, err := os.ReadFile(filepath.Join(repoRoot, "go.mod"))
-	if err != nil {
-		t.Fatalf("read repo go.mod: %v", err)
-	}
+	require.NoError(t, err, "read repo go.mod")
 
 	lines := strings.Split(string(repoGoMod), "\n")
 	var graphLines []string
@@ -151,7 +140,7 @@ func runArchLint(t *testing.T, dir string) (stdout, stderr string, exitCode int)
 			// so the linter-conventional codes (0/1/2) are observable here.
 			exitCode = parseChildExitCode(errb.String(), exitErr.ExitCode())
 		} else {
-			t.Fatalf("failed to run go run: %v\nstderr: %s", err, errb.String())
+			require.NoError(t, err, "failed to run go run:\nstderr: %s", errb.String())
 		}
 	}
 	return out.String(), errb.String(), exitCode
@@ -338,12 +327,8 @@ func TestCheckCommands(t *testing.T) {
 			stdout, stderr, exitCode := runArchLint(t, dir)
 
 			combined := stdout + stderr
-			if exitCode != tt.wantExit {
-				t.Errorf("exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", exitCode, tt.wantExit, stdout, stderr)
-			}
-			if !strings.Contains(combined, tt.wantOutput) {
-				t.Errorf("output does not contain %q\nstdout:\n%s\nstderr:\n%s", tt.wantOutput, stdout, stderr)
-			}
+			require.Equal(t, tt.wantExit, exitCode, "exit code\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+			assert.Contains(t, combined, tt.wantOutput, "output does not contain\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
 		})
 	}
 }
@@ -359,33 +344,21 @@ func TestCheckSARIFFormat(t *testing.T) {
 	dir := scaffoldArch(t, root, fmt.Sprintf(archSARIFTpl, project))
 
 	stdout, stderr, exitCode := runArchLint(t, dir)
-	if exitCode != 1 {
-		t.Fatalf("exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
-	}
+	require.Equal(t, 1, exitCode, "exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s; stdout:\n%s\nstderr:\n%s", stdout, stderr)
 
 	var log sarifLog
-	if err := json.Unmarshal([]byte(stdout), &log); err != nil {
-		t.Fatalf("stdout is not a SARIF log: %v\nstdout:\n%s", err, stdout)
-	}
-	if log.Version != "2.1.0" {
-		t.Errorf("SARIF version = %q, want 2.1.0", log.Version)
-	}
-	if len(log.Runs) != 1 || len(log.Runs[0].Results) == 0 {
-		t.Fatalf("expected 1 run with results, got %+v\nstdout:\n%s", log.Runs, stdout)
-	}
+	assert.Equal(t, nil, json.Unmarshal([]byte(stdout), &log))
+	assert.Equal(t, "2.1.0", log.Version, "SARIF version")
+	require.Len(t, log.Runs, 1, "expected 1 run\nstdout:\n%s", stdout)
+	require.NotEmpty(t, log.Runs[0].Results, "expected results\nstdout:\n%s", stdout)
 
 	for _, res := range log.Runs[0].Results {
-		if res.RuleID == "" {
-			t.Errorf("result without ruleId: %+v", res)
-		}
+		assert.NotEmpty(t, res.RuleID, "result without ruleId: %+v", res)
 		for _, loc := range res.Locations {
 			uri := loc.PhysicalLocation.ArtifactLocation.URI
-			if uri == "" || strings.HasPrefix(uri, "/") {
-				t.Errorf("artifact URI must be relative, got %q", uri)
-			}
-			if line := loc.PhysicalLocation.Region.StartLine; line < 1 {
-				t.Errorf("startLine must be >= 1, got %d (%s)", line, uri)
-			}
+			assert.NotEmpty(t, uri, "artifact URI must be relative")
+			assert.False(t, strings.HasPrefix(uri, "/"), "artifact URI must be relative, got %q", uri)
+			assert.GreaterOrEqual(t, loc.PhysicalLocation.Region.StartLine, 1, "startLine must be >= 1 (%s)", uri)
 		}
 	}
 }
@@ -482,40 +455,25 @@ func TestCheckJUnitFormat(t *testing.T) {
 	dir := scaffoldArch(t, root, fmt.Sprintf(archJUnitTpl, project))
 
 	stdout, stderr, exitCode := runArchLint(t, dir)
-	if exitCode != 1 {
-		t.Fatalf("exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
-	}
+	require.Equal(t, 1, exitCode, "exit code = %d, want 1 (violations)\nstdout:\n%s\nstderr:\n%s; stdout:\n%s\nstderr:\n%s", stdout, stderr)
 
 	var report junitReport
-	if err := xml.Unmarshal([]byte(stdout), &report); err != nil {
-		t.Fatalf("stdout is not a JUnit report: %v\nstdout:\n%s", err, stdout)
-	}
-	if len(report.Suites) != 1 {
-		t.Fatalf("expected 1 testsuite, got %d\nstdout:\n%s", len(report.Suites), stdout)
-	}
+	assert.Equal(t, nil, xml.Unmarshal([]byte(stdout), &report))
+	require.Len(t, report.Suites, 1, "expected 1 testsuite\nstdout:\n%s", stdout)
 
 	suite := report.Suites[0]
-	if len(suite.Cases) == 0 {
-		t.Fatalf("expected failed testcases, got none\nstdout:\n%s", stdout)
-	}
-	if suite.Tests != len(suite.Cases) {
-		t.Errorf("suite tests = %d, want %d (one per testcase)", suite.Tests, len(suite.Cases))
-	}
-	if suite.Failures == 0 || report.Failures != suite.Failures {
-		t.Errorf("failures must be consistent suite=%d envelope=%d", suite.Failures, report.Failures)
-	}
+	assert.NotEmpty(t, suite.Cases)
+	assert.Equal(t, len(suite.Cases), suite.Tests, "suite tests (one per testcase)")
+	assert.NotZero(t, suite.Failures, "failures must be consistent")
+	assert.Equal(t, suite.Failures, report.Failures, "failures must be consistent suite=%d envelope=%d", suite.Failures, report.Failures)
 
 	for _, tc := range suite.Cases {
-		if tc.Classname == "" {
-			t.Errorf("testcase without classname: %+v", tc)
-		}
-		if tc.Name == "" || strings.HasPrefix(tc.Name, "/") {
-			t.Errorf("testcase name must be a relative file[:line], got %q", tc.Name)
-		}
-		if tc.Failure == nil {
-			t.Errorf("violation testcase must carry a failure: %+v", tc)
-		} else if tc.Failure.Type == "" || tc.Failure.Message == "" {
-			t.Errorf("failure must carry type and message: %+v", tc.Failure)
+		assert.NotEmpty(t, tc.Classname, "testcase without classname: %+v", tc)
+		assert.NotEmpty(t, tc.Name, "testcase name must be a relative file[:line]")
+		assert.False(t, strings.HasPrefix(tc.Name, "/"), "testcase name must be a relative file[:line], got %q", tc.Name)
+		if assert.NotNil(t, tc.Failure, "violation testcase must carry a failure: %+v", tc) {
+			assert.NotEmpty(t, tc.Failure.Type, "failure must carry type and message: %+v", tc.Failure)
+			assert.NotEmpty(t, tc.Failure.Message, "failure must carry type and message: %+v", tc.Failure)
 		}
 	}
 }

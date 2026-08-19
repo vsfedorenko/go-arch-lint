@@ -1,10 +1,10 @@
 package printer
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/logrusorgru/aurora/v3"
+	"github.com/stretchr/testify/assert"
 )
 
 // The color printer is a thin adapter over aurora; the contract worth
@@ -14,12 +14,8 @@ import (
 func TestColorPrinter_ColorsOn(t *testing.T) {
 	cp := NewColorPrinter(aurora.NewAurora(true))
 	out := cp.Red("boom")
-	if !strings.HasPrefix(out, "\x1b[") {
-		t.Fatalf("colors on must emit ANSI escapes, got %q", out)
-	}
-	if !strings.Contains(out, "boom") {
-		t.Fatalf("payload lost: %q", out)
-	}
+	assert.Contains(t, out, "\x1b[", "colors on must emit ANSI escapes")
+	assert.Contains(t, out, "boom", "payload must survive")
 }
 
 func TestColorPrinter_ColorsOff(t *testing.T) {
@@ -34,9 +30,7 @@ func TestColorPrinter_ColorsOff(t *testing.T) {
 		"white":   cp.White,
 		"gray":    cp.Gray,
 	} {
-		if out := fn("plain"); out != "plain" {
-			t.Errorf("%s with colors off must be identity, got %q", name, out)
-		}
+		assert.Equal(t, "plain", fn("plain"), "%s with colors off must be identity", name)
 	}
 }
 
@@ -52,8 +46,6 @@ func TestColorPrinter_ColorsOnAllMethods(t *testing.T) {
 		"white":   cp.White,
 		"gray":    cp.Gray,
 	} {
-		if out := fn("x"); !strings.Contains(out, "\x1b[") {
-			t.Errorf("%s with colors on must emit escapes, got %q", name, out)
-		}
+		assert.Contains(t, fn("x"), "\x1b[", "%s with colors on must emit escapes", name)
 	}
 }

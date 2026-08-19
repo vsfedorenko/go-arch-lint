@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
@@ -35,16 +38,11 @@ func TestToHTMLReport(t *testing.T) {
 
 	report := out.ToHTMLReport("v2.0.1")
 
-	if report.Total != 3 {
-		t.Fatalf("Total = %d, want 3", report.Total)
-	}
-	if report.ToolName != "go-arch-lint" || report.ToolVersion != "v2.0.1" {
-		t.Fatalf("tool header = %s %s, want go-arch-lint v2.0.1", report.ToolName, report.ToolVersion)
-	}
+	assert.Equal(t, 3, report.Total, "Total")
+	assert.Equal(t, "go-arch-lint", report.ToolName, "tool name")
+	assert.Equal(t, "v2.0.1", report.ToolVersion, "tool version")
 
-	if len(report.ByType) != 4 {
-		t.Fatalf("ByType cards = %d, want 4 (dependency, match, deepscan, naming)", len(report.ByType))
-	}
+	require.Len(t, report.ByType, 4, "ByType cards (dependency, match, deepscan, naming)")
 	want := []struct {
 		typ   string
 		label string
@@ -57,25 +55,21 @@ func TestToHTMLReport(t *testing.T) {
 	}
 	for i, w := range want {
 		got := report.ByType[i]
-		if got.Type != w.typ || got.Label != w.label || got.Count != w.count {
-			t.Errorf("ByType[%d] = %+v, want %s/%s/%d", i, got, w.typ, w.label, w.count)
-		}
+		assert.Equal(t, w.typ, got.Type, "ByType[%d].Type", i)
+		assert.Equal(t, w.label, got.Label, "ByType[%d].Label", i)
+		assert.Equal(t, w.count, got.Count, "ByType[%d].Count", i)
 	}
 
-	if report.OmittedCount != 3 || report.SuppressedCount != 2 {
-		t.Errorf("cap counters = %d/%d, want 3/2", report.OmittedCount, report.SuppressedCount)
-	}
+	assert.Equal(t, 3, report.OmittedCount, "OmittedCount")
+	assert.Equal(t, 2, report.SuppressedCount, "SuppressedCount")
 
 	// File paths must be workspace-relative (leading slash stripped),
 	// matching the SARIF/GitHub-Actions convention.
 	for _, row := range report.Rows {
-		if strings.HasPrefix(row.File, "/") {
-			t.Errorf("row file %q must be workspace-relative", row.File)
-		}
+		assert.False(t, strings.HasPrefix(row.File, "/"), "row file %q must be workspace-relative", row.File)
 	}
-	if report.Rows[0].File != htmlFixtureFileRel || report.Rows[0].Line != 10 {
-		t.Errorf("first row = %+v, want %s:10", report.Rows[0], htmlFixtureFileRel)
-	}
+	assert.Equal(t, htmlFixtureFileRel, report.Rows[0].File, "first row file")
+	assert.Equal(t, 10, report.Rows[0].Line, "first row line")
 }
 
 // TestToHTMLReport_CleanProject verifies the zero-violation report keeps
@@ -83,16 +77,11 @@ func TestToHTMLReport(t *testing.T) {
 func TestToHTMLReport_CleanProject(t *testing.T) {
 	report := CmdCheckOut{ModuleName: "m"}.ToHTMLReport("dev")
 
-	if report.Total != 0 || len(report.Rows) != 0 {
-		t.Fatalf("clean project must have zero rows, got %+v", report)
-	}
-	if len(report.ByType) != 4 {
-		t.Fatalf("ByType cards = %d, want 4", len(report.ByType))
-	}
+	assert.Equal(t, 0, report.Total, "clean project total")
+	assert.Empty(t, report.Rows, "clean project must have zero rows")
+	require.Len(t, report.ByType, 4)
 	for _, c := range report.ByType {
-		if c.Count != 0 {
-			t.Errorf("clean project count for %s = %d, want 0", c.Type, c.Count)
-		}
+		assert.Equal(t, 0, c.Count, "clean project count for %s", c.Type)
 	}
 }
 
@@ -101,7 +90,5 @@ func TestToHTMLReport_CleanProject(t *testing.T) {
 // drops), mirroring the SARIF/JUnit fallback behavior.
 func TestToHTMLReport_UnknownTypeSurfaces(t *testing.T) {
 	v := Violation{Type: "future-kind", File: "/a.go", Rule: "some rule"}
-	if got := htmlTypeLabel(v.Type); got != "future-kind" {
-		t.Fatalf("unknown type label = %q, want the raw type", got)
-	}
+	assert.Equal(t, "future-kind", htmlTypeLabel(v.Type), "unknown type label must be the raw type")
 }

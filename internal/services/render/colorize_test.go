@@ -1,6 +1,11 @@
 package render
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 // TestColorize_Dispatch verifies every supported color paints through the
 // printer and unknown colors surface as errors (template typos must not
@@ -11,17 +16,12 @@ func TestColorize_Dispatch(t *testing.T) {
 
 	for _, color := range []string{"red", "green", "yellow", "blue", "magenta", "cyan", "gray"} {
 		out, err := c.colorize(color, "x")
-		if err != nil {
-			t.Fatalf("colorize(%q): %v", color, err)
-		}
-		if out != "x" {
-			t.Fatalf("colorize(%q) = %q, want %q", color, out, "x")
-		}
+		require.NoError(t, err, "colorize(%q)", color)
+		assert.Equal(t, "x", out, "colorize(%q)", color)
 	}
 
-	if _, err := c.colorize("chartreuse", "x"); err == nil {
-		t.Fatal("expected error for unknown color")
-	}
+	_, err := c.colorize("chartreuse", "x")
+	require.Error(t, err, "expected error for unknown color")
 }
 
 // passthroughPrinter satisfies colorPrinter; every method returns its

@@ -6,6 +6,9 @@ import (
 	"os/exec"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // exitErrorWith builds a real *exec.ExitError by running the test binary's
@@ -15,9 +18,7 @@ import (
 func exitErrorWithCode(t *testing.T, code int) *exec.ExitError {
 	t.Helper()
 
-	if code == 0 {
-		t.Fatal("code 0 never produces an ExitError")
-	}
+	require.NotEqual(t, 0, code, "code 0 never produces an ExitError")
 
 	// Re-run this very test binary as a child with GO_HELPER_EXIT set: the
 	// TestMain-free trick below uses -test.run to select a helper test that
@@ -28,9 +29,7 @@ func exitErrorWithCode(t *testing.T, code int) *exec.ExitError {
 	err := cmd.Run()
 
 	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) {
-		t.Fatalf("expected ExitError for code %d, got %v", code, err)
-	}
+	require.True(t, errors.As(err, &exitErr), "expected ExitError for code %d, got ")
 	return exitErr
 }
 
@@ -98,9 +97,7 @@ func TestDelegatedExitCode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := delegatedExitCode(tt.errGen(t), tt.stderr)
-			if got != tt.want {
-				t.Errorf("delegatedExitCode() = %d, want %d", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got, "delegatedExitCode()")
 		})
 	}
 }
@@ -128,10 +125,8 @@ func TestChildExitStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			code, ran := childExitStatus(tt.stderr)
-			if code != tt.wantCode || ran != tt.wantRan {
-				t.Errorf("childExitStatus(%q) = (%d, %v), want (%d, %v)",
-					tt.stderr, code, ran, tt.wantCode, tt.wantRan)
-			}
+			assert.Equal(t, tt.wantCode, code, "childExitStatus(%q) code", tt.stderr)
+			assert.Equal(t, tt.wantRan, ran, "childExitStatus(%q) ran", tt.stderr)
 		})
 	}
 }

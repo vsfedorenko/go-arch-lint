@@ -121,9 +121,8 @@ func Test_checkImportPath(t *testing.T) {
 				AllowedProjectImports: tt.args.componentImports,
 			}
 
-			if got := checkProjectImport(cmp, tt.args.resolvedImport); got != tt.want {
-				t.Errorf("checkImportPath() = %v, want %v", got, tt.want)
-			}
+			got := checkProjectImport(cmp, tt.args.resolvedImport)
+			assert.Equal(t, tt.want, got, "checkImportPath()")
 		})
 	}
 }
@@ -260,9 +259,8 @@ func Test_checkProjectImport(t *testing.T) {
 				AllowedProjectImports: tt.args.componentImports,
 			}
 
-			if got := checkProjectImport(cmp, tt.args.resolvedImport); got != tt.want {
-				t.Errorf("checkProjectImport() = %v, want %v", got, tt.want)
-			}
+			got := checkProjectImport(cmp, tt.args.resolvedImport)
+			assert.Equal(t, tt.want, got, "checkProjectImport()")
 		})
 	}
 }
@@ -408,17 +406,13 @@ func TestChecker_checkImport(t *testing.T) {
 	}
 
 	t.Run("check unknown import type", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("The code did not panic")
+		assert.Panics(t, func() {
+			resolvedImport := models.ResolvedImport{
+				Name:       "something",
+				ImportType: 100,
 			}
-		}()
 
-		resolvedImport := models.ResolvedImport{
-			Name:       "something",
-			ImportType: 100,
-		}
-
-		_, _ = checkImport(cmp, resolvedImport, false)
+			_, _ = checkImport(cmp, resolvedImport, false)
+		})
 	})
 }

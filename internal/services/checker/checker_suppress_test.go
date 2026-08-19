@@ -209,16 +209,18 @@ func TestSuppressFilter_DeepscanWarningByInjectionSite(t *testing.T) {
 func TestRuleTarget_PlainImportNotRewritten(t *testing.T) {
 	// A plain component name (no rule markers) must NOT be treated as a
 	// rule target — the import path is used instead.
-	if _, ok := ruleTarget("alpha"); ok {
-		t.Fatal("plain component name must not extract a rule target")
-	}
-	if name, ok := ruleTarget("alpha -> " + tcBetaNm + " (cycle: alpha -> " + tcBetaNm + " -> alpha)"); !ok || name != tcBetaNm {
-		t.Fatalf("cycle rule target = %q, %v; want %s, true", name, ok, tcBetaNm)
-	}
-	if name, ok := ruleTarget("alpha may not consume '" + tcBetaNm + "' (restricted API)"); !ok || name != tcBetaNm {
-		t.Fatalf("visibility rule target = %q, %v; want %s, true", name, ok, tcBetaNm)
-	}
-	if name, ok := ruleTarget("interface 'View' must live with its consumer '" + tcBetaNm + "' (declared in component 'gamma')"); !ok || name != tcBetaNm {
-		t.Fatalf("placement rule target = %q, %v; want %s, true", name, ok, tcBetaNm)
-	}
+	_, ok := ruleTarget("alpha")
+	assert.False(t, ok, "plain component name must not extract a rule target")
+
+	name, ok := ruleTarget("alpha -> " + tcBetaNm + " (cycle: alpha -> " + tcBetaNm + " -> alpha)")
+	assert.True(t, ok, "cycle rule target must be extracted")
+	assert.Equal(t, tcBetaNm, name, "cycle rule target")
+
+	name, ok = ruleTarget("alpha may not consume '" + tcBetaNm + "' (restricted API)")
+	assert.True(t, ok, "visibility rule target must be extracted")
+	assert.Equal(t, tcBetaNm, name, "visibility rule target")
+
+	name, ok = ruleTarget("interface 'View' must live with its consumer '" + tcBetaNm + "' (declared in component 'gamma')")
+	assert.True(t, ok, "placement rule target must be extracted")
+	assert.Equal(t, tcBetaNm, name, "placement rule target")
 }

@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
@@ -19,27 +22,21 @@ func writeTempFile(t *testing.T, lines ...string) string {
 	t.Helper()
 	path := t.TempDir() + "/snippet.go"
 	content := strings.Join(lines, "\n") + "\n"
-	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	return path
 }
 
 func TestSourceCode_InvalidReferenceIsEmpty(t *testing.T) {
 	r := NewRender(stubPrinter{})
 	out := r.SourceCode(domain.Reference{}, false, false)
-	if len(out) != 0 {
-		t.Fatalf("invalid reference must render nothing, got %q", out)
-	}
+	assert.Empty(t, out, "invalid reference must render nothing")
 }
 
 func TestSourceCode_MissingFileIsEmpty(t *testing.T) {
 	r := NewRender(stubPrinter{})
 	ref := domain.NewReferenceRange("/definitely/not/a/file.go", 1, 1, 1)
 	out := r.SourceCode(ref, false, false)
-	if len(out) != 0 {
-		t.Fatalf("missing file must render nothing, got %q", out)
-	}
+	assert.Empty(t, out, "missing file must render nothing")
 }
 
 func TestSourceCode_RendersRangeWithLineNumbers(t *testing.T) {
@@ -50,21 +47,13 @@ func TestSourceCode_RendersRangeWithLineNumbers(t *testing.T) {
 	ref := domain.NewReferenceRange(path, 2, 2, 3)
 	out := string(r.SourceCode(ref, false, false))
 
-	if !strings.Contains(out, "beta") || !strings.Contains(out, "gamma") {
-		t.Fatalf("range lines missing in output: %q", out)
-	}
-	if !strings.Contains(out, "delta") == false {
-		// "delta" must NOT be present (line 4 is outside the range)
-		if strings.Contains(out, "delta") {
-			t.Fatalf("line outside range leaked into output: %q", out)
-		}
-	}
-	if !strings.Contains(out, "2 |") || !strings.Contains(out, "3 |") {
-		t.Fatalf("line numbers missing: %q", out)
-	}
-	if !strings.Contains(out, "> ") {
-		t.Fatalf("pointer marker missing for the violation line: %q", out)
-	}
+	assert.Contains(t, out, "beta", "range lines missing in output")
+	assert.Contains(t, out, "gamma", "range lines missing in output")
+	// "delta" must NOT be present (line 4 is outside the range)
+	assert.NotContains(t, out, "delta", "line outside range leaked into output")
+	assert.Contains(t, out, "2 |", "line numbers missing")
+	assert.Contains(t, out, "3 |", "line numbers missing")
+	assert.Contains(t, out, "> ", "pointer marker missing for the violation line")
 }
 
 func TestSourceCode_PointerOnlyOnViolationLine(t *testing.T) {
@@ -80,9 +69,7 @@ func TestSourceCode_PointerOnlyOnViolationLine(t *testing.T) {
 			markers++
 		}
 	}
-	if markers != 1 {
-		t.Fatalf("exactly one pointer marker expected, got %d in %q", markers, out)
-	}
+	assert.Equal(t, 1, markers, "exactly one pointer marker expected in ")
 }
 
 func TestSourceCode_ColumnPointer(t *testing.T) {
@@ -91,9 +78,7 @@ func TestSourceCode_ColumnPointer(t *testing.T) {
 	ref := domain.NewReferenceRange(path, 1, 1, 1)
 
 	out := string(r.SourceCode(ref, false, true))
-	if !strings.Contains(out, "^") {
-		t.Fatalf("column caret missing: %q", out)
-	}
+	assert.Contains(t, out, "^", "column caret missing")
 }
 
 func TestSourceCode_TabsReplacedWithSpaces(t *testing.T) {
@@ -102,12 +87,9 @@ func TestSourceCode_TabsReplacedWithSpaces(t *testing.T) {
 	ref := domain.NewReferenceRange(path, 1, 1, 1)
 
 	out := string(r.SourceCode(ref, false, false))
-	if strings.Contains(out, "\t|") || strings.Contains(out, "|\t") {
-		t.Fatalf("raw tab leaked into rendered output: %q", out)
-	}
-	if !strings.Contains(out, "indented()") {
-		t.Fatalf("content missing: %q", out)
-	}
+	assert.NotContains(t, out, "\t|", "raw tab leaked into rendered output")
+	assert.NotContains(t, out, "|\t", "raw tab leaked into rendered output")
+	assert.Contains(t, out, "indented()", "content missing")
 }
 
 func TestSourceCode_ReferenceClampedToRealLines(t *testing.T) {
@@ -118,9 +100,7 @@ func TestSourceCode_ReferenceClampedToRealLines(t *testing.T) {
 	ref := domain.NewReferenceRange(path, 5, 5, 9)
 
 	out := string(r.SourceCode(ref, false, false))
-	if strings.Contains(out, "first") {
-		t.Fatalf("clamped render must not include earlier lines: %q", out)
-	}
+	assert.NotContains(t, out, "first", "clamped render must not include earlier lines")
 }
 
 func TestSourceCode_HighlightPath(t *testing.T) {
@@ -134,9 +114,7 @@ func TestSourceCode_HighlightPath(t *testing.T) {
 	// chroma interleaves ANSI escapes inside the tokens themselves — strip
 	// them before asserting on the visible text.
 	plain := ansiRe.ReplaceAllString(out, "")
-	if !strings.Contains(plain, "func main() {}") {
-		t.Fatalf("highlighted content missing: %q", plain)
-	}
+	assert.Contains(t, plain, "func main() {}", "highlighted content missing")
 }
 
 var ansiRe = regexp.MustCompile("\x1b\\[[0-9;]*m")

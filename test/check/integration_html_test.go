@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // The HTML report format: a standalone, self-contained document emitted
@@ -59,37 +62,23 @@ func TestCheckHTMLFormat(t *testing.T) {
 	dir := scaffoldArch(t, root, fmt.Sprintf(archHTMLTpl, project))
 
 	stdout, stderr, exitCode := runArchLint(t, dir)
-	if exitCode != 1 {
-		t.Fatalf("exit code = %d, want 1 (violations found)\nstdout:\n%s\nstderr:\n%s", exitCode, stdout, stderr)
-	}
+	require.Equal(t, 1, exitCode, "exit code = %d, want 1 (violations found)\nstdout:\n%s\nstderr:\n%s; stderr:\n%s", stderr)
 
-	if !strings.HasPrefix(strings.TrimSpace(stdout), "<!DOCTYPE html>") {
-		t.Fatalf("output must be an HTML document, got: %.120s", stdout)
-	}
+	require.True(t, strings.HasPrefix(strings.TrimSpace(stdout), "<!DOCTYPE html>"), "output must be an HTML document, got: %.120s", stdout)
 
 	// Identity: tool name in the header.
-	if !strings.Contains(stdout, "go-arch-lint") {
-		t.Errorf("report must identify the tool, got:\n%s", stdout)
-	}
+	assert.Contains(t, stdout, "go-arch-lint", "report must identify the tool")
 
 	// Violation content: the fixture project has dependency violations
 	// (a→b forbidden etc.) — the table must reference internal/ files.
-	if !strings.Contains(stdout, "internal/") {
-		t.Errorf("violation table must reference project files, got:\n%s", stdout)
-	}
+	assert.Contains(t, stdout, "internal/", "violation table must reference project files")
 
 	// Structure: one table with the file column markup.
-	if !strings.Contains(stdout, "<table>") {
-		t.Errorf("report must contain the violation table, got:\n%s", stdout)
-	}
-	if !strings.Contains(stdout, `<td class="file">`) {
-		t.Errorf("report must use the file column markup, got:\n%s", stdout)
-	}
+	assert.Contains(t, stdout, "<table>", "report must contain the violation table")
+	assert.Contains(t, stdout, `<td class="file">`, "report must use the file column markup")
 
 	// html/template guarantees no raw script markup can survive.
-	if strings.Contains(stdout, "<script>") {
-		t.Errorf("unescaped script tag in report:\n%s", stdout)
-	}
+	assert.NotContains(t, stdout, "<script>", "unescaped script tag in report")
 }
 
 // TestCheckHTMLFormat_WeirdPaths pins the escaping contract on paths with
@@ -98,23 +87,15 @@ func TestCheckHTMLFormat(t *testing.T) {
 // dropped) and the document stays well-formed.
 func TestCheckHTMLFormat_WeirdPaths(t *testing.T) {
 	stdout, exitCode := runWeirdFormat(t, "html")
-	if exitCode != 1 {
-		t.Fatalf("exit code = %d, want 1\nstdout:\n%s", exitCode, stdout)
-	}
+	require.Equal(t, 1, exitCode, "exit code = %d, want 1\nstdout:\n%s")
 
-	if !strings.HasPrefix(strings.TrimSpace(stdout), "<!DOCTYPE html>") {
-		t.Fatalf("output must be an HTML document, got: %.120s", stdout)
-	}
+	require.True(t, strings.HasPrefix(strings.TrimSpace(stdout), "<!DOCTYPE html>"), "output must be an HTML document, got: %.120s", stdout)
 
 	// The weird directory must appear in the report — otherwise the
 	// violation was silently dropped. html/template keeps spaces and
 	// colons readable as plain text.
-	if !strings.Contains(stdout, weirdDirName) {
-		t.Errorf("weird directory name must be present in the report, got:\n%s", stdout)
-	}
+	assert.Contains(t, stdout, weirdDirName, "weird directory name must be present in the report")
 
 	// A well-formed document has exactly one table.
-	if strings.Count(stdout, "<table>") != 1 {
-		t.Errorf("exactly one violation table expected, got %d\n%s", strings.Count(stdout, "<table>"), stdout)
-	}
+	assert.Equal(t, 1, strings.Count(stdout, "<table>"), "exactly one violation table expected")
 }

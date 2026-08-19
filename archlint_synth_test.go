@@ -1,10 +1,11 @@
 package archlint_test
 
 import (
-	"strings"
 	"testing"
 
 	archlint "github.com/vsfedorenko/go-arch-lint"
+
+	"github.com/stretchr/testify/require"
 )
 
 // Synthetic probes for OptionsFromFlags with hostile/odd inputs.
@@ -41,31 +42,21 @@ func TestOptionsFromFlags_SyntheticHostile(t *testing.T) {
 // silently dropped (same class as the --output-color=false bug).
 func TestOptionsFromFlags_EqualsForm(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{"--project-path=/tmp/x", flFormatJSON})
-	if len(opts) != 2 {
-		t.Fatalf("equals form must parse both flags, got %d options", len(opts))
-	}
+	require.Len(t, opts, 2, "equals form must parse both flags")
 
-	if got := archlint.OptionsFromFlags([]string{"--max-warnings=7"}); len(got) != 1 {
-		t.Fatalf("equals form max-warnings must parse, got %d options", len(got))
-	}
+	got := archlint.OptionsFromFlags([]string{"--max-warnings=7"})
+	require.Len(t, got, 1, "equals form max-warnings must parse")
 }
 
 // Space form still wins over equals when both appear (first match).
 func TestOptionsFromFlags_SpaceAndEqualsMixed(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{flFormat, "sarif", flFormatJSON})
-	if len(opts) != 1 {
-		t.Fatalf("first occurrence must win, got %d options", len(opts))
-	}
+	require.Len(t, opts, 1, "first occurrence must win")
 }
 
 // --max-warnings overflow must not silently become a wild value.
 func TestOptionsFromFlags_MaxWarningsOverflow(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{flMaxWarnings, "99999999999999999999"})
 	// strconv.Atoi fails on overflow -> flag dropped silently.
-	if len(opts) != 0 {
-		t.Fatalf("overflow max-warnings must be dropped, got %d options", len(opts))
-	}
-	if len(opts) == 0 && !strings.HasPrefix("ok", "ok") {
-		t.Fatal("unreachable")
-	}
+	require.Len(t, opts, 0, "overflow max-warnings must be dropped")
 }

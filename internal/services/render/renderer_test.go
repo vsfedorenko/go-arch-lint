@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
@@ -66,34 +69,28 @@ func TestRenderModel_FormatJSON_CheckOut(t *testing.T) {
 	// UserSpaceError is expected: it means "violations found". RenderModel
 	// renders the model AND returns the error for exit-code mapping.
 	if err := r.RenderModel(out, models.NewUserSpaceError("check not successful")); err != nil {
-		if !models.IsUserSpaceError(err) {
-			t.Fatalf("RenderModel: unexpected error: %v", err)
-		}
+		require.True(t, models.IsUserSpaceError(err), "RenderModel: unexpected error: %v", err)
 	}
 
 	// Output should be a JSON array (not the wrapped {Type, Payload} object)
 	output := strings.TrimSpace(buf.String())
-	assertTrue(t, strings.HasPrefix(output, "["), "expected JSON array, got: %s", firstRunes(output, 40))
+	assert.True(t, strings.HasPrefix(output, "["), "expected JSON array, got: %s", firstRunes(output, 40))
 
 	var violations []models.Violation
-	if err := json.Unmarshal([]byte(output), &violations); err != nil {
-		t.Fatalf("failed to unmarshal JSON array: %v\noutput: %s", err, output)
-	}
+	require.NoError(t, json.Unmarshal([]byte(output), &violations), "failed to unmarshal JSON array\noutput: %s", output)
 
-	assertTrue(t, len(violations) == 2, "expected 2 violations, got %d", len(violations))
-	assertEquals(t, "dependency", violations[0].Type)
-	assertEquals(t, "match", violations[1].Type)
+	assert.Len(t, violations, 2, "violations")
+	assert.Equal(t, "dependency", violations[0].Type)
+	assert.Equal(t, "match", violations[1].Type)
 }
 
 func TestRenderModel_FormatJSON_EmptyViolations(t *testing.T) {
 	// When there are no violations, the JSON array should be "[]" (not null).
 	r, buf := newTestRenderer(t, models.FormatJSON)
 
-	if err := r.RenderModel(models.CmdCheckOut{}, nil); err != nil {
-		t.Fatalf("RenderModel: %v", err)
-	}
+	require.NoError(t, r.RenderModel(models.CmdCheckOut{}, nil))
 
-	assertEquals(t, "[]", strings.TrimSpace(buf.String()))
+	assert.Equal(t, "[]", strings.TrimSpace(buf.String()))
 }
 
 func TestRenderModel_FormatText_FallsBackToASCII(t *testing.T) {
@@ -103,8 +100,8 @@ func TestRenderModel_FormatText_FallsBackToASCII(t *testing.T) {
 	r, _ := newTestRenderer(t, models.FormatText)
 
 	err := r.RenderModel(models.CmdCheckOut{}, nil)
-	assertTrue(t, err != nil, "expected error from missing ASCII template")
-	assertContains(t, err.Error(), "not exist")
+	require.Error(t, err, "expected error from missing ASCII template")
+	assert.Contains(t, err.Error(), "not exist")
 }
 
 func TestNewRenderer_DefaultsToStdout(t *testing.T) {
@@ -116,36 +113,13 @@ func TestNewRenderer_DefaultsToStdout(t *testing.T) {
 		models.FormatJSON,
 		map[string]string{},
 	)
-	assertEquals(t, models.FormatJSON, r.format)
-	assertEquals(t, models.OutputTypeJSON, r.outputType)
-	assertTrue(t, r.outputJSONOneLine, "expected one-line JSON to be true")
-	if r.out == nil {
-		t.Error("expected default renderer to write to os.Stdout (non-nil out)")
-	}
+	assert.Equal(t, models.FormatJSON, r.format)
+	assert.Equal(t, models.OutputTypeJSON, r.outputType)
+	assert.True(t, r.outputJSONOneLine, "expected one-line JSON to be true")
+	assert.NotNil(t, r.out, "expected default renderer to write to os.Stdout (non-nil out)")
 }
 
 // --- minimal assertion helpers (avoid extra deps churn) ---
-
-func assertTrue(t *testing.T, cond bool, format string, args ...any) {
-	t.Helper()
-	if !cond {
-		t.Errorf(format, args...)
-	}
-}
-
-func assertEquals[T comparable](t *testing.T, want, got T) {
-	t.Helper()
-	if want != got {
-		t.Errorf("want %v, got %v", want, got)
-	}
-}
-
-func assertContains(t *testing.T, s, substr string) {
-	t.Helper()
-	if !strings.Contains(s, substr) {
-		t.Errorf("expected %q to contain %q", s, substr)
-	}
-}
 
 func firstRunes(s string, n int) string {
 	if len(s) < n {

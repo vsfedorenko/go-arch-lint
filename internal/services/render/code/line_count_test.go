@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_lineCounter(t *testing.T) {
@@ -28,13 +30,8 @@ func Test_lineCounter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := lineCounter(tt.args.r)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("lineCounter() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("lineCounter() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.wantErr, err != nil, "lineCounter() error = %v, wantErr ")
+			assert.Equal(t, tt.want, got, "lineCounter() got")
 		})
 	}
 }

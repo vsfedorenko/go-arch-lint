@@ -5,6 +5,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
 
@@ -29,9 +31,8 @@ func Test_readLines(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := readLines(tt.args.r, tt.args.ref); string(got) != string(tt.want) {
-				t.Errorf("readLines() = %v, want %v", string(got), string(tt.want))
-			}
+			got := readLines(tt.args.r, tt.args.ref)
+			assert.Equal(t, string(tt.want), string(got), "readLines()")
 		})
 	}
 }

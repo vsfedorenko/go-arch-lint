@@ -11,6 +11,9 @@ import (
 	archlint "github.com/vsfedorenko/go-arch-lint"
 	"github.com/vsfedorenko/go-arch-lint/dsl"
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Flag spellings shared across the flag tests (goconst).
@@ -33,9 +36,7 @@ const (
 
 func TestOptionsFromFlags_empty(t *testing.T) {
 	opts := archlint.OptionsFromFlags(nil)
-	if len(opts) != 0 {
-		t.Fatalf("no args must yield no options, got %d", len(opts))
-	}
+	require.Len(t, opts, 0, "no args must yield no options")
 }
 
 func TestOptionsFromFlags_full_surface(t *testing.T) {
@@ -46,25 +47,19 @@ func TestOptionsFromFlags_full_surface(t *testing.T) {
 		flNoColors,
 		flFormat, tcJSON,
 	})
-	if len(opts) != 4 {
-		t.Fatalf("expected 4 options, got %d", len(opts))
-	}
+	require.Len(t, opts, 4, "expected 4 options")
 }
 
 func TestOptionsFromFlags_short_project_path(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{"-p", "/x"})
-	if len(opts) != 1 {
-		t.Fatalf("expected 1 option, got %d", len(opts))
-	}
+	require.Len(t, opts, 1, "expected 1 option")
 }
 
 func TestOptionsFromFlags_ignores_unknown(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{
 		"--verbose", // not part of the scaffold surface
 	})
-	if len(opts) != 0 {
-		t.Fatalf("unknown flags must be ignored, got %d options", len(opts))
-	}
+	require.Len(t, opts, 0, "unknown flags must be ignored")
 }
 
 // The scaffold path must honor the output flags the launcher documents as
@@ -87,9 +82,7 @@ func TestOptionsFromFlags_output_type(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			opts := archlint.OptionsFromFlags(tc.args)
-			if len(opts) != tc.wantOpts {
-				t.Fatalf("expected %d options, got %d", tc.wantOpts, len(opts))
-			}
+			require.Len(t, opts, tc.wantOpts, "expected %d options", tc.wantOpts)
 			if tc.wantOutput == "" {
 				return
 			}
@@ -104,9 +97,7 @@ func TestOptionsFromFlags_output_type(t *testing.T) {
 
 func TestOptionsFromFlags_json_one_line(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{"--output-json-one-line"})
-	if len(opts) != 1 {
-		t.Fatalf("expected 1 option, got %d", len(opts))
-	}
+	require.Len(t, opts, 1, "expected 1 option")
 }
 
 // captureStdout swaps os.Stdout for a pipe, runs fn, and returns what was
@@ -117,9 +108,7 @@ func captureStdout(t *testing.T, fn func()) string {
 
 	old := os.Stdout
 	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	os.Stdout = w
 
 	done := make(chan string)
@@ -144,12 +133,8 @@ func oneComponentProject(t *testing.T) string {
 	root := t.TempDir()
 	write := func(rel, content string) {
 		path := filepath.Join(root, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	}
 	write("go.mod", "module example.com/outtype\n\ngo 1.25\n")
 	write("internal/core/a.go", "package core\n")
@@ -181,19 +166,13 @@ func TestRun_OutputTypeJSON_renders_wrapper_model(t *testing.T) {
 		)
 	})
 
-	if runErr != nil {
-		t.Fatalf("clean project must pass, got %v", runErr)
-	}
+	require.NoError(t, runErr, "clean project must pass, got ")
 
 	var wrapper struct {
 		Type string `json:"Type"`
 	}
-	if err := json.Unmarshal([]byte(strings.TrimSpace(out)), &wrapper); err != nil {
-		t.Fatalf("output-type=json must render a JSON wrapper, got %q: %v", out, err)
-	}
-	if wrapper.Type == "" {
-		t.Fatalf("wrapper must carry a Type field, got %q", out)
-	}
+	assert.Equal(t, nil, json.Unmarshal([]byte(strings.TrimSpace(out)), &wrapper))
+	require.NotEmpty(t, wrapper.Type, "wrapper must carry a Type field, got %q", out)
 }
 
 // TestRun_OneLineJSON_compact_output pins the one-line rendering: exactly
@@ -211,12 +190,8 @@ func TestRun_OneLineJSON_compact_output(t *testing.T) {
 	})
 
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
-	if len(lines) != 1 {
-		t.Fatalf("one-line JSON must be a single line, got %d: %q", len(lines), out)
-	}
-	if strings.Contains(lines[0], "\n") || strings.HasPrefix(strings.TrimSpace(lines[0]), "{\n") {
-		t.Fatalf("one-line JSON must not be indented: %q", lines[0])
-	}
+	require.Len(t, lines, 1, "one-line JSON must be a single line, got %d: %q", len(lines), out)
+	assert.False(t, strings.HasPrefix(lines[0], " {"), "one-line JSON must not be indented: ")
 }
 
 // TestRun_OneLineWithoutJSON_is_config_error pins the fail-fast contract:
@@ -230,26 +205,18 @@ func TestRun_OneLineWithoutJSON_is_config_error(t *testing.T) {
 		archlint.WithColors(false),
 		archlint.WithOutputJSONOneLine(),
 	)
-	if err == nil {
-		t.Fatal("one-line without json output must fail")
-	}
-	if archlint.ExitCode(err) != archlint.ExitCodeConfigError {
-		t.Fatalf("must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
-	}
-	if !strings.Contains(err.Error(), "--output-json-one-line") {
-		t.Fatalf("error must name the flag and the fix: %v", err)
-	}
+	require.Error(t, err)
+	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
+	assert.Contains(t, err.Error(), "--output-json-one-line", "error must name the flag and the fix: ")
 
 	// The same flag with json output is fine (covered above) — and so is
 	// the --format json (flat array) spelling: compacting a flat JSON
 	// array is meaningful.
-	if err := archlint.Run(oneComponentSpec(),
+	require.NoError(t, archlint.Run(oneComponentSpec(),
 		archlint.WithProjectPath(root),
 		archlint.WithFormat(models.FormatJSON),
 		archlint.WithOutputJSONOneLine(),
-	); err != nil {
-		t.Fatalf("one-line with --format json must be accepted, got %v", err)
-	}
+	), "one-line with --format json must be accepted, got")
 }
 
 // TestRun_UnknownOutputType_is_config_error pins the validation of the
@@ -261,19 +228,14 @@ func TestRun_UnknownOutputType_is_config_error(t *testing.T) {
 		archlint.WithProjectPath(root),
 		archlint.WithOutputType("yaml"),
 	)
-	if err == nil || archlint.ExitCode(err) != archlint.ExitCodeConfigError {
-		t.Fatalf("unknown output-type must be a config error, got %v", err)
-	}
-	if !strings.Contains(err.Error(), "yaml") {
-		t.Fatalf("error must echo the bad value: %v", err)
-	}
+	require.Error(t, err, "unknown output-type must be a config error")
+	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "unknown output-type must be a config error, got %d: %v", archlint.ExitCode(err), err)
+	assert.Contains(t, err.Error(), "yaml", "error must echo the bad value: ")
 }
 
 func TestOptionsFromFlags_invalid_int_ignored(t *testing.T) {
 	opts := archlint.OptionsFromFlags([]string{flMaxWarnings, "abc"})
-	if len(opts) != 0 {
-		t.Fatalf("invalid int must be dropped, got %d options", len(opts))
-	}
+	require.Len(t, opts, 0, "invalid int must be dropped")
 }
 
 func TestOptionsFromFlags_output_color_value_form(t *testing.T) {
@@ -294,9 +256,7 @@ func TestOptionsFromFlags_output_color_value_form(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			opts := archlint.OptionsFromFlags(tc.args)
-			if len(opts) != tc.wantOpts {
-				t.Fatalf("expected %d options, got %d", tc.wantOpts, len(opts))
-			}
+			require.Len(t, opts, tc.wantOpts, "expected %d options", tc.wantOpts)
 			// Colors are observable only through the option list: with
 			// wantColor=true no option is emitted (default is colors on).
 		})

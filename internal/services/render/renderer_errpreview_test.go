@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
@@ -29,20 +32,12 @@ func TestRenderModel_ReferableErrorPreview(t *testing.T) {
 	referable := models.NewReferableErr(original, domain.Reference{})
 	err := r.RenderModel(nil, referable)
 
-	if err == nil {
-		t.Fatal("RenderModel must return the error")
-	}
-	if err.Error() != "boom at line 5" {
-		t.Fatalf("RenderModel must return the original error, got %q", err.Error())
-	}
+	require.Error(t, err, "RenderModel must return the error")
+	assert.Equal(t, "boom at line 5", err.Error(), "RenderModel must return the original error")
 
 	out := sb.String()
 	for _, want := range []string{"ERR: boom at line 5", "------------", "// preview"} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("output missing %q:\n%s", want, out)
-		}
+		assert.Contains(t, out, want, "output")
 	}
-	if !strings.HasSuffix(out, "\n") {
-		t.Fatalf("preview must be newline-terminated, got %q", out)
-	}
+	assert.True(t, strings.HasSuffix(out, "\n"), "preview must be newline-terminated, got ")
 }

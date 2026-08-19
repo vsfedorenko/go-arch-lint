@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/internal/view"
 )
@@ -46,30 +49,21 @@ func TestRenderModel_Text_MappingCouplingLine(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatText)
 	r.asciiTemplates = view.Templates
 
-	if err := r.RenderModel(couplingMappingModel(), nil); err != nil {
-		t.Fatalf("render: %v", err)
-	}
+	require.NoError(t, r.RenderModel(couplingMappingModel(), nil), "render")
 
 	out := buf.String()
 
-	if !strings.Contains(out, "coupling: out 2 | in 1 | stability 0.67") {
-		t.Errorf("expected coupling line in text output, got:\n%s", out)
-	}
-	if strings.Count(out, "coupling:") != 1 {
-		t.Errorf("components without metrics must not print a coupling line, got:\n%s", out)
-	}
-	if !strings.Contains(out, tcSvcName) || !strings.Contains(out, "models") {
-		t.Errorf("expected both components listed, got:\n%s", out)
-	}
+	assert.Contains(t, out, "coupling: out 2 | in 1 | stability 0.67", "expected coupling line in text output")
+	assert.Equal(t, 1, strings.Count(out, "coupling:"), "components without metrics must not print a coupling line")
+	assert.Contains(t, out, tcSvcName, "expected both components listed")
+	assert.Contains(t, out, "models", "expected both components listed")
 }
 
 func TestRenderModel_JSON_MappingCouplingFields(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatJSON)
 	r.asciiTemplates = view.Templates
 
-	if err := r.RenderModel(couplingMappingModel(), nil); err != nil {
-		t.Fatalf("render: %v", err)
-	}
+	require.NoError(t, r.RenderModel(couplingMappingModel(), nil), "render")
 
 	var parsed struct {
 		Payload struct {
@@ -84,26 +78,17 @@ func TestRenderModel_JSON_MappingCouplingFields(t *testing.T) {
 		} `json:"Payload"`
 	}
 
-	if err := json.Unmarshal(buf.Bytes(), &parsed); err != nil {
-		t.Fatalf("json parse: %v\nraw: %s", err, buf.String())
-	}
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &parsed), "json parse\nraw: %s", buf.String())
 
-	if len(parsed.Payload.MappingGrouped) != 2 {
-		t.Fatalf("expected 2 grouped entries, got %d", len(parsed.Payload.MappingGrouped))
-	}
+	require.Len(t, parsed.Payload.MappingGrouped, 2, "grouped entries")
 
 	withMetrics := parsed.Payload.MappingGrouped[0]
-	if withMetrics.ComponentName != tcSvcName || withMetrics.Coupling == nil {
-		t.Fatalf("services must carry coupling, got %+v", withMetrics)
-	}
-	if withMetrics.Coupling.OutboundDeps != 2 ||
-		withMetrics.Coupling.InboundDeps != 1 ||
-		withMetrics.Coupling.Stability < 0.66 || withMetrics.Coupling.Stability > 0.67 {
-		t.Errorf("wrong coupling values: %+v", withMetrics.Coupling)
-	}
+	require.Equal(t, tcSvcName, withMetrics.ComponentName, "services must be first")
+	require.NotNil(t, withMetrics.Coupling, "services must carry coupling")
+	assert.Equal(t, 2, withMetrics.Coupling.OutboundDeps, "OutboundDeps")
+	assert.Equal(t, 1, withMetrics.Coupling.InboundDeps, "InboundDeps")
+	assert.InDelta(t, 0.6667, withMetrics.Coupling.Stability, 0.0001, "Stability")
 
 	withoutMetrics := parsed.Payload.MappingGrouped[1]
-	if withoutMetrics.Coupling != nil {
-		t.Errorf("models must have no coupling (omitempty), got %+v", withoutMetrics.Coupling)
-	}
+	assert.Nil(t, withoutMetrics.Coupling, "models must have no coupling (omitempty)")
 }

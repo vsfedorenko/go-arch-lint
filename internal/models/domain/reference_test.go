@@ -2,8 +2,9 @@ package domain_test
 
 import (
 	"math"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/vsfedorenko/go-arch-lint/internal/models/domain"
 )
@@ -226,9 +227,7 @@ func TestReference_ClampWithRealLinesCount(t *testing.T) {
 				tt.wantLineTo,
 			)
 
-			if got := ref.ClampWithRealLinesCount(tt.args.maxLines); !reflect.DeepEqual(got, want) {
-				t.Errorf("ClampWithRealLinesCount() = %v, want %v", got, want)
-			}
+			assert.Equal(t, want, ref.ClampWithRealLinesCount(tt.args.maxLines))
 		})
 	}
 }

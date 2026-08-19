@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // The suite drives the exported surface of the directive index: file
@@ -14,9 +17,7 @@ import (
 func writeSource(t *testing.T, lines ...string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "src.go")
-	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600))
 	return path
 }
 
@@ -32,18 +33,10 @@ func TestIndexNoDirectives(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if index.HasDirectives() {
-		t.Fatal("plain source must yield no directives")
-	}
-	if index.IsLineSuppressed(path, 7, "anything") {
-		t.Fatal("nothing is suppressed without directives")
-	}
-	if index.IsFileSuppressed(path) {
-		t.Fatal("file is not suppressed without directives")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.False(t, index.HasDirectives(), "plain source must yield no directives")
+	assert.False(t, index.IsLineSuppressed(path, 7, "anything"), "nothing is suppressed without directives")
+	assert.False(t, index.IsFileSuppressed(path), "file is not suppressed without directives")
 }
 
 func TestIndexStandaloneDirectiveAboveLine(t *testing.T) {
@@ -56,18 +49,13 @@ func TestIndexStandaloneDirectiveAboveLine(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsLineSuppressed(path, 4, "example.com/app/internal/beta") {
-		t.Fatal("standalone directive must suppress the next code line")
-	}
-	if index.IsLineSuppressed(path, 3, "example.com/app/internal/beta") {
-		t.Fatal("the comment line itself is not the target")
-	}
-	if index.IsLineSuppressed(path, 5, "example.com/app/internal/beta") {
-		t.Fatal("lines after the target are not suppressed")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsLineSuppressed(path, 4, "example.com/app/internal/beta"),
+		"standalone directive must suppress the next code line")
+	assert.False(t, index.IsLineSuppressed(path, 3, "example.com/app/internal/beta"),
+		"the comment line itself is not the target")
+	assert.False(t, index.IsLineSuppressed(path, 5, "example.com/app/internal/beta"),
+		"lines after the target are not suppressed")
 }
 
 func TestIndexTrailingDirectiveSameLine(t *testing.T) {
@@ -79,12 +67,9 @@ func TestIndexTrailingDirectiveSameLine(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsLineSuppressed(path, 3, "example.com/app/internal/beta") {
-		t.Fatal("trailing directive must suppress its own line")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsLineSuppressed(path, 3, "example.com/app/internal/beta"),
+		"trailing directive must suppress its own line")
 }
 
 func TestIndexDirectiveWithTargetArgument(t *testing.T) {
@@ -96,22 +81,17 @@ func TestIndexDirectiveWithTargetArgument(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
 
 	// Full import path matches by last segment.
-	if !index.IsLineSuppressed(path, 4, "example.com/app/internal/beta") {
-		t.Fatal("argument must match the dependency target by last path segment")
-	}
+	assert.True(t, index.IsLineSuppressed(path, 4, "example.com/app/internal/beta"),
+		"argument must match the dependency target by last path segment")
 	// Exact argument match.
-	if !index.IsLineSuppressed(path, 4, "beta") {
-		t.Fatal("argument must match the exact target")
-	}
+	assert.True(t, index.IsLineSuppressed(path, 4, "beta"),
+		"argument must match the exact target")
 	// Different target is NOT suppressed.
-	if index.IsLineSuppressed(path, 4, "example.com/app/internal/gamma") {
-		t.Fatal("argument filter must not suppress other targets")
-	}
+	assert.False(t, index.IsLineSuppressed(path, 4, "example.com/app/internal/gamma"),
+		"argument filter must not suppress other targets")
 }
 
 func TestIndexDirectiveWithMultipleArguments(t *testing.T) {
@@ -123,15 +103,11 @@ func TestIndexDirectiveWithMultipleArguments(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsLineSuppressed(path, 4, "gamma") {
-		t.Fatal("second argument must suppress its target")
-	}
-	if index.IsLineSuppressed(path, 4, "delta") {
-		t.Fatal("unlisted target must not be suppressed")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsLineSuppressed(path, 4, "gamma"),
+		"second argument must suppress its target")
+	assert.False(t, index.IsLineSuppressed(path, 4, "delta"),
+		"unlisted target must not be suppressed")
 }
 
 func TestIndexAnyTargetResetsArgumentFilter(t *testing.T) {
@@ -146,12 +122,9 @@ func TestIndexAnyTargetResetsArgumentFilter(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsLineSuppressed(path, 5, "anything-at-all") {
-		t.Fatal("argument-less directive must reset the filter to any-target")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsLineSuppressed(path, 5, "anything-at-all"),
+		"argument-less directive must reset the filter to any-target")
 }
 
 func TestIndexIgnoreFile(t *testing.T) {
@@ -163,15 +136,9 @@ func TestIndexIgnoreFile(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsFileSuppressed(path) {
-		t.Fatal("ignore-file must suppress the whole file")
-	}
-	if !index.HasDirectives() {
-		t.Fatal("index must report directives")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsFileSuppressed(path), "ignore-file must suppress the whole file")
+	assert.True(t, index.HasDirectives(), "index must report directives")
 }
 
 func TestIndexIgnoreNeverMatchesIgnoreFile(t *testing.T) {
@@ -186,15 +153,11 @@ func TestIndexIgnoreNeverMatchesIgnoreFile(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if index.IsFileSuppressed(path) {
-		t.Fatal("misspelled ignore-file variants must not suppress the file")
-	}
-	if index.IsLineSuppressed(path, 6, "example.com/app/internal/beta") {
-		t.Fatal("misspelled ignore variants must not suppress the line")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.False(t, index.IsFileSuppressed(path),
+		"misspelled ignore-file variants must not suppress the file")
+	assert.False(t, index.IsLineSuppressed(path, 6, "example.com/app/internal/beta"),
+		"misspelled ignore variants must not suppress the line")
 }
 
 func TestIndexDirectiveInsideStringLiteral(t *testing.T) {
@@ -212,12 +175,9 @@ func TestIndexDirectiveInsideStringLiteral(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if index.HasDirectives() {
-		t.Fatal("directive text inside a string literal (no // prefix) must not match")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.False(t, index.HasDirectives(),
+		"directive text inside a string literal (no // prefix) must not match")
 }
 
 func TestIndexURLCommentFalsePositive(t *testing.T) {
@@ -235,22 +195,15 @@ func TestIndexURLCommentFalsePositive(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if index.IsLineSuppressed(path, 4, "example.com/app/internal/beta") {
-		t.Fatal("URL text after // must not trigger the directive (prefix must match immediately)")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.False(t, index.IsLineSuppressed(path, 4, "example.com/app/internal/beta"),
+		"URL text after // must not trigger the directive (prefix must match immediately)")
 }
 
 func TestIndexMissingFileSkipped(t *testing.T) {
 	index, err := NewIndexFromFiles([]string{filepath.Join(t.TempDir(), "gone.go")})
-	if err != nil {
-		t.Fatalf("missing file must be skipped, got error: %v", err)
-	}
-	if index.HasDirectives() {
-		t.Fatal("missing file yields no directives")
-	}
+	require.NoError(t, err, "missing file must be skipped")
+	assert.False(t, index.HasDirectives(), "missing file yields no directives")
 }
 
 func TestIndexMultipleFilesIndependent(t *testing.T) {
@@ -258,23 +211,17 @@ func TestIndexMultipleFilesIndependent(t *testing.T) {
 	a := filepath.Join(dir, "a.go")
 	b := filepath.Join(dir, "b.go")
 	write := func(path, body string) {
-		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, os.WriteFile(path, []byte(body), 0o600))
 	}
 	write(a, "package demo\n\n//go-arch-lint:ignore\nimport \"example.com/app/internal/beta\"\n")
 	write(b, "package demo\n\nimport \"example.com/app/internal/beta\"\n")
 
 	index, err := NewIndexFromFiles([]string{a, b})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsLineSuppressed(a, 4, "example.com/app/internal/beta") {
-		t.Fatal("file a line 4 must be suppressed")
-	}
-	if index.IsLineSuppressed(b, 4, "example.com/app/internal/beta") {
-		t.Fatal("file b has no directive — nothing suppressed")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsLineSuppressed(a, 4, "example.com/app/internal/beta"),
+		"file a line 4 must be suppressed")
+	assert.False(t, index.IsLineSuppressed(b, 4, "example.com/app/internal/beta"),
+		"file b has no directive — nothing suppressed")
 }
 
 func TestIndexConsecutiveDirectivesApplyToNextCodeLine(t *testing.T) {
@@ -288,15 +235,9 @@ func TestIndexConsecutiveDirectivesApplyToNextCodeLine(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if !index.IsLineSuppressed(path, 5, "beta") {
-		t.Fatal("first stacked directive must apply")
-	}
-	if !index.IsLineSuppressed(path, 5, "gamma") {
-		t.Fatal("second stacked directive must apply")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.True(t, index.IsLineSuppressed(path, 5, "beta"), "first stacked directive must apply")
+	assert.True(t, index.IsLineSuppressed(path, 5, "gamma"), "second stacked directive must apply")
 }
 
 func TestIndexDirectiveThenBlankLineDoesNotReachFarCode(t *testing.T) {
@@ -312,10 +253,7 @@ func TestIndexDirectiveThenBlankLineDoesNotReachFarCode(t *testing.T) {
 	)
 
 	index, err := NewIndexFromFiles([]string{path})
-	if err != nil {
-		t.Fatalf("NewIndexFromFiles: %v", err)
-	}
-	if index.IsLineSuppressed(path, 5, "example.com/app/internal/beta") {
-		t.Fatal("directive must not cross a blank line (applies to the immediately next line)")
-	}
+	require.NoError(t, err, "NewIndexFromFiles")
+	assert.False(t, index.IsLineSuppressed(path, 5, "example.com/app/internal/beta"),
+		"directive must not cross a blank line (applies to the immediately next line)")
 }

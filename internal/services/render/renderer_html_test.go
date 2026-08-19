@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/vsfedorenko/go-arch-lint/internal/models"
 )
 
@@ -21,41 +24,33 @@ func TestRenderModel_FormatHTML_CheckOut(t *testing.T) {
 	// UserSpaceError is expected: it means "violations found". RenderModel
 	// renders the model AND returns the error for exit-code mapping.
 	if err := r.RenderModel(out, models.NewUserSpaceError("check not successful")); err != nil {
-		if !models.IsUserSpaceError(err) {
-			t.Fatalf("RenderModel: unexpected error: %v", err)
-		}
+		require.True(t, models.IsUserSpaceError(err), "RenderModel: unexpected error: %v", err)
 	}
 
 	doc := buf.String()
 
 	// Document shape: one complete HTML document, emitted once.
-	assertTrue(t, strings.HasPrefix(strings.TrimSpace(doc), "<!DOCTYPE html>"),
+	assert.True(t, strings.HasPrefix(strings.TrimSpace(doc), "<!DOCTYPE html>"),
 		"document must start with <!DOCTYPE html>, got: %.80s", doc)
-	assertTrue(t, strings.Count(doc, "<!DOCTYPE html>") == 1,
-		"exactly one document, got %d", strings.Count(doc, "<!DOCTYPE html>"))
+	assert.Equal(t, 1, strings.Count(doc, "<!DOCTYPE html>"), "exactly one document")
 
 	// Header identity.
-	assertTrue(t, strings.Contains(doc, "module <code>github.com/x/proj</code>"),
-		"header must carry the module name, got: %s", doc)
+	assert.Contains(t, doc, "module <code>github.com/x/proj</code>",
+		"header must carry the module name")
 
 	// Violations present: one dependency row, one match row.
-	assertTrue(t, strings.Contains(doc, "internal/handler/user.go:10"),
-		"dependency row must point at file:line, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, "internal/orphan/x.go"),
-		"match row must be present, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, gaFixtureImport),
-		"dependency column must carry the import, got: %s", doc)
+	assert.Contains(t, doc, "internal/handler/user.go:10",
+		"dependency row must point at file:line")
+	assert.Contains(t, doc, "internal/orphan/x.go", "match row must be present")
+	assert.Contains(t, doc, gaFixtureImport, "dependency column must carry the import")
 
 	// Type cards: totals per class.
-	assertTrue(t, strings.Contains(doc, "<div class=\"n\">2</div>"),
-		"total violations card must show 2, got: %s", doc)
+	assert.Contains(t, doc, "<div class=\"n\">2</div>", "total violations card must show 2")
 
 	// Every rule id cell must be tagged with the violation type so CSS
 	// color coding works.
-	assertTrue(t, strings.Contains(doc, `class="tag dependency"`),
-		"dependency tag missing, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, `class="tag match"`),
-		"match tag missing, got: %s", doc)
+	assert.Contains(t, doc, `class="tag dependency"`, "dependency tag missing")
+	assert.Contains(t, doc, `class="tag match"`, "match tag missing")
 }
 
 // TestRenderModel_FormatHTML_NoViolations verifies the clean path: a
@@ -64,16 +59,12 @@ func TestRenderModel_FormatHTML_CheckOut(t *testing.T) {
 func TestRenderModel_FormatHTML_NoViolations(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatHTML)
 
-	if err := r.RenderModel(models.CmdCheckOut{ModuleName: gaFixtureModule}, nil); err != nil {
-		t.Fatalf("RenderModel: unexpected error: %v", err)
-	}
+	require.NoError(t, r.RenderModel(models.CmdCheckOut{ModuleName: gaFixtureModule}, nil))
 
 	doc := buf.String()
-	assertTrue(t, strings.Contains(doc, "<!DOCTYPE html>"), "must be a document, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, "No architecture violations found"),
-		"clean project notice missing, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, "<div class=\"n\">0</div>"),
-		"total card must show 0, got: %s", doc)
+	assert.Contains(t, doc, "<!DOCTYPE html>", "must be a document")
+	assert.Contains(t, doc, "No architecture violations found", "clean project notice missing")
+	assert.Contains(t, doc, "<div class=\"n\">0</div>", "total card must show 0")
 }
 
 // TestRenderModel_FormatHTML_Escaping verifies hostile values (angle
@@ -94,18 +85,14 @@ func TestRenderModel_FormatHTML_Escaping(t *testing.T) {
 
 	r, buf := newTestRenderer(t, models.FormatHTML)
 	if err := r.RenderModel(out, models.NewUserSpaceError("check not successful")); err != nil {
-		if !models.IsUserSpaceError(err) {
-			t.Fatalf("RenderModel: unexpected error: %v", err)
-		}
+		require.True(t, models.IsUserSpaceError(err), "RenderModel: unexpected error: %v", err)
 	}
 
 	doc := buf.String()
-	assertTrue(t, !strings.Contains(doc, "<script>"),
-		"raw <script> must not survive escaping, got: %s", doc)
-	assertTrue(t, !strings.Contains(doc, "util<s"),
-		"raw < in file path must be escaped, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, "&lt;script&gt;"),
-		"the hostile value must still be VISIBLE (escaped), not dropped, got: %s", doc)
+	assert.NotContains(t, doc, "<script>", "raw <script> must not survive escaping")
+	assert.NotContains(t, doc, "util<s", "raw < in file path must be escaped")
+	assert.Contains(t, doc, "&lt;script&gt;",
+		"the hostile value must still be VISIBLE (escaped), not dropped")
 }
 
 // TestRenderModel_FormatHTML_ConfigError verifies a configuration error
@@ -118,15 +105,11 @@ func TestRenderModel_FormatHTML_ConfigError(t *testing.T) {
 	out := models.CmdCheckOut{ModuleName: gaFixtureModule}
 
 	renderErr := r.RenderModel(out, err)
-	if renderErr == nil {
-		t.Fatal("RenderModel must still return the config error for exit-code mapping")
-	}
+	require.Error(t, renderErr, "RenderModel must still return the config error for exit-code mapping")
 
 	doc := buf.String()
-	assertTrue(t, strings.Contains(doc, "configuration error"),
-		"config error banner missing, got: %s", doc)
-	assertTrue(t, strings.Contains(doc, "spec broken &lt;&amp;&gt;"),
-		"config error text must be escaped but visible, got: %s", doc)
+	assert.Contains(t, doc, "configuration error", "config error banner missing")
+	assert.Contains(t, doc, "spec broken &lt;&amp;&gt;", "config error text must be escaped but visible")
 }
 
 // TestRenderModel_FormatHTML_NonCheckModelFallsBackToJSON verifies the
@@ -135,11 +118,9 @@ func TestRenderModel_FormatHTML_ConfigError(t *testing.T) {
 func TestRenderModel_FormatHTML_NonCheckModelFallsBackToJSON(t *testing.T) {
 	r, buf := newTestRenderer(t, models.FormatHTML)
 
-	if err := r.RenderModel(models.CmdVersionOut{LinterVersion: "1.2.3"}, nil); err != nil {
-		t.Fatalf("RenderModel: unexpected error: %v", err)
-	}
+	require.NoError(t, r.RenderModel(models.CmdVersionOut{LinterVersion: "1.2.3"}, nil))
 
 	doc := buf.String()
-	assertTrue(t, strings.Contains(doc, `"Type": "models.Version"`),
-		"non-check model must fall back to wrapped JSON, got: %s", doc)
+	assert.Contains(t, doc, `"Type": "models.Version"`,
+		"non-check model must fall back to wrapped JSON")
 }
