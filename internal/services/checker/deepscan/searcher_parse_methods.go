@@ -114,6 +114,12 @@ func (s *Searcher) extractInterfaceName(t types.Type) (name string, ref token.Po
 	case *types.Interface:
 		return t.String(), ref, true
 
+	// type alias to an interface (Go 1.22+ materializes aliases):
+	// `type myAlias = myInterface`, so `func(a myAlias)` is an injectable gate
+	// on the aliased interface.
+	case *types.Alias:
+		return s.extractInterfaceName(goType.Rhs())
+
 	// named type or interface: `func(a myInterface)` or `func (a int)`
 	case *types.Named:
 		if _, _, isInterface := s.extractInterfaceName(goType.Underlying()); !isInterface {

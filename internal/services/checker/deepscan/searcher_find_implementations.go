@@ -208,6 +208,10 @@ func (s *Searcher) extractTargetFromCallParam(t types.Type) (name string, pos to
 	switch goType := t.(type) {
 	case *types.Named:
 		return goType.Obj().Name(), goType.Obj().Pos(), true
+	case *types.Alias:
+		// a type alias used for the injected value resolves to what it
+		// aliases: the underlying named struct type is the real target
+		return s.extractTargetFromCallParam(goType.Rhs())
 	case *types.Pointer:
 		return s.extractTargetFromCallParam(goType.Elem())
 	default:
