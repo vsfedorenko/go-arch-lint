@@ -29,13 +29,13 @@ func newColorizer(printer colorPrinter) *colorizer {
 
 // painters maps each supported color to its printer method.
 var painters = map[colorName]func(colorPrinter, string) string{
-	colorRed:     (colorPrinter).Red,
-	colorGreen:   (colorPrinter).Green,
-	colorYellow:  (colorPrinter).Yellow,
-	colorBlue:    (colorPrinter).Blue,
-	colorMagenta: (colorPrinter).Magenta,
-	colorCyan:    (colorPrinter).Cyan,
-	colorGray:    (colorPrinter).Gray,
+	colorRed:     colorPrinter.Red,
+	colorGreen:   colorPrinter.Green,
+	colorYellow:  colorPrinter.Yellow,
+	colorBlue:    colorPrinter.Blue,
+	colorMagenta: colorPrinter.Magenta,
+	colorCyan:    colorPrinter.Cyan,
+	colorGray:    colorPrinter.Gray,
 }
 
 // colorize paints input with the named color. Unknown colors are an error —

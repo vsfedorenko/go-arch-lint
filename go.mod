@@ -1,6 +1,6 @@
 module github.com/vsfedorenko/go-arch-lint/v2
 
-go 1.25.0
+go 1.25.13
 
 require (
 	github.com/alecthomas/chroma/v2 v2.27.0

@@ -1,16 +1,14 @@
 module arch-lint-local
 
-go 1.25.0
+go 1.25.13
 
 require github.com/vsfedorenko/go-arch-lint/v2 v2.0.0-dev
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0 // indirect
-	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/alecthomas/chroma/v2 v2.27.0 // indirect
 	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/andybalholm/cascadia v1.3.4 // indirect
-	github.com/dlclark/regexp2 v1.12.0 // indirect
 	github.com/dlclark/regexp2/v2 v2.2.2 // indirect
 	github.com/dop251/goja v0.0.0-20260701091749-b07b74453ea9 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
