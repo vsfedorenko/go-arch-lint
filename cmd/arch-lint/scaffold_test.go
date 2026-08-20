@@ -50,10 +50,10 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v2/dsl"`, "arch.go missing dsl import: %s", archgo)
 	assert.NotContains(t, string(archgo), "func main()", "arch.go must not contain the runner: %s", archgo)
 
-	// main.go is the stable runner: flag passthrough, NO spec definition.
+	// main.go is the stable runner: command+flag passthrough, NO spec definition.
 	maingo, err := os.ReadFile(filepath.Join(archDir, "main.go"))
 	require.NoError(t, err, "read main.go")
-	assert.Contains(t, string(maingo), "archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)", "main.go missing flag passthrough: %s", maingo)
+	assert.Contains(t, string(maingo), "archlint.MustRunCLI(spec, os.Args[1:])", "main.go missing command passthrough: %s", maingo)
 	assert.NotContains(t, string(maingo), "Spec(func()", "main.go must not contain the spec: %s", maingo)
 }
 

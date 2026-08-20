@@ -344,6 +344,46 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	})
 }
 
+// RunCLI executes the delegated CLI command surface (check, mapping,
+// graph, self-inspect, version) against spec, with args being the
+// process arguments without the binary name (os.Args[1:], command
+// included). This is what a scaffolded `.go-arch-lint/main.go` calls so
+// that EVERY delegated command keeps its own behavior: the launcher
+// forwards `mapping`/`graph`/`selfInspect` by name, and a runner that
+// only calls [Run] silently degrades them all to a check run.
+//
+// Launcher-dialect spellings are translated: `-p` → `--project-path`,
+// `--no-colors` → `--output-color=false`, `selfInspect` → the
+// `self-inspect` command. A list without a command defaults to `check`
+// (bare `go run .go-arch-lint/` keeps linting instead of printing help).
+//
+// The error contract matches [Run]: nil on success, a user-space error
+// when check finds violations, a config error for invalid flags/specs.
+// Unknown flags are rejected (exit 2) rather than silently ignored.
+func RunCLI(spec dsl.SpecDef, args []string) error {
+	if spec.Builder() == nil {
+		return fmt.Errorf("spec is empty — ensure Spec() was called")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	return app.RunCLI(ctx, decoder.NewGoDecoder(spec.Builder()), args)
+}
+
+// MustRunCLI runs the delegated CLI surface and exits the process with a
+// conventional exit code (see [ExitCode]). This is what a scaffolded
+// `.go-arch-lint/main.go` calls; errors that fail before the renderer
+// runs (unknown command/flag) are printed to stderr so the exit is never
+// silent.
+func MustRunCLI(spec dsl.SpecDef, args []string) {
+	if err := RunCLI(spec, args); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err.Error())
+		os.Exit(ExitCode(err))
+	}
+	os.Exit(ExitCodeOK)
+}
+
 // Exit codes follow the linter convention (same as golangci-lint):
 //
 //	0 — success, no violations

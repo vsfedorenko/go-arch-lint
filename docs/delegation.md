@@ -36,7 +36,7 @@ code, and the failure modes you should not be surprised by.
 | Command dispatch | `init`/`version`/`help` are local; any other command delegates |
 | `--project-path` / `-p` | Rewritten to an **absolute** path before delegation (the spec module runs from inside `.go-arch-lint/`) |
 | No `--project-path` given | `--project-path <abs>` is **appended** — the spec's default (`../`) is overridden deterministically |
-| Other flags | Passed through verbatim (`--format json`, `--max-warnings`, `--no-colors`, `--output-type`, `--json`, `--output-json-one-line`, …) and parsed by the scaffolded runner (`archlint.OptionsFromFlags`) |
+| Other flags | Passed through verbatim (`--format json`, `--max-warnings`, `--no-colors`, `--output-type`, `--json`, `--output-json-one-line`, …) and parsed by the scaffolded runner (`archlint.MustRunCLI` → cobra flag tree) |
 | stdout / stdin | Streamed through untouched (JSON output is pipe-safe) |
 | stderr | **Teed**: shown to you *and* captured, because the child's exit code is only available there (see below) |
 
@@ -103,21 +103,30 @@ or context-free; they are covered by `cmd/arch-lint/errors_ux_test.go`, and
 exit-code mapping by `exitcode_test.go` plus `test/check/integration_test.go`
 (which parses the child exit out of `go run`'s stderr).
 
-## Known sharp edge: scaffold ahead of the published library
+## The scaffolded runner: `archlint.MustRunCLI`
 
-`go-arch-lint init` scaffolds `arch.go` (the spec) plus `main.go` (a stable runner) with flag passthrough — the split keeps the spec and the runner independently replaceable:
+`go-arch-lint init` scaffolds `arch.go` (the spec) plus `main.go` (a stable
+runner) — the split keeps the spec and the runner independently replaceable:
 
 ```go
-archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
+archlint.MustRunCLI(spec, os.Args[1:])
 ```
 
-`OptionsFromFlags` is newer than the currently published library release, so
-a **fresh scaffold tidied against the published version does not compile**
-(`undefined: archlint.OptionsFromFlags`) until the next library release
-ships. This repo dogfoods the scaffold through a `replace` directive, so CI
-does not see it. Until the release: after `init`, either pin the module to
-the upcoming version or replace the call with `archlint.MustRun(spec)` (flags
-then fall back to their defaults).
+`MustRunCLI` routes the delegated command name (`check`, `mapping`, `graph`,
+`self-inspect`, `version`) to its own behavior. A runner calling bare
+`MustRun` instead runs `check` for EVERY command — the exact regression
+this entry point exists to prevent. Launcher-dialect spellings (`-p`,
+`--no-colors`, camelCase `selfInspect`) are translated, and an invocation
+without a command defaults to `check` (bare `go run .go-arch-lint/` keeps
+linting, as it always did).
+
+`MustRunCLI` is newer than the currently published library release, so a
+**fresh scaffold tidied against the published version does not compile**
+(`undefined: archlint.MustRunCLI`) until the next library release ships.
+This repo dogfoods the scaffold through a `replace` directive, so CI does
+not see it. Until the release: after `init`, either pin the module to the
+upcoming version or replace the call with `archlint.MustRun(spec, ...)` —
+but then every delegated command degrades to `check`, so prefer pinning.
 
 ## Library users bypass all of this
 

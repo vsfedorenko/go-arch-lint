@@ -23,10 +23,13 @@ const (
 	flNoColors    = "--no-colors"
 	flFormat      = "--format"
 	flOutputType  = "--output-type"
+	flJSONFlag    = "--json"
 
-	tcJSON       = "json"
-	tcASCII      = "ascii"
-	flFormatJSON = flFormat + "=" + tcJSON
+	tcCmdCheck       = "check"
+	tcCmdSelfInspect = "selfInspect"
+	tcJSON           = "json"
+	tcASCII          = "ascii"
+	flFormatJSON     = flFormat + "=" + tcJSON
 )
 
 /**

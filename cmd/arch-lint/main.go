@@ -17,6 +17,7 @@ import (
 const (
 	flagProjectPath = "--project-path"
 	flagBaseline    = "--baseline"
+	flagOut         = "--out"
 	flagHelp        = "--help"
 )
 
@@ -137,6 +138,16 @@ func cmdDelegate(command string, args []string) int {
 				absBaseline = args[i+1]
 			}
 			delegatedArgs = append(delegatedArgs, args[i], absBaseline)
+			i++
+		case args[i] == flagOut && hasValue:
+			// Same cwd story as --baseline: `graph --out ./graph.svg`
+			// must land next to the user's project, not inside
+			// .go-arch-lint/.
+			absOut, err := filepath.Abs(args[i+1])
+			if err != nil {
+				absOut = args[i+1]
+			}
+			delegatedArgs = append(delegatedArgs, args[i], absOut)
 			i++
 		default:
 			delegatedArgs = append(delegatedArgs, args[i])

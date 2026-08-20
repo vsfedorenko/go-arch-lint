@@ -89,7 +89,7 @@ import (
 )
 
 func main() {
-	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
+	archlint.MustRunCLI(spec, os.Args[1:])
 }
 ```
 
@@ -246,6 +246,14 @@ func runArchCheck() error {
 `archlint.MustRun(spec)` does the same but exits the process with the
 conventional exit code: `1` on violations, `2` on a configuration error
 (see `archlint.ExitCode`).
+
+`archlint.RunCLI(spec, os.Args[1:])` is the entry point for the scaffolded
+`.go-arch-lint/main.go`: it routes the delegated commands (`check`,
+`mapping`, `graph`, `self-inspect`) to their own behavior instead of
+silently running `check`. The launcher dialect (`-p`, `--no-colors`,
+`selfInspect`) is translated automatically, and an invocation without a
+command defaults to `check`. `MustRunCLI` is the conventional-exit-code
+variant.
 
 ## Commands
 

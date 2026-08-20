@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
+	archlint.MustRunCLI(spec, os.Args[1:])
 }

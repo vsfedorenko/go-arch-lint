@@ -90,7 +90,7 @@ import (
 )
 
 func main() {
-	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
+	archlint.MustRunCLI(spec, os.Args[1:])
 }
 ```
 
@@ -238,6 +238,12 @@ func runArchCheck() error {
 
 `archlint.MustRun(spec)` — то же самое, но завершает процесс с конвенциональным
 кодом возврата: `1` при нарушениях, `2` при ошибке конфигурации (см. `archlint.ExitCode`).
+
+`archlint.RunCLI(spec, os.Args[1:])` — точка входа для скаффолда `.go-arch-lint/main.go`:
+маршрутизирует делегированные команды (`check`, `mapping`, `graph`, `self-inspect`)
+по их собственному поведению, а не молча выполняет `check`. Диалект лаунчера
+(`-p`, `--no-colors`, `selfInspect`) переводится автоматически; запуск без команды
+по умолчанию — `check`. `MustRunCLI` — вариант с конвенциональными кодами возврата.
 
 ## Команды
 

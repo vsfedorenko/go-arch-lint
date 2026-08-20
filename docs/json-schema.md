@@ -438,8 +438,9 @@ arch-report:
   keep the `--output-type` (`ascii`/`json`) wrapper format (all formats
   fall back to it for non-check models).
 - The scaffold `main()` must pass through CLI flags — the modern scaffold
-  (`go-arch-lint init`) calls `archlint.MustRun(spec,
-  archlint.OptionsFromFlags(os.Args[1:])...)`. If your scaffold predates
-  this, add `archlint.OptionsFromFlags(os.Args[1:])...` to `MustRun`.
+  (`go-arch-lint init`) calls `archlint.MustRunCLI(spec, os.Args[1:])`.
+  If your scaffold predates this, replace the `archlint.MustRun(spec,
+  archlint.OptionsFromFlags(...))` call with `archlint.MustRunCLI(spec,
+  os.Args[1:])` so delegated commands keep their own behavior.
 - Exit code `2` means the check did not run. Fix the spec first — a broken
   config lints nothing, so `2` is never "clean".
