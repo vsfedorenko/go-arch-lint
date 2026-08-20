@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] — 2026-08-20
+
 ### Security
 - CI security suite (`.github/workflows/security.yml`): govulncheck on
   every push/PR plus a daily cron (reachable vulnerabilities only),
@@ -15,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `go` directive bumped 1.25.0 → 1.25.13: govulncheck reported 15
   reachable stdlib vulnerabilities (net/url, html/template,
   crypto/x509, …) — all fixed by the toolchain patch release.
+
+### Fixed
+- Scaffolded `.go-arch-lint` runners delegate subcommands (`check`,
+  `graph`, …) to the installed CLI via `archlint.MustRunCLI` instead of
+  failing on the first unknown flag (#64).
+- Example trees no longer ship compiled `arch-lint-local` binaries
+  (~58 MB off the repo); local rebuilds are gitignored (#62).
 
 ## [2.2.0] — 2026-08-20
 
