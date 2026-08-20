@@ -96,6 +96,18 @@ func run() int {
 }
 
 func cmdDelegate(command string, args []string) int {
+	// --help must never require a project: a user exploring the tool outside
+	// any project should get usage, not a config error (same class as
+	// `init --help` not requiring a scaffold). Without .go-arch-lint/ there
+	// is nothing to delegate `go run` to, so the launcher's own usage —
+	// which already documents every delegated flag — is the best answer.
+	for _, a := range args {
+		if a == flagHelp || a == "-h" {
+			printUsage()
+			return 0
+		}
+	}
+
 	projectPath := "."
 	for i, a := range args {
 		if (a == flagProjectPath || a == "-p") && i+1 < len(args) {

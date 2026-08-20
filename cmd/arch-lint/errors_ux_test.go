@@ -95,3 +95,35 @@ func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
 	assert.Contains(t, out, "did not build", "expected 'did not build' context on stderr")
 	assert.Contains(t, out, "go-arch-lint init", "expected init hint on stderr")
 }
+
+// TestLauncher_HelpOutsideProject_ShowsUsage pins the "help must never
+// require a project" contract: `check --help` run where no .go-arch-lint/
+// exists prints the launcher usage and exits 0 instead of the
+// ".go-arch-lint/ directory not found" config error. A user exploring the
+// tool outside any project should be able to read the flags.
+func TestLauncher_HelpOutsideProject_ShowsUsage(t *testing.T) {
+	bin := buildLauncher(t)
+
+	// Empty temp dir: no .go-arch-lint/, no go.mod — deliberately NOT a
+	// project, and help must work without touching the network or `go`.
+	dir := t.TempDir()
+
+	for _, flag := range []string{"--help", "-h"} {
+		t.Run(flag, func(t *testing.T) {
+			cmd := exec.Command(bin, "check", flag, "--project-path", dir)
+			cmd.Env = append(os.Environ(), "PATH="+t.TempDir())
+
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
+			err := cmd.Run()
+			require.NoError(t, err, "check %s outside a project must exit 0", flag)
+
+			out := stdout.String()
+			assert.Contains(t, out, "Usage:", "expected usage on stdout")
+			assert.Contains(t, out, "--baseline", "usage must document delegated check flags")
+			assert.NotContains(t, stderr.String(), "directory not found", "help must not surface the config error")
+		})
+	}
+}

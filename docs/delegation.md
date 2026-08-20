@@ -92,6 +92,7 @@ Each row was reproduced against a real scaffold:
 | # | Situation | What you see | Exit |
 |---|-----------|--------------|------|
 | 1 | `.go-arch-lint/` missing | `Error: .go-arch-lint/ directory not found at …` + `Run 'go-arch-lint init' first` | `1` |
+| 1a | `.go-arch-lint/` missing **and** `--help`/`-h` passed | launcher usage (help never requires a project) | `0` |
 | 2 | `go` not on PATH | explicit hint: delegation needs `go`, install link | `2` |
 | 3 | Scaffold not tidied (`go.sum` absent) | go's own `go get …/dsl` suggestion + footer `The arch spec … did not build. Fix the compile errors above, or regenerate the scaffold with 'go-arch-lint init'.` | `2` |
 | 4 | Spec does not compile (any Go error) | raw compiler errors, then the same footer pointing at `.go-arch-lint/arch.go` | `2` |
