@@ -29,19 +29,21 @@ import (
 
 var spec = Spec(func() {
 	Version(1)
-	Workdir("internal")
+	Workdir(".")
 
 	Allow(func() {
 		DepOnAnyVendor(false)
 	})
 
+	Exclude(".go-arch-lint")
+
 	ExcludeFiles(` + "`^.*_test\\.go$`" + `)
 
-	// Define your components:
-	// Component("handler", "handlers/*")
-	// Component("service", "services/**")
+	// One component matching the whole tree keeps the fresh scaffold
+	// green (a spec with no components is invalid). Split it into real
+	// components and add Deps rules as your architecture takes shape:
+	Component("app", "**")
 
-	// Define dependency rules:
 	// Deps("handler", func() {
 	//     MayDependOn("service")
 	// })

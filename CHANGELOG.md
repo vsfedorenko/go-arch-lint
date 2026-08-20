@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The default `init` scaffold checks green out of the box: it used to
+  ship with every component commented out (spec invalid: "at least one
+  component must be defined") and `Workdir("internal")` (invalid on
+  projects without `internal/`) — the very next step init suggests
+  ("run check") was guaranteed to fail. The template now ships one
+  catch-all component, `Workdir(".")`, and excludes `.go-arch-lint/`
+  itself. Pinned by black-box tests (scaffold → check on a real module
+  and on an empty one).
+
 ## [2.3.0] — 2026-08-20
 
 ### Security
