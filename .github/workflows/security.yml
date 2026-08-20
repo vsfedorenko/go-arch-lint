@@ -84,7 +84,7 @@ jobs:
       security-events: write
       id-token: write
     steps:
-      - uses: ossf/scorecard-action@v2
+      - uses: ossf/scorecard-action@v2.4.4 # pinned: the floating @v2 tag does not exist upstream, resolution fails the job
         with:
           results_format: sarif
           results_file: scorecard.sarif
