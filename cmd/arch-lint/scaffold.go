@@ -50,6 +50,9 @@ var spec = Spec(func() {
 
 // scaffoldMainGo is the stable runner. Keep user-facing configuration in
 // arch.go; this file only forwards CLI flags and executes the spec.
+// MustRunCLI (not MustRun) so delegated commands (mapping, graph,
+// selfInspect) keep their own behavior instead of silently degrading
+// to a check run.
 const scaffoldMainGo = `package main
 
 import (
@@ -59,7 +62,7 @@ import (
 )
 
 func main() {
-	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
+	archlint.MustRunCLI(spec, os.Args[1:])
 }
 `
 
