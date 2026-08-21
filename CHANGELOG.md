@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit suites for the remaining zero-coverage layers: selfInspect
+  (0% → 100%), the project-files resolver (0% → 100%), the embedded
+  view-template map (0% → 100%), and version sourcing rules (0% → 72.7%).
+
+### Added
 - Unit suite for the mapping operation (0% → 98.3%): grouped/list view
   assembly, empty components staying visible, the trailing
   "[not attached]" bucket, coupling attachment, and error wrapping from
