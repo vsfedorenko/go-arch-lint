@@ -8,3 +8,6 @@ packages:
   github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/assembler:
     config:
       all: true
+  github.com/vsfedorenko/go-arch-lint/v2/internal/operations/check:
+    config:
+      all: true
