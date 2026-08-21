@@ -7,23 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Unit suites for the remaining zero-coverage layers: selfInspect
-  (0% → 100%), the project-files resolver (0% → 100%), the embedded
-  view-template map (0% → 100%), and version sourcing rules (0% → 72.7%).
+## [2.4.2] — 2026-08-22
 
 ### Added
-- Unit suite for the mapping operation (0% → 98.3%): grouped/list view
-  assembly, empty components staying visible, the trailing
-  "[not attached]" bucket, coupling attachment, and error wrapping from
-  every port. Ports mocked via mockery (EXPECT-driven).
+- Unit suites for every previously zero-coverage operation and service
+  layer: check (0% → 61.5%), mapping (0% → 98.3%), selfInspect (0% →
+  100%), the project-files resolver (0% → 100%), the embedded
+  view-template map (0% → 100%), and version sourcing (0% → 72.7%).
+  Pinned contracts include the exit-code trichotomy, the
+  "[not attached]" bucket leading the grouped mapping, JSON-safe empty
+  annotation lists, and scan-directory cleaning.
 
-### Added
-- Unit suite for the check operation (0% → 61.5%): config-error
-  classification for unreadable projects, spec-assemble failure wrapping,
-  the clean/violating exit-code trichotomy, the MaxWarnings cap (omitted
-  count, suppressed-count metadata surviving the cut), and invalid-spec
-  runs skipping the checker. Ports mocked via mockery (EXPECT-driven).
+### Changed
+- README (EN/RU): the GitHub Action example pins the real release tag
+  (`@v2.4.1`) instead of `@main`, and CI snippets use `go-version:
+  '1.25.13'` matching the repo's go directive.
 
 ## [2.4.1] — 2026-08-21
 
