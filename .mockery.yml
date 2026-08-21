@@ -14,3 +14,9 @@ packages:
   github.com/vsfedorenko/go-arch-lint/v2/internal/operations/mapping:
     config:
       all: true
+  github.com/vsfedorenko/go-arch-lint/v2/internal/operations/selfInspect:
+    config:
+      all: true
+  github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/resolver:
+    config:
+      all: true
