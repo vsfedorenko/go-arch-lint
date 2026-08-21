@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Unit suite for the check operation (0% → 61.5%): config-error
+  classification for unreadable projects, spec-assemble failure wrapping,
+  the clean/violating exit-code trichotomy, the MaxWarnings cap (omitted
+  count, suppressed-count metadata surviving the cut), and invalid-spec
+  runs skipping the checker. Ports mocked via mockery (EXPECT-driven).
+
 ## [2.4.1] — 2026-08-21
 
 ### Fixed
