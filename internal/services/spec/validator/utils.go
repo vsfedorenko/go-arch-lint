@@ -2,8 +2,10 @@ package validator
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
 )
@@ -26,6 +28,10 @@ func newUtils(
 		pathResolver: pathResolver,
 		document:     document,
 	}
+}
+
+func sortedKeys[V any](m map[string]V) []string {
+	return slices.Sorted(maps.Keys(m))
 }
 
 func (u *utils) assertGlobPathValid(localGlobPath string) error {

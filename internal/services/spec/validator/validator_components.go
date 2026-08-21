@@ -23,14 +23,18 @@ func newValidatorComponents(
 func (v *validatorComponents) Validate(doc spec.Document) []arch.Notice {
 	notices := make([]arch.Notice, 0)
 
-	if len(doc.Components()) == 0 {
+	components := doc.Components()
+
+	if len(components) == 0 {
 		notices = append(notices, arch.Notice{
 			Notice: fmt.Errorf("at least one component must be defined"),
 			Ref:    doc.Version().Reference,
 		})
 	}
 
-	for _, component := range doc.Components() {
+	for _, name := range sortedKeys(components) {
+		component := components[name]
+
 		for _, componentIn := range component.Value.RelativePaths() {
 			localPath := path.Clean(fmt.Sprintf("%s/%s",
 				doc.WorkingDirectory().Value,

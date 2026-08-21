@@ -22,7 +22,10 @@ func newValidatorDepsComponents(
 func (v *validatorDepsComponents) Validate(doc spec.Document) []arch.Notice {
 	notices := make([]arch.Notice, 0)
 
-	for name, rule := range doc.Dependencies() {
+	dependencies := doc.Dependencies()
+
+	for _, name := range sortedKeys(dependencies) {
+		rule := dependencies[name]
 		existComponents := make(map[string]bool)
 
 		for _, componentName := range rule.Value.MayDependOn() {

@@ -7,11 +7,13 @@ require (
 	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/mod v0.38.0
+	golang.org/x/mod v0.40.0
 	golang.org/x/sync v0.22.0
-	golang.org/x/tools v0.47.0
+	golang.org/x/tools v0.49.0
 	oss.terrastruct.com/d2 v0.7.1
 )
+
+require gopkg.in/yaml.v3 v3.0.1 // indirect
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0 // indirect
@@ -33,9 +35,8 @@ require (
 	github.com/yuin/goldmark v1.8.2 // indirect
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976 // indirect
 	golang.org/x/image v0.44.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	oss.terrastruct.com/util-go v0.0.0-20250213174338-243d8661088a // indirect
 )
