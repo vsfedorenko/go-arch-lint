@@ -2,7 +2,9 @@ package assembler
 
 import (
 	"fmt"
+	"maps"
 	"path"
+	"slices"
 
 	"github.com/fe3dback/go-arch-lint/internal/models"
 	"github.com/fe3dback/go-arch-lint/internal/models/arch"
@@ -31,7 +33,13 @@ func newComponentsAssembler(
 }
 
 func (m *componentsAssembler) assemble(spec *arch.Spec, document spec.Document) error {
-	for yamlName, yamlComponent := range document.Components() {
+	components := document.Components()
+
+	// components stored in map, iterate it in stable order,
+	// because assembled spec.Components order is visible in commands output
+	for _, yamlName := range slices.Sorted(maps.Keys(components)) {
+		yamlComponent := components[yamlName]
+
 		component, err := m.assembleComponent(yamlName, yamlComponent, document)
 		if err != nil {
 			return fmt.Errorf("failed to assemble component '%s': %w", yamlName, err)
