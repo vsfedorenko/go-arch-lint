@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit suite for the mapping operation (0% → 98.3%): grouped/list view
+  assembly, empty components staying visible, the trailing
+  "[not attached]" bucket, coupling attachment, and error wrapping from
+  every port. Ports mocked via mockery (EXPECT-driven).
+
+### Added
 - Unit suite for the check operation (0% → 61.5%): config-error
   classification for unreadable projects, spec-assemble failure wrapping,
   the clean/violating exit-code trichotomy, the MaxWarnings cap (omitted
