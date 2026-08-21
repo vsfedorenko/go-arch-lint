@@ -126,10 +126,7 @@ func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 	// A child Path joins the enclosing Path's prefix; at the top level
 	// the prefix is empty. Absolute-looking inputs ("/x") stay top-level
 	// by convention: leading slashes are stripped before joining.
-	rel := p
-	if strings.HasPrefix(rel, "/") {
-		rel = rel[1:]
-	}
+	rel := strings.TrimPrefix(p, "/")
 	var clean string
 	if s.top != nil && !strings.HasPrefix(p, "/") {
 		clean = path.Join(s.top.from, rel)
