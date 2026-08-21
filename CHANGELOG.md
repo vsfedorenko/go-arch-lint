@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] — 2026-08-21
+
 ### Fixed
 - The default `init` scaffold checks green out of the box: it used to
   ship with every component commented out (spec invalid: "at least one
@@ -16,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   catch-all component, `Workdir(".")`, and excludes `.go-arch-lint/`
   itself. Pinned by black-box tests (scaffold → check on a real module
   and on an empty one).
+- `check --help` outside a project prints usage instead of a config
+  error (#68).
+- Security/CI hardening: dependabot (gomod + github-actions), OSSF
+  scorecard on main pushes, scorecard-action pinned (the upstream moving
+  `v2` tag was unpublished).
 
 ## [2.3.0] — 2026-08-20
 
