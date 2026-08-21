@@ -134,10 +134,7 @@ func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 	if s.top != nil && !strings.HasPrefix(p, "/") {
 		clean = path.Join(s.top.from, rel)
 	} else {
-		clean = path.Clean("/" + rel)
-		if strings.HasPrefix(clean, "/") {
-			clean = clean[1:]
-		}
+		clean = strings.TrimPrefix(path.Clean("/"+rel), "/")
 	}
 	if clean == "" || clean == "." {
 		panic(fmt.Errorf("%s:%d: Path(\"\") — empty path", file, line))
