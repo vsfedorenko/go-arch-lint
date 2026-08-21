@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Synced with upstream fe3dback/go-arch-lint (through #87): Go 1.27
+  support via golang.org/x dependency upgrades (x/mod v0.40.0, x/tools
+  v0.49.0), spec-validator fixes, and upstream's stable unit tests for
+  the holder/scanner. Fork-authoritative surfaces kept: v2 Go-DSL docs,
+  the release pipeline, the testify-standalone test suites, and the
+  v2 URL-archfile stub (upstream's http.Get loader intentionally not
+  taken — v2 specs are local Go DSL).
+
 ## [2.4.2] — 2026-08-22
 
 ### Added

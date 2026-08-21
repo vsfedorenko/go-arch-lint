@@ -380,6 +380,7 @@ __pycache__/
 __pypackages__/
 # Compiled arch-lint spec binaries (go build in examples' .go-arch-lint/)
 examples/**/arch-lint-local
+.go-arch-lint/arch-lint-local
 atlassian-ide-plugin.xml
 bower_components
 build/
