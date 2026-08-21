@@ -36,12 +36,6 @@ type VendorID struct {
 	spec *SpecBuilder
 }
 
-// target is anything a Use may reference: a path or a vendor.
-type target struct {
-	path   *PathID
-	vendor *VendorID
-}
-
 // Entry is one declared path.
 type Entry struct {
 	// Full is the slash-joined path from the module root ("**" kept).
@@ -81,8 +75,6 @@ type SpecBuilder struct {
 	// from inside the SAME fn merges — see Use).
 	uses     map[string]*UseEntry
 	useOrder []string
-	// fsRoot is the filesystem root paths resolve against (empty = cwd).
-	fsRoot string
 	// declared tracks every PathID/VendorID that got its declaration
 	// executed (assigned), so Use(unusedID) is detectable.
 	declared map[string]bool
@@ -278,10 +270,6 @@ func (s *SpecBuilder) finish() *Build {
 	}
 	return b
 }
-
-// SetFSRoot points path validation at a real filesystem root. Called by
-// the pipeline before finish; empty keeps paths unvalidated (tests).
-func (s *SpecBuilder) SetFSRoot(root string) { s.fsRoot = root }
 
 // Suggest returns the closest declared name to typo ("" when none is
 // close enough). Used by the checker and by tests of diagnostics.
