@@ -120,10 +120,10 @@ func TestRunCLI_baseline_update_without_baseline_is_config_error(t *testing.T) {
 func TestRunCLI_one_line_without_json_is_config_error(t *testing.T) {
 	root := writeProject(t, false)
 
-	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, "--output-json-one-line"})
+	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, flOneLineFlag})
 	require.Error(t, err, "--output-json-one-line without json output must not be ignored")
 	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
-	assert.Contains(t, err.Error(), "--output-json-one-line", "error must name the flag and the fix: %v", err)
+	assert.Contains(t, err.Error(), flOneLineFlag, "error must name the flag and the fix: %v", err)
 }
 
 // The output-flag pair is validated for EVERY command, not just check —
@@ -132,7 +132,7 @@ func TestRunCLI_one_line_without_json_is_config_error(t *testing.T) {
 func TestRunCLI_one_line_without_json_rejected_on_mapping(t *testing.T) {
 	root := writeProject(t, false)
 
-	err := archlint.RunCLI(cliSpec(), []string{"mapping", flProjectPath, root, flNoColors, "--output-json-one-line"})
+	err := archlint.RunCLI(cliSpec(), []string{"mapping", flProjectPath, root, flNoColors, flOneLineFlag})
 	require.Error(t, err, "mapping must reject the incoherent flag pair as well")
 	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
 }
@@ -140,7 +140,7 @@ func TestRunCLI_one_line_without_json_rejected_on_mapping(t *testing.T) {
 func TestRunCLI_one_line_with_json_still_works(t *testing.T) {
 	root := writeProject(t, false)
 
-	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, "--json", "--output-json-one-line"})
+	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, "--json", flOneLineFlag})
 	assert.NoError(t, err, "the coherent combination (--json + one-line) must keep working, got %v", err)
 }
 
