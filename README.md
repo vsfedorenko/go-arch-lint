@@ -370,8 +370,8 @@ HTML-отчёт (инлайн-CSS, без скриптов и внешних а�
 ```yaml
 - uses: actions/checkout@v7
 - uses: actions/setup-go@v7
-  with: { go-version: '1.25' }
-- uses: vsfedorenko/go-arch-lint@main   # после первого релиза — @v2.1
+  with: { go-version: '1.25.13' }
+- uses: vsfedorenko/go-arch-lint@v2.4.1
 ```
 
 Подробности и все inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).
