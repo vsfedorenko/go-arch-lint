@@ -294,32 +294,25 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Fail fast on the incoherent flag combination instead of silently
-	// no-op'ing the run: --baseline-update without --baseline recorded
-	// nothing and the check still ran (violations failed the build with
-	// no baseline written) — confusing in CI.
-	if cfg.baselineUpdate && cfg.baselinePath == "" {
-		return models.NewConfigError("--baseline-update requires --baseline <file> to know where to record the fingerprints")
+	checkOpts := models.CheckOptions{
+		ProjectPath:       cfg.projectPath,
+		MaxWarnings:       cfg.maxWarnings,
+		UseColors:         cfg.useColors,
+		Format:            cfg.format,
+		OutputType:        cfg.outputType,
+		OutputJSONOneLine: cfg.outputJSONOneLine,
+		BaselinePath:      cfg.baselinePath,
+		BaselineUpdate:    cfg.baselineUpdate,
 	}
 
-	// Same fail-fast contract for the output flags. --output-json-one-line
-	// only affects the json output type; on ascii (or with --format
-	// text/sarif/...) it changed nothing while LOOKING honored — the
-	// exact confusion reported against the CLI upstream ("an error would
-	// have been helpful", fe3dback/go-arch-lint#62). Reject with the fix
-	// spelled out instead.
-	if cfg.outputJSONOneLine {
-		jsonOutput := cfg.outputType == models.OutputTypeJSON
-
-		// --format json (flat violation array) is also JSON on stdout;
-		// compacting it is meaningful there, so accept the combination.
-		if cfg.format == models.FormatJSON {
-			jsonOutput = true
-		}
-
-		if !jsonOutput {
-			return models.NewConfigError("--output-json-one-line only affects json output: add --output-type=json (or --json), or drop the flag")
-		}
+	// Fail fast on incoherent flag combinations instead of silently
+	// no-op'ing the run: --baseline-update without --baseline recorded
+	// nothing and the check still ran (violations failed the build with
+	// no baseline written) — confusing in CI. The rules live on
+	// models.CheckOptions so the cobra entry path (scaffolded runners
+	// via MustRunCLI) enforces the exact same contracts.
+	if err := checkOpts.ValidateFlagPairs(); err != nil {
+		return err
 	}
 
 	switch cfg.outputType {
@@ -332,16 +325,7 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	// dsl → services boundary: the public API accepts a dsl.SpecDef, the
 	// internal app layer consumes a services-layer GoDecoder. Converting
 	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
-	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), models.CheckOptions{
-		ProjectPath:       cfg.projectPath,
-		MaxWarnings:       cfg.maxWarnings,
-		UseColors:         cfg.useColors,
-		Format:            cfg.format,
-		OutputType:        cfg.outputType,
-		OutputJSONOneLine: cfg.outputJSONOneLine,
-		BaselinePath:      cfg.baselinePath,
-		BaselineUpdate:    cfg.baselineUpdate,
-	})
+	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), checkOpts)
 }
 
 // RunCLI executes the delegated CLI command surface (check, mapping,
