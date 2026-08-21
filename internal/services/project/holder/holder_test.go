@@ -9,6 +9,11 @@ import (
 	"github.com/fe3dback/go-arch-lint/internal/models/common"
 )
 
+const (
+	testPathHolder  = "/app/internal/glue/project/holder"
+	testPathPackage = "/app/internal/glue/project/package"
+)
+
 func Test_packageMathPath(t *testing.T) {
 	type args struct {
 		packagePath string
@@ -22,15 +27,15 @@ func Test_packageMathPath(t *testing.T) {
 		{
 			name: "exactly",
 			args: args{
-				packagePath: "/app/internal/glue/project/holder",
-				path:        "/app/internal/glue/project/holder",
+				packagePath: testPathHolder,
+				path:        testPathHolder,
 			},
 			want: true,
 		},
 		{
 			name: "subfolder",
 			args: args{
-				packagePath: "/app/internal/glue/project/holder",
+				packagePath: testPathHolder,
 				path:        "/app/internal/glue/project/holder/sub",
 			},
 			want: false,
@@ -38,7 +43,7 @@ func Test_packageMathPath(t *testing.T) {
 		{
 			name: "subfolder 2",
 			args: args{
-				packagePath: "/app/internal/glue/project/holder",
+				packagePath: testPathHolder,
 				path:        "/app/internal/glue/project/holder/sub/b",
 			},
 			want: false,
@@ -46,7 +51,7 @@ func Test_packageMathPath(t *testing.T) {
 		{
 			name: "lower 1",
 			args: args{
-				packagePath: "/app/internal/glue/project/holder",
+				packagePath: testPathHolder,
 				path:        "/app/internal/glue/project",
 			},
 			want: false,
@@ -74,11 +79,11 @@ func Test_componentMatchPackage(t *testing.T) {
 		{
 			name: "match",
 			args: args{
-				packagePath: "/app/internal/glue/project/package",
+				packagePath: testPathPackage,
 				component: arch.Component{
 					ResolvedPaths: []common.Referable[models.ResolvedPath]{
 						common.NewReferable(
-							models.ResolvedPath{AbsPath: "/app/internal/glue/project/package"},
+							models.ResolvedPath{AbsPath: testPathPackage},
 							common.NewEmptyReference(),
 						),
 					},
@@ -89,7 +94,7 @@ func Test_componentMatchPackage(t *testing.T) {
 		{
 			name: "not match",
 			args: args{
-				packagePath: "/app/internal/glue/project/package",
+				packagePath: testPathPackage,
 				component: arch.Component{
 					ResolvedPaths: []common.Referable[models.ResolvedPath]{
 						common.NewReferable(
@@ -104,7 +109,7 @@ func Test_componentMatchPackage(t *testing.T) {
 		{
 			name: "any match",
 			args: args{
-				packagePath: "/app/internal/glue/project/package",
+				packagePath: testPathPackage,
 				component: arch.Component{
 					ResolvedPaths: []common.Referable[models.ResolvedPath]{
 						common.NewReferable(
@@ -112,7 +117,7 @@ func Test_componentMatchPackage(t *testing.T) {
 							common.NewEmptyReference(),
 						),
 						common.NewReferable(
-							models.ResolvedPath{AbsPath: "/app/internal/glue/project/package"},
+							models.ResolvedPath{AbsPath: testPathPackage},
 							common.NewEmptyReference(),
 						),
 					},

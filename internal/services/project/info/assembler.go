@@ -107,7 +107,8 @@ func checkArchFile(archFilePath string) (string, error) {
 }
 
 func checkArchFileURL(archFileURL string) (string, error) {
-	resp, err := http.Get(archFileURL)
+	// url is provided by user in cli flags, downloading it is the point of this function
+	resp, err := http.Get(archFileURL) // #nosec G107
 	if err != nil {
 		return "", fmt.Errorf("downloading archfile: %w", err)
 	}
