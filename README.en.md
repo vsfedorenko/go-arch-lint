@@ -329,8 +329,8 @@ directly on the diff lines, binary installed from the release — no JS glue:
 ```yaml
 - uses: actions/checkout@v7
 - uses: actions/setup-go@v7
-  with: { go-version: '1.25' }
-- uses: vsfedorenko/go-arch-lint@main   # pin @v2.1 after the first release
+  with: { go-version: '1.25.13' }
+- uses: vsfedorenko/go-arch-lint@v2.4.1
 ```
 
 Details and all inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).
