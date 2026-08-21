@@ -81,6 +81,21 @@ func (c *Container) CommandRoot() *cobra.Command {
 				return fmt.Errorf("unknown format: %s", flags.Format)
 			}
 
+			// Fail fast on incoherent flag combinations with the same rule
+			// set the public archlint.Run SDK path enforces
+			// (models.CheckOptions.ValidateFlagPairs): a scaffolded runner
+			// must reject `--output-json-one-line` without json output
+			// exactly like the SDK does, for every command — not silently
+			// ignore it (README: "a config error, not a silent no-op").
+			flagPairs := models.CheckOptions{
+				OutputType:        flags.OutputType,
+				OutputJSONOneLine: flags.OutputJsonOneLine,
+				Format:            flags.Format,
+			}
+			if err := flagPairs.ValidateFlagPairs(); err != nil {
+				return err
+			}
+
 			// save global flags for another child commands
 			c.flags = flags
 			return nil

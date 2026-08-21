@@ -24,6 +24,7 @@ const (
 	flFormat      = "--format"
 	flOutputType  = "--output-type"
 	flJSONFlag    = "--json"
+	flOneLineFlag = "--output-json-one-line"
 
 	tcCmdCheck       = "check"
 	tcCmdSelfInspect = "selfInspect"
@@ -79,8 +80,8 @@ func TestOptionsFromFlags_output_type(t *testing.T) {
 		{"space form", []string{flOutputType, tcJSON}, 1, tcJSON},
 		{"equals form", []string{flOutputType + "=" + tcJSON}, 1, tcJSON},
 		{"ascii explicit", []string{flOutputType, tcASCII}, 1, tcASCII},
-		{"--json alias", []string{"--json"}, 1, tcJSON},
-		{"explicit type beats alias", []string{"--json", flOutputType, tcASCII}, 1, tcASCII},
+		{"--json alias", []string{flJSONFlag}, 1, tcJSON},
+		{"explicit type beats alias", []string{flJSONFlag, flOutputType, tcASCII}, 1, tcASCII},
 		{"absent", nil, 0, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -99,7 +100,7 @@ func TestOptionsFromFlags_output_type(t *testing.T) {
 }
 
 func TestOptionsFromFlags_json_one_line(t *testing.T) {
-	opts := archlint.OptionsFromFlags([]string{"--output-json-one-line"})
+	opts := archlint.OptionsFromFlags([]string{flOneLineFlag})
 	require.Len(t, opts, 1, "expected 1 option")
 }
 
@@ -210,7 +211,7 @@ func TestRun_OneLineWithoutJSON_is_config_error(t *testing.T) {
 	)
 	require.Error(t, err)
 	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
-	assert.Contains(t, err.Error(), "--output-json-one-line", "error must name the flag and the fix: ")
+	assert.Contains(t, err.Error(), flOneLineFlag, "error must name the flag and the fix: ")
 
 	// The same flag with json output is fine (covered above) — and so is
 	// the --format json (flat array) spelling: compacting a flat JSON

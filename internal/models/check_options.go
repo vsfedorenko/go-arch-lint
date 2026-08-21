@@ -30,3 +30,31 @@ type CheckOptions struct {
 	// BaselinePath.
 	BaselineUpdate bool
 }
+
+// ValidateFlagPairs rejects incoherent flag combinations with an
+// actionable error instead of letting them silently no-op. One rule set
+// shared by BOTH entry paths — the public archlint.Run SDK path and the
+// cobra tree the scaffolded runner drives via MustRunCLI — so a scaffolded
+// `check --baseline-update` (no --baseline) fails the same way the SDK
+// does, instead of running a plain check that records nothing.
+func (o CheckOptions) ValidateFlagPairs() error {
+	if o.BaselineUpdate && o.BaselinePath == "" {
+		return NewConfigError("--baseline-update requires --baseline <file> to know where to record the fingerprints")
+	}
+
+	if o.OutputJSONOneLine {
+		jsonOutput := o.OutputType == OutputTypeJSON
+
+		// --format json (flat violation array) is also JSON on stdout;
+		// compacting it is meaningful there, so accept the combination.
+		if o.Format == FormatJSON {
+			jsonOutput = true
+		}
+
+		if !jsonOutput {
+			return NewConfigError("--output-json-one-line only affects json output: add --output-type=json (or --json), or drop the flag")
+		}
+	}
+
+	return nil
+}

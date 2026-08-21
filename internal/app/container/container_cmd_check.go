@@ -35,11 +35,23 @@ func (c *Container) commandCheck() (*cobra.Command, runner) {
 
 		if in.MaxWarnings < warningsRangeMin || in.MaxWarnings > warningsRangeMax {
 			return nil, fmt.Errorf(
-				"flag '%s' should by in range [%d .. %d]",
+				"flag '%s' should be in range [%d .. %d]",
 				"max-warnings",
 				warningsRangeMin,
 				warningsRangeMax,
 			)
+		}
+
+		// Baseline pair lives on the check command (the root hook covers
+		// the global output flags). Same shared rule set as the SDK path:
+		// --baseline-update without --baseline must be an actionable
+		// config error, not a plain check run that records nothing.
+		flagPairs := models.CheckOptions{
+			BaselinePath:   in.BaselinePath,
+			BaselineUpdate: in.BaselineUpdate,
+		}
+		if err := flagPairs.ValidateFlagPairs(); err != nil {
+			return nil, err
 		}
 
 		return c.commandCheckOperation().Behave(act.Context(), in)

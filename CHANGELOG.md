@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Flag-pair validation now covers the delegated cobra path, not only the
+  SDK entry point: since the scaffold ships `archlint.MustRunCLI` as its
+  runner (#64), `check --baseline-update` without `--baseline` silently
+  ran a plain check that recorded nothing (exit 0/1), and
+  `--output-json-one-line` without json output was silently ignored on
+  `check`/`mapping`/`graph` — while both READMEs promise "a config
+  error, not a silent no-op". Both combinations now fail fast with an
+  actionable config error (exit 2) on every command, via one shared
+  rule set (`models.CheckOptions.ValidateFlagPairs`) used by BOTH entry
+  paths. Also fixes the `max-warnings` range message typo
+  ("should by" → "should be"). Found by probing the built launcher
+  against a freshly scaffolded project.
+
 ## [2.4.0] — 2026-08-21
 
 ### Fixed

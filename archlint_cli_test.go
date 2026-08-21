@@ -100,6 +100,50 @@ func TestRunCLI_unknown_command_is_config_error(t *testing.T) {
 	assert.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err))
 }
 
+// The silent no-op flag pairs must fail fast on the COBRA surface too —
+// not only through archlint.Run. Since the scaffold ships
+// archlint.MustRunCLI as its runner (see scaffold.go), the SDK-path
+// validation alone never runs for real users: `check --baseline-update`
+// (no --baseline) recorded nothing and exited as a plain check, and
+// `--output-json-one-line` without json output was ignored — while both
+// READMEs promise "a config error, not a silent no-op". Found by probing
+// the built launcher against a freshly scaffolded project.
+func TestRunCLI_baseline_update_without_baseline_is_config_error(t *testing.T) {
+	root := writeProject(t, false)
+
+	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, "--baseline-update"})
+	require.Error(t, err, "--baseline-update without --baseline must not degrade to a plain check run")
+	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
+	assert.Contains(t, err.Error(), "requires --baseline", "error must name the missing flag: %v", err)
+}
+
+func TestRunCLI_one_line_without_json_is_config_error(t *testing.T) {
+	root := writeProject(t, false)
+
+	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, flOneLineFlag})
+	require.Error(t, err, "--output-json-one-line without json output must not be ignored")
+	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
+	assert.Contains(t, err.Error(), flOneLineFlag, "error must name the flag and the fix: %v", err)
+}
+
+// The output-flag pair is validated for EVERY command, not just check —
+// `mapping --output-json-one-line` silently ignored the flag the same
+// way before the shared root-level validation.
+func TestRunCLI_one_line_without_json_rejected_on_mapping(t *testing.T) {
+	root := writeProject(t, false)
+
+	err := archlint.RunCLI(cliSpec(), []string{"mapping", flProjectPath, root, flNoColors, flOneLineFlag})
+	require.Error(t, err, "mapping must reject the incoherent flag pair as well")
+	require.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err), "must map to config error (2), got %d: %v", archlint.ExitCode(err), err)
+}
+
+func TestRunCLI_one_line_with_json_still_works(t *testing.T) {
+	root := writeProject(t, false)
+
+	err := archlint.RunCLI(cliSpec(), []string{tcCmdCheck, flProjectPath, root, flNoColors, "--json", flOneLineFlag})
+	assert.NoError(t, err, "the coherent combination (--json + one-line) must keep working, got %v", err)
+}
+
 func TestRunCLI_empty_spec_rejected(t *testing.T) {
 	err := archlint.RunCLI(dsl.SpecDef{}, []string{tcCmdCheck})
 	require.Error(t, err)
