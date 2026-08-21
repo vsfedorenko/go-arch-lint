@@ -10,8 +10,11 @@
 //
 // Defaults: nothing may use anything until a Use says so. The order of
 // declarations mirrors the direction of dependencies (referring forward is
-// a Go compile error). Paths are verified against the real filesystem at
-// spec-build time — a typo panics with file:line and a suggestion.
+// a Go compile error). Malformed specs panic at build time with file:line
+// (duplicate paths, Use outside a Path fn, self-use, raw strings as
+// targets, misplaced "**"). Filesystem verification of declared paths and
+// did-you-mean suggestions arrive with the checker-pipeline integration
+// (stage 2 of the v3 roadmap).
 //
 // This package is experimental: the API may change before it replaces the
 // first-generation dsl package.
