@@ -46,9 +46,9 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	// arch.go is the user-editable spec: v2 DSL import, Spec entry, NO runner.
 	archgo, err := os.ReadFile(filepath.Join(archDir, "arch.go"))
 	require.NoError(t, err, "read arch.go")
-	assert.Contains(t, string(archgo), "dsl.Spec(func(s *dsl.SpecBuilder)", "arch.go missing Spec entry: %s", archgo)
-	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v3/dsl"`, "arch.go missing dsl import: %s", archgo)
-	assert.Contains(t, string(archgo), `s.Path(".")`, "arch.go missing the module-root component: %s", archgo)
+	assert.Contains(t, string(archgo), "Spec(func() {", "arch.go missing Spec entry: %s", archgo)
+	assert.Contains(t, string(archgo), `. "github.com/vsfedorenko/go-arch-lint/v3/dsl"`, "arch.go missing dot-import: %s", archgo)
+	assert.Contains(t, string(archgo), `Path(".")`, "arch.go missing the module-root component: %s", archgo)
 	assert.NotContains(t, string(archgo), "func main()", "arch.go must not contain the runner: %s", archgo)
 
 	// main.go is the stable runner: command+flag passthrough, NO spec definition.
@@ -91,12 +91,12 @@ func TestScanGoDirs(t *testing.T) {
 // appear in one s.Exclude call after the Path declarations.
 func TestV2SpecFromDirs_ExcludeLine(t *testing.T) {
 	spec := v2SpecFromDirs([]string{".", "internal/app"}, []string{"testdata/**"})
-	assert.Contains(t, spec, `s.Path(".")`, "spec missing Path decl: %s", spec)
-	assert.Contains(t, spec, `s.Exclude("testdata/**")`, "spec missing Exclude call: %s", spec)
+	assert.Contains(t, spec, `Path(".")`, "spec missing Path decl: %s", spec)
+	assert.Contains(t, spec, `Exclude("testdata/**")`, "spec missing Exclude call: %s", spec)
 
 	// no excludes -> no Exclude call and no comment noise
 	plain := v2SpecFromDirs([]string{"."}, nil)
-	assert.NotContains(t, plain, "s.Exclude(", "unexpected Exclude in %s", plain)
+	assert.NotContains(t, plain, "Exclude(", "unexpected Exclude in %s", plain)
 }
 
 func TestCmdInit_AlreadyExists(t *testing.T) {

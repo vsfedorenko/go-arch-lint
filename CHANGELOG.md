@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Every doc example, the `init` scaffold template and the examples/ specs now
+  use the dot-import sugar form (`Spec(func(){ ... Path(...) ... Use(...) })`)
+  introduced in #107; the explicit builder form stays documented as the
+  equivalent alternative.
+- examples/*/.go-arch-lint: `replace` now points at the repo root with a
+  portable relative path.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),

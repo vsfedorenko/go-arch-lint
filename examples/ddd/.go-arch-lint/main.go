@@ -2,16 +2,16 @@ package main
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/v3"
-	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = dsl.Spec(func(s *dsl.SpecBuilder) {
-	user := s.Path("internal/domain/user")
-	order := s.Path("internal/domain/order", func() { s.Use(user) })
-	application := s.Path("internal/application", func() { s.Use(user, order) })
-	infrastructure := s.Path("internal/infrastructure", func() { s.Use(user, order) })
-	interfaces := s.Path("internal/interfaces", func() { s.Use(application) })
-	s.Path(".", func() { s.Use(application, infrastructure, interfaces) })
+var build = Spec(func() {
+	user := Path("internal/domain/user")
+	order := Path("internal/domain/order", func() { Use(user) })
+	application := Path("internal/application", func() { Use(user, order) })
+	infrastructure := Path("internal/infrastructure", func() { Use(user, order) })
+	interfaces := Path("internal/interfaces", func() { Use(application) })
+	Path(".", func() { Use(application, infrastructure, interfaces) })
 })
 
 func main() {

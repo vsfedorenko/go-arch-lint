@@ -63,17 +63,17 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+var build = Spec(func() {
 	// Каждый каталог с Go-кодом объявлен: язык v3 падает на
 	// необъявленных каталогах. Добавляйте правила Use по мере
 	// роста архитектуры:
 	//
-	//     domain := s.Path("internal/domain")
-	//     s.Path("internal/core", func() { s.Use(domain) })
-	s.Path(".")
-	s.Path("cmd/app")
-	s.Path("internal/handlers")
-	s.Path("internal/services")
+	//     domain := Path("internal/domain")
+	//     Path("internal/core", func() { Use(domain) })
+	Path(".")
+	Path("cmd/app")
+	Path("internal/handlers")
+	Path("internal/services")
 })
 ```
 
@@ -215,22 +215,26 @@ go-arch-lint — не только CLI, но и библиотека. Спека
 ```go
 import (
 	"github.com/vsfedorenko/go-arch-lint/v3"
-	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func runArchCheck() error {
-	build := dsl.Spec(func(s *dsl.SpecBuilder) {
-		domain := s.Path("shop/domain")
-		pgx := s.Vendor("pgx", "github.com/jackc/pgx/v5")
+	build := Spec(func() {
+		domain := Path("shop/domain")
+		pgx := Vendor("pgx", "github.com/jackc/pgx/v5")
 
-		s.Path("shop/core", func() {
-			s.Use(domain, pgx) // core использует domain и pgx
+		Path("shop/core", func() {
+			Use(domain, pgx) // core использует domain и pgx
 		})
 	})
 
 	return archlint.Run(build, archlint.WithProjectPath("."))
 }
 ```
+
+Обе формы равнозначны: точечный импорт с `Spec(func() {...})` — компактная,
+а явная `Spec(func(s *dsl.SpecBuilder) {...})` с методами — без глобального
+роутинга. Стили можно миксовать в одной спеке.
 
 Правила простые:
 
@@ -269,8 +273,8 @@ file:line. Каталоги проверяются по диску: несуще
 
 | v2.x (удалено)         | v3                                            |
 |------------------------|-----------------------------------------------|
-| `Component("n", "a/b")`| `n := s.Path("a/b")`                          |
-| `Deps("n", …MayDependOn("m"))` | `s.Path("a/b", func() { s.Use(m) })` |
+| `Component("n", "a/b")`| `n := Path("a/b")`                             |
+| `Deps("n", …MayDependOn("m"))` | `Path("a/b", func() { Use(m) })`     |
 | `CommonComponents("n")`| `Use(n)` у каждого, кому нужен                |
 | `AnyProjectDeps(true)` | перечислить цели явно в `Use`                 |
 | `Vendor(name, imp)` (один путь) | `s.Vendor(name, imp1, imp2)`         |
