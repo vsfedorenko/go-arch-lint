@@ -2,13 +2,27 @@
 
 ## [Unreleased]
 
-### Changed
-- Every doc example, the `init` scaffold template and the examples/ specs now
-  use the dot-import sugar form (`Spec(func(){ ... Path(...) ... Use(...) })`)
-  introduced in #107; the explicit builder form stays documented as the
-  equivalent alternative.
+## [3.1.0] — 2026-08-22
+
+### Added
+- Package-level `Path` / `Use` / `Vendor` / `Exclude` sugar: specs can now be
+  written receiverless with a dot import, and `Spec(fn)` accepts both
+  closure shapes — `func()` (dot-import style) and `func(s *SpecBuilder)`
+  (explicit builder style, unchanged). Routing is goroutine-local, so
+  parallel Specs stay isolated; both styles may be mixed in one Spec.
+  Panics and Use diagnostics keep pointing at the user's spec line (#107).
+- The `init` scaffold, every doc example and the examples/ specs now use
+  the sugar form; the explicit builder form stays documented as the
+  equivalent alternative (#108).
 - examples/*/.go-arch-lint: `replace` now points at the repo root with a
-  portable relative path.
+  portable relative path (#108).
+
+### Fixed
+- Fresh `init` scaffolds broke at `go mod tidy` time: the template used the
+  sugar form before it existed in a published release (`Spec(func(){…})` did
+  not compile against v3.0.4). Release v3.1.0 ships the sugar API, making
+  every `go-arch-lint init` → `go mod tidy` → `check` run green again.
+  Found by probing the scaffold as a consumer.
 
 All notable changes to this project will be documented in this file.
 
