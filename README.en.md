@@ -255,6 +255,50 @@ silently running `check`. The launcher dialect (`-p`, `--no-colors`,
 command defaults to `check`. `MustRunCLI` is the conventional-exit-code
 variant.
 
+### v2 DSL (experimental)
+
+The DSL above is the first generation (`dsl`). There is a second, simpler
+one — the entire language is four calls.
+
+```go
+import (
+	"github.com/vsfedorenko/go-arch-lint/v2"
+	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+)
+
+func runArchCheck() error {
+	build := v2.Spec(func(s *v2.SpecBuilder) {
+		domain := s.Path("shop/domain")
+
+		s.Path("shop/core", func() {
+			s.Use(domain) // core may use domain
+		})
+	})
+
+	return archlint.RunV2(build, archlint.WithProjectPath("."))
+}
+```
+
+The rules are simple:
+
+- `Path("a/b")` — a directory with Go code, i.e. a component.
+  `Path("a/b/**")` — the whole subtree as one component. `Path(".")` —
+  the module root.
+- `Use(...)` — the only rule: "this path uses these targets". Targets
+  are `Path`/`Vendor` variables only, mixed freely.
+- `Vendor(name, import)` — an external package, a legal `Use` target.
+- By default everything is denied until a `Use` allows it.
+
+Declaration order mirrors dependency direction: referring forward is a
+Go compile error. Typos and malformed specs panic at build time with
+file:line. Directories are verified against the filesystem: a missing
+path is a config error with a "did you mean" hint.
+
+`archlint.MustRunV2(build)` is the conventional-exit-code variant.
+
+The package is experimental: the API may change before it replaces the
+first generation (stage 4 of the v3 roadmap).
+
 ## Commands
 
 | Command       | Purpose                                          |
