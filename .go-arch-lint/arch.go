@@ -35,7 +35,7 @@ var spec = Spec(func() {
 	Component("services", "services/**")
 	Component("view", "view")
 	Component("models", "models/**")
-	Component("dsl", "../dsl")
+	Component("dsl", "../dsl", "../dsl/v2")
 
 	CommonVendors("go-common")
 	CommonComponents("models")
