@@ -24,29 +24,17 @@ go 1.25
 const scaffoldArchGo = `package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
 )
 
-var spec = Spec(func() {
-	Version(1)
-	Workdir(".")
-
-	Allow(func() {
-		DepOnAnyVendor(false)
-	})
-
-	Exclude(".go-arch-lint")
-
-	ExcludeFiles(` + "`^.*_test\\.go$`" + `)
-
-	// One component matching the whole tree keeps the fresh scaffold
-	// green (a spec with no components is invalid). Split it into real
-	// components and add Deps rules as your architecture takes shape:
-	Component("app", "**")
-
-	// Deps("handler", func() {
-	//     MayDependOn("service")
-	// })
+var build = v2.Spec(func(s *v2.SpecBuilder) {
+	// The whole module as one component keeps the fresh scaffold green.
+	// Split it into real directories and add Use rules as your
+	// architecture takes shape:
+	//
+	//     domain := s.Path("internal/domain")
+	//     s.Path("internal/core", func() { s.Use(domain) })
+	s.Path(".")
 })
 `
 
@@ -64,9 +52,8 @@ import (
 )
 
 func main() {
-	archlint.MustRunCLI(spec, os.Args[1:])
-}
-`
+	archlint.MustRunCLIV2(build, os.Args[1:])
+}`
 
 // recipeFlag is the flag selecting a starter spec: init --recipe <name>.
 const recipeFlag = "--recipe"
@@ -131,6 +118,88 @@ Flags:
 ` + recipeHelp())
 }
 
+// scanGoDirs lists every directory under root (relative, slash-separated,
+// sorted, excluding .go-arch-lint, vendor, hidden dirs and testdata)
+// that directly contains a .go file. The scaffold declares each as a
+// Path() so the fresh spec satisfies the declare-everything rule.
+func scanGoDirs(root string) []string { //nolint:gosec // root is the init --project-path argument, same trust level as every other init write
+	var dirs []string
+	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error { //nolint:gosec // root is the init --project-path argument, same trust level as every other init write
+		if err != nil {
+			return nil //nolint:nilerr // unreadable entries are skipped
+		}
+		if !d.IsDir() {
+			return nil
+		}
+		if p == root {
+			// the module root itself: declare as "." when it has Go files
+			entries, readErr := os.ReadDir(p)
+			if readErr != nil {
+				return nil //nolint:nilerr // unreadable root: nothing to declare
+			}
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasSuffix(e.Name(), ".go") {
+					dirs = append(dirs, ".")
+					break
+				}
+			}
+			return nil
+		}
+		name := d.Name()
+		if name == ".go-arch-lint" || name == "vendor" || name == "testdata" || strings.HasPrefix(name, ".") {
+			return filepath.SkipDir
+		}
+		entries, readErr := os.ReadDir(p)
+		if readErr != nil {
+			return nil //nolint:nilerr // unreadable directories are skipped
+		}
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".go") {
+				rel, _ := filepath.Rel(root, p)
+				dirs = append(dirs, filepath.ToSlash(rel))
+				break
+			}
+		}
+		return nil
+	})
+	sort.Strings(dirs)
+	return dirs
+}
+
+// v2SpecFromDirs renders the scaffolded arch.go body declaring every
+// discovered Go directory as a Path component. A module without any Go
+// subdirectory falls back to the module root alone.
+func v2SpecFromDirs(dirs []string) string {
+	var b strings.Builder
+	b.WriteString("var build = v2.Spec(func(s *v2.SpecBuilder) {\n")
+	b.WriteString("\t// Every directory with Go code is declared: the v2 language\n")
+	b.WriteString("\t// fails on undeclared directories. Add Use rules as your\n")
+	b.WriteString("\t// architecture takes shape:\n")
+	b.WriteString("\t//\n")
+	b.WriteString("\t//     s.Path(\"internal/core\", func() { s.Use(domain) })\n")
+	if len(dirs) == 0 {
+		b.WriteString("\ts.Path(\".\")\n")
+	} else {
+		for _, d := range dirs {
+			fmt.Fprintf(&b, "\ts.Path(%q)\n", d)
+		}
+	}
+	b.WriteString("})\n")
+	return b.String()
+}
+
+// scaffoldPrefix is everything of scaffoldArchGo before the spec body —
+// the fixed header the generated declaration list is appended to.
+func scaffoldPrefix() string {
+	cut := strings.Index(scaffoldArchGo, "var build =")
+	if cut < 0 {
+		// unreachable while scaffoldArchGo is a compile-time constant
+		// with the marker; kept defensive for future template edits
+		return scaffoldArchGo
+	}
+	return scaffoldArchGo[:cut]
+}
+
 func cmdInit(args []string) int {
 	for _, a := range args {
 		if a == flagHelp || a == "-h" {
@@ -154,7 +223,11 @@ func cmdInit(args []string) int {
 		return writeScaffold(projectPath, archGo, fmt.Sprintf(" (%s recipe)", recipe))
 	}
 
-	return writeScaffold(projectPath, scaffoldArchGo, "")
+	// Default scaffold: declare the project's real directory tree so
+	// the fresh spec passes the declare-everything rule day one.
+	prefix := scaffoldPrefix()
+	body := prefix + v2SpecFromDirs(scanGoDirs(projectPath)) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
+	return writeScaffold(projectPath, body, "")
 }
 
 // writeScaffold creates the .go-arch-lint directory with go.mod, arch.go and
