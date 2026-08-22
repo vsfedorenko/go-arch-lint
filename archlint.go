@@ -463,3 +463,12 @@ func MustRun(spec dsl.SpecDef, opts ...Option) {
 	}
 	os.Exit(ExitCodeOK)
 }
+
+// MustRunV2 is [MustRun] for a v2 build (see [RunV2]).
+func MustRunV2(build *v2.Build, opts ...Option) {
+	if err := RunV2(build, opts...); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err.Error())
+		os.Exit(ExitCode(err))
+	}
+	os.Exit(ExitCodeOK)
+}

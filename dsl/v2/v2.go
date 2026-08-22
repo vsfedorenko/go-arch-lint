@@ -123,6 +123,7 @@ func Spec(fn func(s *SpecBuilder)) *Build {
 //	path := Path("internal/core")
 //	Path("internal", func() { ... children ... })
 //	all := Path("legacy/**")  // the whole subtree is one component
+//	root := Path(".")         // the module root itself is a component
 func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 	file, line := callerRef(1)
 
@@ -136,14 +137,17 @@ func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 	} else {
 		clean = strings.TrimPrefix(path.Clean("/"+rel), "/")
 	}
-	if clean == "." {
-		clean = "" // the module root itself is a legal path
-	}
-	if clean == "" && p != "." && p != "" {
+	// The module root is a legal path with the canonical key "." (never
+	// "" — an empty PathID name is the zero value, and an empty component
+	// name renders as a blank "Component  shouldn't depend on" line).
+	if clean == "" && p != "." && p != "" && p != "/" {
 		panic(fmt.Errorf("%s:%d: Path(%q) — empty path", file, line, p))
 	}
 	if clean == "" && p == "" {
 		panic(fmt.Errorf("%s:%d: Path(\"\") — empty path", file, line))
+	}
+	if clean == "" {
+		clean = "."
 	}
 	subtree := strings.HasSuffix(clean, "/**")
 	if subtree {
@@ -198,10 +202,9 @@ func (s *SpecBuilder) Use(targets ...any) {
 	if s.top == nil {
 		panic(fmt.Errorf("%s:%d: Use(...) must be called inside Path(path, func(){...})", file, line))
 	}
+	// top.from is never empty: Path() maps the module root to the
+	// canonical key "." (see Path), so no empty-from guard is needed.
 	from := s.top.from
-	if from == "" {
-		panic(fmt.Errorf("%s:%d: Use(...) must be called inside Path(path, func(){...})", file, line))
-	}
 
 	u, exists := s.uses[from]
 	if !exists {

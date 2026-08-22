@@ -155,3 +155,34 @@ func TestSuggest(t *testing.T) {
 	assert.Equal(t, "domain", Suggest("domian", []string{"domain", "core", "events"}))
 	assert.Empty(t, Suggest("zzzzzzzz", []string{"domain"}), "nothing close → empty")
 }
+
+// The module root is a component with the canonical key "." — never "".
+// The empty string is reserved for the zero-value PathID, so Use(root)
+// must work and the rendered component name must not be blank.
+func TestPath_Root(t *testing.T) {
+	b := Spec(func(s *SpecBuilder) {
+		root := s.Path(".")
+		a := s.Path("a")
+
+		s.Path("b", func() {
+			s.Use(root)
+		})
+		_ = a
+	})
+
+	require.Contains(t, b.Paths, ".", "root key is canonical \".\"")
+	require.NotContains(t, b.Paths, "", "empty key is the zero PathID, never a component")
+	assert.Equal(t, []string{"."}, b.Uses["b"].Paths, "Use(root) resolves")
+}
+
+// Use inside Path(".", func(){...}) binds to the root component.
+func TestUse_InsideRootPath(t *testing.T) {
+	b := Spec(func(s *SpecBuilder) {
+		a := s.Path("a")
+		s.Path(".", func() {
+			s.Use(a)
+		})
+	})
+	require.Contains(t, b.Uses, ".", "root rule recorded")
+	assert.Equal(t, []string{"a"}, b.Uses["."].Paths)
+}
