@@ -56,25 +56,20 @@ Creates `.go-arch-lint/` with three files. The spec and the runner are separate:
 package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
 )
 
-var spec = Spec(func() {
-	Version(1)
-	Workdir("internal")
-
-	Component("handler", "handlers/*")
-	Component("service", "services/**")
-	Component("repository", "domain/*/repository")
-
-	CommonComponents("model")
-
-	Deps("handler", func() {
-		MayDependOn("service")
-	})
-	Deps("service", func() {
-		MayDependOn("repository")
-	})
+var build = v2.Spec(func(s *v2.SpecBuilder) {
+	// Every directory with Go code is declared: the v2 language
+	// fails on undeclared directories. Add Use rules as your
+	// architecture takes shape:
+	//
+	//     domain := s.Path("internal/domain")
+	//     s.Path("internal/core", func() { s.Use(domain) })
+	s.Path(".")
+	s.Path("cmd/app")
+	s.Path("internal/handlers")
+	s.Path("internal/services")
 })
 ```
 
@@ -89,19 +84,20 @@ import (
 )
 
 func main() {
-	archlint.MustRunCLI(spec, os.Args[1:])
+	archlint.MustRunCLIV2(build, os.Args[1:])
 }
 ```
 
 How this works:
 
-— `Workdir` sets the root below which the linter scans for Go packages.
-— `Component` maps a component name to a path glob pattern.
-— `Deps` declares which components a component may depend on.
-— `CommonComponents` — components available to everyone (utilities, models).
-— `Vendor` and `CanUse` — third-party libraries allowed for a specific component.
+— `init` scans the project and declares every directory with Go code as a component (`Path`). The fresh scaffold is honest: all paths are declared, and real violations of missing `Use` rules show up immediately.
+— `Use` is the only rule: "this path uses these targets". Without an explicit `Use`, everything is denied.
+— `Vendor(name, import)` — an external library as a legal target; the standard library is always allowed.
+— Declaration order mirrors dependency direction: referring forward is a Go compile error.
 
-Full DSL function reference: [syntax docs](docs/syntax/README.md) or `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
+Full v2 walkthrough — in the [v2 DSL](#v2-dsl-experimental) section below.
+The first-generation DSL reference (`Component`/`Deps`/`Workdir`) lives in
+the [syntax docs](docs/syntax/README.md) or via `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
 
 ### Init recipes
 
@@ -113,7 +109,7 @@ go-arch-lint init --recipe ddd         # DDD: bounded contexts + application/inf
 go-arch-lint init --recipe clean       # clean architecture: domain ← usecase ← delivery
 ```
 
-A recipe writes the same scaffold (`.go-arch-lint/`), but `arch.go` already describes the layers and dependency rules of the chosen pattern. The spec sets `IgnoreNotFoundComponents(true)` — you can create the layer directories gradually; the linter won't fail while a layer is still missing.
+A recipe writes the same scaffold (`.go-arch-lint/`), but `arch.go` already describes the layers and dependency rules of the chosen pattern in the first-generation DSL (`Spec`/`Component`/`Deps` — reference in [docs/syntax](docs/syntax/README.md)). The spec sets `IgnoreNotFoundComponents(true)` — you can create the layer directories gradually; the linter won't fail while a layer is still missing (v2 offers no such leniency: it requires the directories to exist).
 
 ## Check
 
@@ -300,6 +296,11 @@ file:line. Directories are verified against the filesystem: a missing
 path is a config error with a "did you mean" hint.
 
 `archlint.MustRunV2(build)` is the conventional-exit-code variant.
+`archlint.RunCLIV2(build, os.Args[1:])` / `MustRunCLIV2` is the CLI wrapper
+over a v2 build: it routes the delegated commands (`check`, `mapping`,
+`graph`, `self-inspect`) to their own behavior; an invocation without a
+command defaults to `check`. This is what the `init` scaffold writes into
+`main.go`.
 
 The package is experimental: the API may change before it replaces the
 first generation (stage 4 of the v3 roadmap).
@@ -337,25 +338,38 @@ Visibility(func() {
 
 `Interfaces(func(){ MustLiveWithConsumer() })` enforces the hexagonal-ports rule: an interface used by exactly **one other** component must be declared in that component — not next to its implementation:
 
+```go
+Interfaces(func() {
+	MustLiveWithConsumer()
+})
+```
+
 ```
 interface 'UserRepo' must live with its consumer 'service' (declared in component 'repository')
 ```
 
 - Shared interfaces (2+ consumers) legitimately stay where they are
 - Same-component usage (including bare identifiers in the declaring package) counts as internal consumption
-- Syntax-only single-pass analysis — fast, no type-checking
+- Syntax-only single-pass analysis — fast, no type-checking, no network
+- go-arch-lint's own spec enables this rule
 
 ### Package naming conventions
 
-`Naming(func(){ ForbiddenPackages(...) })` bans junk-drawer package names:
+`Naming(func(){ ForbiddenPackages(...) })` bans junk-drawer package names (`utils`, `helpers`, `common`, …) — the sinks all code eventually leaks into. Enable it with one declaration in the spec:
 
 ```go
 Naming(func() {
-    ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
+	ForbiddenPackages("utils", "helpers", "common", "misc", "stuff")
 })
 ```
 
-One violation per package (not per file), with file count and the first witness.
+The checker compares the names of all scanned packages (the actual `package X` clauses, not paths) and reports one violation per package with the file count:
+
+```
+Package name utils is forbidden internal/utils (3 file(s)): first at internal/utils/a.go
+```
+
+In JSON output (`--format json`) these violations carry the `naming` type. go-arch-lint's own spec already bans `utils`, `helpers`, `common`, `misc`, `stuff`.
 
 ### Coupling metrics (mapping)
 

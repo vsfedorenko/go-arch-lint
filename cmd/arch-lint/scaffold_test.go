@@ -124,13 +124,17 @@ func TestCmdInit_Recipes(t *testing.T) {
 			// Recipes tolerate not-yet-created directories.
 			assert.Contains(t, s, "IgnoreNotFoundComponents(true)", "%s: recipe must set IgnoreNotFoundComponents(true)", recipe)
 
-			// go.mod and main.go are shared with the plain scaffold.
+			// go.mod is shared with the plain scaffold; main.go must match the
+			// spec's DSL generation: recipes write a v1 spec (`var spec`), so
+			// the runner must reference `spec` — a v2 runner (`build`) next to
+			// a v1 spec does not compile ("undefined: build").
 			gomod, err := os.ReadFile(filepath.Join(".go-arch-lint", "go.mod"))
 			require.NoError(t, err, "%s: bad go.mod", recipe)
 			assert.Contains(t, string(gomod), "module arch-lint-local", "%s: bad go.mod", recipe)
 			maingo, err := os.ReadFile(filepath.Join(".go-arch-lint", "main.go"))
 			require.NoError(t, err, "%s: bad main.go", recipe)
-			assert.Contains(t, string(maingo), "archlint.MustRun", "%s: bad main.go", recipe)
+			assert.Contains(t, string(maingo), "archlint.MustRunCLI(spec, os.Args[1:])", "%s: main.go must run the v1 spec via MustRunCLI", recipe)
+			assert.NotContains(t, string(maingo), "MustRunCLIV2", "%s: main.go must not use the v2 runner for a v1 spec", recipe)
 		})
 	}
 }

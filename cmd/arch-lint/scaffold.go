@@ -38,11 +38,11 @@ var build = v2.Spec(func(s *v2.SpecBuilder) {
 })
 `
 
-// scaffoldMainGo is the stable runner. Keep user-facing configuration in
-// arch.go; this file only forwards CLI flags and executes the spec.
-// MustRunCLI (not MustRun) so delegated commands (mapping, graph,
-// selfInspect) keep their own behavior instead of silently degrading
-// to a check run.
+// scaffoldMainGo is the stable runner for v2 specs. Keep user-facing
+// configuration in arch.go; this file only forwards CLI flags and executes
+// the spec. MustRunCLIV2 (not MustRunV2) so delegated commands (mapping,
+// graph, selfInspect) keep their own behavior instead of silently
+// degrading to a check run.
 const scaffoldMainGo = `package main
 
 import (
@@ -53,6 +53,23 @@ import (
 
 func main() {
 	archlint.MustRunCLIV2(build, os.Args[1:])
+}`
+
+// scaffoldMainGoV1 is the runner for v1 (recipe) specs. Recipes still use
+// the first-generation DSL (they rely on IgnoreNotFoundComponents for
+// not-yet-created layer dirs, which v2 deliberately does not offer), so
+// their runner must reference the v1 `spec` variable — a v2 runner next to
+// a v1 spec does not compile ("undefined: build").
+const scaffoldMainGoV1 = `package main
+
+import (
+	"os"
+
+	"github.com/vsfedorenko/go-arch-lint/v2"
+)
+
+func main() {
+	archlint.MustRunCLI(spec, os.Args[1:])
 }`
 
 // recipeFlag is the flag selecting a starter spec: init --recipe <name>.
@@ -220,20 +237,22 @@ func cmdInit(args []string) int {
 			fmt.Fprintf(os.Stderr, "Error: unknown recipe '%s'\n\n%s", recipe, recipeHelp())
 			return 1
 		}
-		return writeScaffold(projectPath, archGo, fmt.Sprintf(" (%s recipe)", recipe))
+		return writeScaffold(projectPath, archGo, scaffoldMainGoV1, fmt.Sprintf(" (%s recipe)", recipe))
 	}
 
 	// Default scaffold: declare the project's real directory tree so
 	// the fresh spec passes the declare-everything rule day one.
 	prefix := scaffoldPrefix()
 	body := prefix + v2SpecFromDirs(scanGoDirs(projectPath)) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
-	return writeScaffold(projectPath, body, "")
+	return writeScaffold(projectPath, body, scaffoldMainGo, "")
 }
 
 // writeScaffold creates the .go-arch-lint directory with go.mod, arch.go and
-// main.go. archGo is the spec body (plain scaffold or a recipe); label is
-// appended to the final "scaffold created" line, may be empty.
-func writeScaffold(projectPath, archGo, label string) int {
+// main.go. archGo is the spec body (plain scaffold or a recipe); mainGo is
+// the runner matching the spec's DSL generation (v2 runner for the default
+// scaffold, v1 runner for recipes); label is appended to the final
+// "scaffold created" line, may be empty.
+func writeScaffold(projectPath, archGo, mainGo, label string) int {
 	archDir := filepath.Join(projectPath, ".go-arch-lint")
 
 	if dirExists(archDir) {
@@ -249,7 +268,7 @@ func writeScaffold(projectPath, archGo, label string) int {
 	files := map[string]string{
 		"go.mod":  scaffoldGoMod,
 		"arch.go": archGo,
-		"main.go": scaffoldMainGo,
+		"main.go": mainGo,
 	}
 
 	for name, content := range files {

@@ -68,18 +68,34 @@ func runRecipeCheck(t *testing.T, projectDir string) (string, int) {
 	return out.String(), code
 }
 
-// scaffoldRecipeArchDir builds the arch module the way `init --recipe
-// hexagonal` + `go mod tidy` would: recipe spec, local replace, repo go.sum.
+// scaffoldRecipeArchDir builds the arch module the way a real user gets it:
+// run the launcher's `init --recipe hexagonal` for arch.go and main.go (the
+// exact pair the user receives — pinning BOTH is the point: a v2 runner
+// next to a v1 spec compiles nowhere, and a hand-written main.go here used
+// to hide that), then offline-wire the module with a local replace and the
+// repo go.sum.
 func scaffoldRecipeArchDir(t *testing.T, projectDir, repoRoot string) {
 	t.Helper()
 	archDir := filepath.Join(projectDir, ".go-arch-lint")
 	require.NoError(t, os.MkdirAll(archDir, 0o755), "mkdir arch dir") //nolint:gosec // test fixture dirs
 
+	launcher := filepath.Join(t.TempDir(), "arch-lint")
+	build := exec.Command("go", "build", "-o", launcher, "./cmd/arch-lint")
+	build.Dir = repoRoot
+	out, err := build.CombinedOutput()
+	require.NoError(t, err, "build launcher: %s", out)
+
+	scaffoldDir := t.TempDir()
+	init := exec.Command(launcher, "init", "--recipe", "hexagonal", "-p", scaffoldDir)
+	out, err = init.CombinedOutput()
+	require.NoError(t, err, "launcher init --recipe hexagonal: %s", out)
+
 	goMod := offlineGoMod(t, repoRoot)
-	files := map[string]string{
-		"go.mod":  goMod,
-		"arch.go": hexagonalRecipeSpec(),
-		"main.go": "package main\n\nimport (\n\t\"os\"\n\n\tarchlint \"github.com/vsfedorenko/go-arch-lint/v2\"\n)\n\nfunc main() {\n\tarchlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)\n}\n",
+	files := map[string]string{"go.mod": goMod}
+	for _, name := range []string{"arch.go", "main.go"} {
+		content, err := os.ReadFile(filepath.Join(scaffoldDir, ".go-arch-lint", name))
+		require.NoError(t, err, "read scaffolded %s", name)
+		files[name] = string(content)
 	}
 	for name, content := range files {
 		require.NoError(t, os.WriteFile(filepath.Join(archDir, name), []byte(content), 0o600), "write %s", name) //nolint:gosec // test fixture
