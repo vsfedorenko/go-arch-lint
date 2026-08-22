@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 // Flag spellings shared across the flag tests (goconst).
@@ -145,11 +145,9 @@ func oneComponentProject(t *testing.T) string {
 	return root
 }
 
-func oneComponentSpec() dsl.SpecDef {
-	return dsl.Spec(func() {
-		dsl.Version(1)
-		dsl.Workdir("internal")
-		dsl.Component("core", "core/**")
+func oneComponentSpec() *dsl.Build {
+	return dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path("internal/core/**")
 	})
 }
 

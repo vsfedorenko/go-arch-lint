@@ -1,7 +1,7 @@
 # Arch DSL Reference
 
 The go-arch-lint configuration is a Go file (`.go-arch-lint/arch.go`) that imports the
-`github.com/vsfedorenko/go-arch-lint/v2/dsl` package. Every DSL function captures its position
+`github.com/vsfedorenko/go-arch-lint/v3/dsl` package. Every DSL function captures its position
 in the source via `runtime.Caller`, so error messages point at the exact line in your `arch.go`.
 
 > [Russian version](README.md)
@@ -311,7 +311,7 @@ Visibility(func() {
 // .go-arch-lint/arch.go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var _ = Spec(func() {
     Version(1)

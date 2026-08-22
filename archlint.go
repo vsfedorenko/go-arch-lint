@@ -7,8 +7,8 @@
 // A minimal check looks like:
 //
 //	import (
-//		"github.com/vsfedorenko/go-arch-lint/v2"
-//		. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+//		"github.com/vsfedorenko/go-arch-lint/v3"
+//		. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 //	)
 //
 //	spec := Spec(func() {
@@ -35,11 +35,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/app"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/decoder"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/app"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/spec/decoder"
 )
 
 // Option customizes a [Run] call.
@@ -277,58 +276,6 @@ func boolFlag(args []string, name string) bool {
 // compile, unreadable project, internal failure). Use [ExitCode] to map the
 // error to a process exit code, or [MustRun] for the common CLI pattern.
 //
-// Run is safe for sequential use; concurrent Run calls are not synchronized.
-func Run(spec dsl.SpecDef, opts ...Option) error {
-	if spec.Builder() == nil {
-		return fmt.Errorf("spec is empty — ensure Spec() was called")
-	}
-
-	cfg := config{
-		projectPath: "../",
-		maxWarnings: 512,
-		useColors:   true,
-		format:      models.FormatText,
-	}
-	for _, o := range opts {
-		o(&cfg)
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	checkOpts := models.CheckOptions{
-		ProjectPath:       cfg.projectPath,
-		MaxWarnings:       cfg.maxWarnings,
-		UseColors:         cfg.useColors,
-		Format:            cfg.format,
-		OutputType:        cfg.outputType,
-		OutputJSONOneLine: cfg.outputJSONOneLine,
-		BaselinePath:      cfg.baselinePath,
-		BaselineUpdate:    cfg.baselineUpdate,
-	}
-
-	// Fail fast on incoherent flag combinations instead of silently
-	// no-op'ing the run: --baseline-update without --baseline recorded
-	// nothing and the check still ran (violations failed the build with
-	// no baseline written) — confusing in CI. The rules live on
-	// models.CheckOptions so the cobra entry path (scaffolded runners
-	// via MustRunCLI) enforces the exact same contracts.
-	if err := checkOpts.ValidateFlagPairs(); err != nil {
-		return err
-	}
-
-	switch cfg.outputType {
-	case "", models.OutputTypeDefault, models.OutputTypeASCII, models.OutputTypeJSON:
-		// ok — empty/default falls back to ascii downstream
-	default:
-		return models.NewConfigError(fmt.Sprintf("unknown output-type %q: expected %s or %s (see --json)", cfg.outputType, models.OutputTypeASCII, models.OutputTypeJSON))
-	}
-
-	// dsl → services boundary: the public API accepts a dsl.SpecDef, the
-	// internal app layer consumes a services-layer GoDecoder. Converting
-	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
-	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), checkOpts)
-}
 
 // RunV2 executes a check driven by a v2 Path-based DSL build (dsl/v2).
 // It is the v2 counterpart of [Run]: the build is first verified against
@@ -336,9 +283,9 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 // config errors with file:line of the offending Path call), then the same
 // check pipeline runs. Stage 2 of the v3 roadmap; the v1 Run stays until
 // the /v3 module bump removes it.
-func RunV2(build *v2.Build, opts ...Option) error {
+func Run(build *dsl.Build, opts ...Option) error {
 	if build == nil {
-		return fmt.Errorf("build is empty — ensure v2.Spec(...) was called")
+		return fmt.Errorf("build is empty — ensure dsl.Spec(...) was called")
 	}
 
 	cfg := config{
@@ -349,6 +296,13 @@ func RunV2(build *v2.Build, opts ...Option) error {
 	}
 	for _, o := range opts {
 		o(&cfg)
+	}
+
+	switch cfg.outputType {
+	case "", models.OutputTypeASCII, models.OutputTypeJSON:
+	default:
+		return fmt.Errorf("unknown output-type %q: must be %q or %q",
+			cfg.outputType, models.OutputTypeASCII, models.OutputTypeJSON)
 	}
 
 	absProject, err := filepath.Abs(cfg.projectPath)
@@ -382,53 +336,13 @@ func RunV2(build *v2.Build, opts ...Option) error {
 	return app.RunCheck(ctx, doc, checkOpts)
 }
 
-// RunCLI executes the delegated CLI command surface (check, mapping,
-// graph, self-inspect, version) against spec, with args being the
-// process arguments without the binary name (os.Args[1:], command
-// included). This is what a scaffolded `.go-arch-lint/main.go` calls so
-// that EVERY delegated command keeps its own behavior: the launcher
-// forwards `mapping`/`graph`/`selfInspect` by name, and a runner that
-// only calls [Run] silently degrades them all to a check run.
-//
-// Launcher-dialect spellings are translated: `-p` → `--project-path`,
-// `--no-colors` → `--output-color=false`, `selfInspect` → the
-// `self-inspect` command. A list without a command defaults to `check`
-// (bare `go run .go-arch-lint/` keeps linting instead of printing help).
-//
-// The error contract matches [Run]: nil on success, a user-space error
-// when check finds violations, a config error for invalid flags/specs.
-// Unknown flags are rejected (exit 2) rather than silently ignored.
-func RunCLI(spec dsl.SpecDef, args []string) error {
-	if spec.Builder() == nil {
-		return fmt.Errorf("spec is empty — ensure Spec() was called")
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	return app.RunCLI(ctx, decoder.NewGoDecoder(spec.Builder()), args)
-}
-
-// MustRunCLI runs the delegated CLI surface and exits the process with a
-// conventional exit code (see [ExitCode]). This is what a scaffolded
-// `.go-arch-lint/main.go` calls; errors that fail before the renderer
-// runs (unknown command/flag) are printed to stderr so the exit is never
-// silent.
-func MustRunCLI(spec dsl.SpecDef, args []string) {
-	if err := RunCLI(spec, args); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err.Error())
-		os.Exit(ExitCode(err))
-	}
-	os.Exit(ExitCodeOK)
-}
-
 // RunCLIV2 is [RunCLI] for a v2 Path-based DSL build: the delegated
 // command surface (check, mapping, graph, self-inspect, version) driven
 // by a dsl/v2 build. This is what a v2 scaffolded `.go-arch-lint/main.go`
 // calls.
-func RunCLIV2(build *v2.Build, args []string) error {
+func RunCLI(build *dsl.Build, args []string) error {
 	if build == nil {
-		return fmt.Errorf("build is empty — ensure v2.Spec(...) was called")
+		return fmt.Errorf("build is empty — ensure dsl.Spec(...) was called")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -439,8 +353,8 @@ func RunCLIV2(build *v2.Build, args []string) error {
 
 // MustRunCLIV2 is [RunCLIV2] with the conventional exit-code mapping (see
 // [MustRunCLI]).
-func MustRunCLIV2(build *v2.Build, args []string) {
-	if err := RunCLIV2(build, args); err != nil {
+func MustRunCLI(build *dsl.Build, args []string) {
+	if err := RunCLI(build, args); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err.Error())
 		os.Exit(ExitCode(err))
 	}
@@ -477,21 +391,9 @@ func ExitCode(err error) int {
 	}
 }
 
-// MustRun runs the check and exits the process with a conventional exit code
-// (see ExitCode). This is what a scaffolded `.go-arch-lint/main.go` calls.
-// Errors that fail before the renderer runs (invalid option combinations)
-// are printed to stderr so the exit is never silent.
-func MustRun(spec dsl.SpecDef, opts ...Option) {
-	if err := Run(spec, opts...); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err.Error())
-		os.Exit(ExitCode(err))
-	}
-	os.Exit(ExitCodeOK)
-}
-
-// MustRunV2 is [MustRun] for a v2 build (see [RunV2]).
-func MustRunV2(build *v2.Build, opts ...Option) {
-	if err := RunV2(build, opts...); err != nil {
+// MustRunV2 is [MustRun] for a v2 build (see [Run]).
+func MustRun(build *dsl.Build, opts ...Option) {
+	if err := Run(build, opts...); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err.Error())
 		os.Exit(ExitCode(err))
 	}

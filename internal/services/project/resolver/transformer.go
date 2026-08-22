@@ -3,8 +3,8 @@ package resolver
 import (
 	"regexp"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 func refPathToList(list []domain.Referable[models.ResolvedPath]) []models.ResolvedPath {

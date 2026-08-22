@@ -3,7 +3,7 @@ package ast
 import (
 	"go/token"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 func PositionFromToken(pos token.Position) domain.Reference {

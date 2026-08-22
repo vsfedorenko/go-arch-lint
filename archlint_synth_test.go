@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
 )
 
 // Synthetic probes for OptionsFromFlags with hostile/odd inputs.

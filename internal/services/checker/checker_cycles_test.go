@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 /**
@@ -146,7 +146,7 @@ func Test_orderCycle_complex_scc_walks_all_nodes(t *testing.T) {
 
 // --- full Check path --------------------------------------------------------
 
-const cyclesTestModule = "github.com/vsfedorenko/go-arch-lint/v2/checker/cyclestest"
+const cyclesTestModule = "github.com/vsfedorenko/go-arch-lint/v3/checker/cyclestest"
 
 type fakeProjectFilesResolver struct {
 	holds []models.FileHold

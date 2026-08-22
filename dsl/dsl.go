@@ -1,4 +1,4 @@
-// Package v2 is the second-generation architecture DSL.
+// Package dsl is the Path-based architecture DSL.
 //
 // The entire language is four calls:
 //
@@ -18,7 +18,7 @@
 //
 // This package is experimental: the API may change before it replaces the
 // first-generation dsl package.
-package v2
+package dsl
 
 import (
 	"fmt"
@@ -52,10 +52,10 @@ type Entry struct {
 
 // VendorEntry is one declared vendor.
 type VendorEntry struct {
-	Name       string
-	ImportPath string
-	File       string
-	Line       int
+	Name        string
+	ImportPaths []string
+	File        string
+	Line        int
 }
 
 // UseEntry is one Use rule: the using path plus its targets.
@@ -83,20 +83,22 @@ type SpecBuilder struct {
 	declared map[string]bool
 
 	// top is the innermost Path fn being executed (nil outside Path fns).
-	top *frame
+	top      *frame
+	excluded []string
 }
 
 // Build is the final, immutable spec (fields filled by the pipeline glue).
 type Build struct {
-	Paths   map[string]Entry
-	Order   []string
-	Vendors map[string]VendorEntry
-	Uses    map[string]UseEntry
+	Paths    map[string]Entry
+	Order    []string
+	Vendors  map[string]VendorEntry
+	Uses     map[string]UseEntry
+	Excluded []string
 }
 
-// callerRef returns file:line of the DSL call site (skip=1 → the caller).
-func callerRef(skip int) (string, int) {
-	_, file, line, ok := runtime.Caller(skip + 1)
+// callerRef returns file:line of the DSL call site (the direct caller).
+func callerRef() (string, int) {
+	_, file, line, ok := runtime.Caller(2)
 	if !ok {
 		return "", 0
 	}
@@ -125,7 +127,7 @@ func Spec(fn func(s *SpecBuilder)) *Build {
 //	all := Path("legacy/**")  // the whole subtree is one component
 //	root := Path(".")         // the module root itself is a component
 func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
-	file, line := callerRef(1)
+	file, line := callerRef()
 
 	// A child Path joins the enclosing Path's prefix; at the top level
 	// the prefix is empty. Absolute-looking inputs ("/x") stay top-level
@@ -177,15 +179,20 @@ func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 }
 
 // Vendor declares an external dependency as a named Use target.
-func (s *SpecBuilder) Vendor(name, importPath string) VendorID {
-	file, line := callerRef(1)
-	if name == "" || importPath == "" {
-		panic(fmt.Errorf("%s:%d: Vendor(name, importPath) — neither argument may be empty", file, line))
+func (s *SpecBuilder) Vendor(name string, importPaths ...string) VendorID {
+	file, line := callerRef()
+	if name == "" || len(importPaths) == 0 {
+		panic(fmt.Errorf("%s:%d: Vendor(name, imports...) — name and at least one import are required", file, line))
+	}
+	for _, imp := range importPaths {
+		if imp == "" {
+			panic(fmt.Errorf("%s:%d: Vendor(%q) — import paths may not be empty", file, line, name))
+		}
 	}
 	if v, dup := s.vendors[name]; dup {
 		panic(fmt.Errorf("%s:%d: Vendor(%q) declared twice — first at %s:%d", file, line, name, v.File, v.Line))
 	}
-	s.vendors[name] = &VendorEntry{Name: name, ImportPath: importPath, File: file, Line: line}
+	s.vendors[name] = &VendorEntry{Name: name, ImportPaths: importPaths, File: file, Line: line}
 	s.declared["vendor:"+name] = true
 	return VendorID{name: name, spec: s}
 }
@@ -197,7 +204,7 @@ func (s *SpecBuilder) Vendor(name, importPath string) VendorID {
 //	    Use(domain, pgx)   // core uses domain and pgx
 //	})
 func (s *SpecBuilder) Use(targets ...any) {
-	file, line := callerRef(1)
+	file, line := callerRef()
 
 	if s.top == nil {
 		panic(fmt.Errorf("%s:%d: Use(...) must be called inside Path(path, func(){...})", file, line))
@@ -260,10 +267,11 @@ func (s *SpecBuilder) popFrame(f *frame) { s.top = f.prev }
 // finish freezes the builder into an immutable Build.
 func (s *SpecBuilder) finish() *Build {
 	b := &Build{
-		Paths:   map[string]Entry{},
-		Order:   append([]string(nil), s.pathOrder...),
-		Vendors: map[string]VendorEntry{},
-		Uses:    map[string]UseEntry{},
+		Paths:    map[string]Entry{},
+		Order:    append([]string(nil), s.pathOrder...),
+		Vendors:  map[string]VendorEntry{},
+		Uses:     map[string]UseEntry{},
+		Excluded: append([]string(nil), s.excluded...),
 	}
 	for k, v := range s.paths {
 		b.Paths[k] = *v
@@ -319,4 +327,22 @@ func levenshtein(a, b string) int {
 		prev, cur = cur, prev
 	}
 	return prev[lb]
+}
+
+// Exclude removes directories from the checked tree. Nested modules
+// (a directory with its own go.mod), generated code and examples are
+// not architecture — declare them excluded instead of listing every
+// package. Paths are module-root relative; a trailing "/**" excludes a
+// whole subtree.
+func (s *SpecBuilder) Exclude(paths ...string) {
+	file, line := callerRef()
+	if len(paths) == 0 {
+		panic(fmt.Errorf("%s:%d: Exclude(paths...) — at least one path is required", file, line))
+	}
+	for _, p := range paths {
+		if p == "" {
+			panic(fmt.Errorf("%s:%d: Exclude(%q) — path may not be empty", file, line, p))
+		}
+		s.excluded = append(s.excluded, p)
+	}
 }

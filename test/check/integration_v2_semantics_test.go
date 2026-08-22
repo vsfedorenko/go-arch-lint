@@ -24,19 +24,19 @@ import (
 const archV2SemSpecTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		domain := s.Path("domain")
 		s.Path("core", func() {
 			s.Use(domain)
 		})
 		%[1]s
 	})
-	archlint.MustRunV2(build,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%[2]s"),
 		archlint.WithColors(false),
 	)
@@ -46,19 +46,19 @@ func main() {
 const archV2VendorAllowTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		domain := s.Path("domain")
 		pgx := s.Vendor("pgx", "github.com/jackc/pgx/v5")
 		s.Path("store", func() {
 			s.Use(domain, pgx)
 		})
 	})
-	archlint.MustRunV2(build,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%[1]s"),
 		archlint.WithColors(false),
 	)
@@ -68,18 +68,18 @@ func main() {
 const archV2VendorDenyTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		domain := s.Path("domain")
 		s.Path("store", func() {
 			s.Use(domain)
 		})
 	})
-	archlint.MustRunV2(build,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%[1]s"),
 		archlint.WithColors(false),
 	)

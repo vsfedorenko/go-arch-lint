@@ -4,8 +4,8 @@ import (
 	"cmp"
 	"sort"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
 )
 
 // ComputeCoupling measures per-component coupling over the actual

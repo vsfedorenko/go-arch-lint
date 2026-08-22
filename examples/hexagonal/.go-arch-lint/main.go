@@ -1,40 +1,18 @@
 package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var spec = Spec(func() {
-	Version(1)
-	Workdir("internal")
-
-	Allow(func() {
-		DepOnAnyVendor(false)
-	})
-
-	ExcludeFiles(`^.*_test\.go$`)
-
-	Component("core", "core")
-	Component("http", "adapter/http")
-	Component("db", "adapter/db")
-	Component("domain", "domain")
-
-	CommonComponents("domain")
-
-	Deps("core", func() {
-		MayDependOn("domain")
-	})
-
-	Deps("http", func() {
-		MayDependOn("core")
-	})
-
-	Deps("db", func() {
-		MayDependOn("core")
-	})
+var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+	domain := s.Path("internal/domain")
+	core := s.Path("internal/core", func() { s.Use(domain) })
+	http := s.Path("internal/adapter/http", func() { s.Use(core) })
+	db := s.Path("internal/adapter/db", func() { s.Use(core, domain) })
+	s.Path(".", func() { s.Use(core, db, http) })
 })
 
 func main() {
-	archlint.MustRun(spec)
+	archlint.MustRun(build, archlint.WithProjectPath("../"))
 }

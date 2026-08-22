@@ -6,8 +6,8 @@ package selfInspect
 
 import (
 	mock "github.com/stretchr/testify/mock"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 // newMockspecAssembler creates a new instance of mockspecAssembler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

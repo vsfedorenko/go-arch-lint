@@ -19,7 +19,7 @@ responsibly.
 
 Instead, please report vulnerabilities by one of these methods:
 
-1. Open a **private** [GitHub Security Advisory](https://github.com/vsfedorenko/go-arch-lint/v2/security/advisories/new).
+1. Open a **private** [GitHub Security Advisory](https://github.com/vsfedorenko/go-arch-lint/v3/security/advisories/new).
 2. Email the maintainer directly.
 
 Please include the following in your report:

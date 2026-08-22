@@ -8,21 +8,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
-// The V2SpecDocument adapter: dsl/v2.Build -> spec.Document. These tests
+// The V2SpecDocument adapter: dsl/dsl.Build -> spec.Document. These tests
 // pin the mapping the checker will consume, plus the filesystem
 // verification with did-you-mean suggestions.
 
 // Paths become components; /** subtrees keep the glob suffix; Use rules
 // become dependency rules with path/vendor targets split correctly.
+const tcShopDomain = "shop/domain"
+
 func TestV2Document_Mapping(t *testing.T) {
-	b := v2.Spec(func(s *v2.SpecBuilder) {
+	b := dsl.Spec(func(s *dsl.SpecBuilder) {
 		pgx := s.Vendor("pgx", "github.com/jackc/pgx/v5")
-		domain := s.Path("shop/domain")
+		domain := s.Path(tcShopDomain)
 		legacy := s.Path("legacy/**")
 
 		s.Path("shop/core", func() {
@@ -33,7 +35,7 @@ func TestV2Document_Mapping(t *testing.T) {
 
 	comps := d.Components()
 	require.Len(t, comps, 3)
-	assert.Equal(t, []models.Glob{"shop/domain"}, comps["shop/domain"].Value.RelativePaths())
+	assert.Equal(t, []models.Glob{tcShopDomain}, comps[tcShopDomain].Value.RelativePaths())
 	assert.Equal(t, []models.Glob{"legacy/**"}, comps["legacy"].Value.RelativePaths(), "subtree keeps /** in the glob")
 
 	vendors := d.Vendors()
@@ -41,10 +43,14 @@ func TestV2Document_Mapping(t *testing.T) {
 	assert.Equal(t, []models.Glob{"github.com/jackc/pgx/v5"}, vendors["pgx"].Value.ImportPaths())
 
 	deps := d.Dependencies()
-	require.Len(t, deps, 1)
+	// Every declared path carries a rule: components without an explicit
+	// Use still keep their self-imports (one component = one unit).
+	require.Len(t, deps, 3)
 	rule := deps["shop/core"].Value
-	assert.Equal(t, []string{"shop/domain", "legacy"}, referableStrings(rule.MayDependOn()))
+	assert.Equal(t, []string{"shop/core", tcShopDomain, "legacy"}, referableStrings(rule.MayDependOn()))
 	assert.Equal(t, []string{"pgx"}, referableStrings(rule.CanUse()))
+	assert.Equal(t, []string{tcShopDomain}, referableStrings(deps[tcShopDomain].Value.MayDependOn()), "self-only rule")
+	assert.Equal(t, []string{"legacy"}, referableStrings(deps["legacy"].Value.MayDependOn()), "self-only rule")
 
 	// The v2 zero-surface: everything the language does not have.
 	assert.False(t, d.Options().IsDependOnAnyVendor().Value, "no Use(vendor) rule -> vendor imports are violations")
@@ -81,8 +87,8 @@ func TestV2Document_FSVerify(t *testing.T) {
 	write("shop/adaptive/http/handler.go", "package http\n") // the real directory
 	mkdir("legacy/empty")                                    // exists, no Go files
 
-	b := v2.Spec(func(s *v2.SpecBuilder) {
-		s.Path("shop/domain")
+	b := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path(tcShopDomain)
 		s.Path("shop/adaptiv") // typo: the real sibling is shop/adaptive
 		s.Path("legacy/**")
 	})
@@ -108,7 +114,7 @@ func TestV2Document_FSVerifyClean(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Join(root, "sub"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "sub", "b.go"), []byte("package sub\n"), 0o600))
 
-	b := v2.Spec(func(s *v2.SpecBuilder) {
+	b := dsl.Spec(func(s *dsl.SpecBuilder) {
 		s.Path(".")
 		s.Path("sub")
 	})

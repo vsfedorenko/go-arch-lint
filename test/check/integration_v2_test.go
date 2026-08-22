@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// End-to-end coverage for the v2 Path-based DSL pipeline (dsl/v2.Build ->
+// End-to-end coverage for the v2 Path-based DSL pipeline (dsl/dsl.Build ->
 // V2SpecDocument -> archlint.RunV2) that PR #84 shipped without a single
 // integration test: RunV2 was exported but never executed against a real
 // project through the real check pipeline.
@@ -31,12 +31,12 @@ import (
 const archV2OKTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		root := s.Path(".")
 		domain := s.Path("shop/domain")
 
@@ -48,7 +48,7 @@ func main() {
 			s.Use(domain, root)
 		})
 	})
-	archlint.MustRunV2(build,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 	)
@@ -75,19 +75,19 @@ type Bad struct{ O core.Order }
 const archV2MissingPathTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		s.Path(".")
 		typo := s.Path("shop/domian") // typo: the real sibling is shop/domain
 		s.Path("shop/core", func() {
 			s.Use(typo)
 		})
 	})
-	archlint.MustRunV2(build,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 	)

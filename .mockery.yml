@@ -1,22 +1,22 @@
 packages:
-  github.com/vsfedorenko/go-arch-lint/v2/internal/app/container:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/app/container:
     interfaces:
       SpecDecoder:
-  github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/services/checker:
     interfaces:
       SuppressIndex:
-  github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/assembler:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/services/spec/assembler:
     config:
       all: true
-  github.com/vsfedorenko/go-arch-lint/v2/internal/operations/check:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/operations/check:
     config:
       all: true
-  github.com/vsfedorenko/go-arch-lint/v2/internal/operations/mapping:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/operations/mapping:
     config:
       all: true
-  github.com/vsfedorenko/go-arch-lint/v2/internal/operations/selfInspect:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/operations/selfInspect:
     config:
       all: true
-  github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/resolver:
+  github.com/vsfedorenko/go-arch-lint/v3/internal/services/project/resolver:
     config:
       all: true

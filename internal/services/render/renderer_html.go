@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 // htmlReportTpl is the standalone HTML document template for --format

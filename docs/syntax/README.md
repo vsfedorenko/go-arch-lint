@@ -1,7 +1,7 @@
 # Справочник Arch DSL
 
 Arch конфигурация это Go файл (`.go-arch-lint/arch.go`), использующий пакет
-`github.com/vsfedorenko/go-arch-lint/v2/dsl`. Каждая функция DSL фиксирует свою
+`github.com/vsfedorenko/go-arch-lint/v3/dsl`. Каждая функция DSL фиксирует свою
 позицию в исходнике через `runtime.Caller`, поэтому сообщения об ошибках
 указывают на точную строку в вашем `arch.go`.
 
@@ -260,7 +260,7 @@ Visibility(func() {
 // .go-arch-lint/arch.go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var spec = Spec(func() {
     Version(1)

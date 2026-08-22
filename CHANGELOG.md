@@ -5,7 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] — v3: the Path DSL is the only DSL
+
+### Removed (breaking)
+- The first-generation DSL (`Version`/`Workdir`/`Component`/`Deps`/
+  `CommonComponents`/`Allow`/`ExcludeFiles` and the `Naming`/`Tiers`/
+  `Visibility`/`Interfaces` rule builders) — the `dsl` package now
+  contains only `Spec`/`Path`/`Use`/`Vendor`/`Exclude`.
+- `archlint.Run`/`RunCLI` over a v1 `SpecDef`; the YAML-free
+  `GoSpecDecoder` (`decoder_go.go`) and the `--recipe` init flag with
+  its `clean|hexagonal|ddd` recipes (candidates to return as v3
+  preset functions).
+
+### Changed (breaking)
+- Module path: `github.com/vsfedorenko/go-arch-lint/v3` (imports,
+  scaffold templates and fixtures migrated; `require` lines use
+  `v3.0.0-dev` locally, `v3.0.0` once tagged).
+- `RunV2`/`MustRunV2`/`RunCLIV2`/`MustRunCLIV2` renamed to
+  `Run`/`MustRun`/`RunCLI`/`MustRunCLI` — the v2 pipeline is the only
+  pipeline.
+- `Vendor(name, import)` is variadic: `s.Vendor("pgx", imp1, imp2)`
+  declares one vendor name over several import paths.
+- Component names in output are path keys (`internal/a`), not the
+  v1 free-form aliases.
+- `WithOutputType`/`WithFormat` values are validated before the
+  renderer runs — an unknown format is a config error (exit 2), not a
+  panic (found by the v3 test migration).
+
+### Added
+- `Exclude(paths...)` — glob paths outside the architecture (test
+  fixtures, examples, nested modules); declare-everything otherwise
+  makes monorepos inexpressible.
+- Component self-imports are always allowed: a `Path` may import its
+  own subdirectories without a self-`Use` (decoder emits the self
+  rule for every declared path).
+- Migration guide: README → «Миграция с v2.x» / “Migrating from v2.x”.
+
 ## [Unreleased]
+
+## [2.6.0] — 2026-08-22
 
 ### Fixed
 - `init --recipe <name>` scaffolds a compiling pair again: recipes write a

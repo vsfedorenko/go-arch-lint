@@ -1,13 +1,15 @@
 package archlint_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 // Synthetic baseline-mode contracts (found by probing the freshly merged
@@ -19,14 +21,17 @@ import (
 //     "OK - No warnings found" on stdout with exit 2 — actively
 //     misleading in CI.
 func TestRun_BaselineUpdateWithoutBaseline_IsConfigError(t *testing.T) {
-	spec := dsl.Spec(func() {
-		dsl.Version(1)
-		dsl.Workdir("internal")
-		dsl.Component("main", "app")
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "internal", "app"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "go.mod"), []byte("module baseline.probe\n\ngo 1.25\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "internal", "app", "a.go"), []byte("package app\n"), 0o600))
+
+	spec := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path("internal/app")
 	})
 
 	err := archlint.Run(spec,
-		archlint.WithProjectPath("../"),
+		archlint.WithProjectPath(root),
 		archlint.WithBaselineUpdate(),
 	)
 	require.Error(t, err)

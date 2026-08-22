@@ -24,10 +24,10 @@ go 1.25
 const scaffoldArchGo = `package main
 
 import (
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = v2.Spec(func(s *v2.SpecBuilder) {
+var build = dsl.Spec(func(s *dsl.SpecBuilder) {
 	// The whole module as one component keeps the fresh scaffold green.
 	// Split it into real directories and add Use rules as your
 	// architecture takes shape:
@@ -48,76 +48,32 @@ const scaffoldMainGo = `package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
 )
 
 func main() {
-	archlint.MustRunCLIV2(build, os.Args[1:])
+	archlint.MustRunCLI(build, os.Args[1:])
 }`
 
-// scaffoldMainGoV1 is the runner for v1 (recipe) specs. Recipes still use
-// the first-generation DSL (they rely on IgnoreNotFoundComponents for
-// not-yet-created layer dirs, which v2 deliberately does not offer), so
-// their runner must reference the v1 `spec` variable — a v2 runner next to
-// a v1 spec does not compile ("undefined: build").
-const scaffoldMainGoV1 = `package main
-
-import (
-	"os"
-
-	"github.com/vsfedorenko/go-arch-lint/v2"
-)
-
-func main() {
-	archlint.MustRunCLI(spec, os.Args[1:])
-}`
-
-// recipeFlag is the flag selecting a starter spec: init --recipe <name>.
-const recipeFlag = "--recipe"
-
-// parseInitArgs extracts --project-path/-p (space and = forms) and --recipe
-// (space and = forms) from init's args. A flag present without its value is
-// an error — silently scaffolding the DEFAULT spec when the user asked for a
-// recipe (but typo'd the invocation) writes the wrong starting point.
-func parseInitArgs(args []string) (projectPath, recipe string, err error) {
+// parseInitArgs extracts --project-path/-p (space and = forms) from init's
+// args. A flag present without its value is an error — silently scaffolding
+// at the wrong path writes the wrong starting point.
+func parseInitArgs(args []string) (projectPath string, err error) {
 	projectPath = "."
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		switch {
 		case a == "--project-path" || a == "-p":
 			if i+1 >= len(args) {
-				return "", "", fmt.Errorf("%s requires a value (the project directory)", a)
+				return "", fmt.Errorf("%s requires a value (the project directory)", a)
 			}
 			projectPath = args[i+1]
 			i++
 		case strings.HasPrefix(a, "--project-path="):
 			projectPath = strings.TrimPrefix(a, "--project-path=")
-		case a == recipeFlag:
-			if i+1 >= len(args) {
-				return "", "", fmt.Errorf("%s requires a value; pick one of the names below", recipeFlag)
-			}
-			recipe = args[i+1]
-			i++
-		case strings.HasPrefix(a, recipeFlag+"="):
-			recipe = strings.TrimPrefix(a, recipeFlag+"=")
 		}
 	}
-	return projectPath, recipe, nil
-}
-
-// recipeHelp renders the known recipes for error/usage output.
-func recipeHelp() string {
-	names := make([]string, 0, len(knownRecipes))
-	for name := range knownRecipes {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	var b strings.Builder
-	b.WriteString("Available recipes:\n")
-	for _, name := range names {
-		fmt.Fprintf(&b, "  %-12s %s\n", name, knownRecipes[name].desc)
-	}
-	return b.String()
+	return projectPath, nil
 }
 
 // printInitUsage explains init's flags without touching the filesystem —
@@ -129,10 +85,8 @@ Usage:
   go-arch-lint init [flags]
 
 Flags:
-  --recipe string        starter spec for a known pattern
   -p, --project-path     project directory (default "./")
-
-` + recipeHelp())
+`)
 }
 
 // scanGoDirs lists every directory under root (relative, slash-separated,
@@ -188,7 +142,7 @@ func scanGoDirs(root string) []string { //nolint:gosec // root is the init --pro
 // subdirectory falls back to the module root alone.
 func v2SpecFromDirs(dirs []string) string {
 	var b strings.Builder
-	b.WriteString("var build = v2.Spec(func(s *v2.SpecBuilder) {\n")
+	b.WriteString("var build = dsl.Spec(func(s *dsl.SpecBuilder) {\n")
 	b.WriteString("\t// Every directory with Go code is declared: the v2 language\n")
 	b.WriteString("\t// fails on undeclared directories. Add Use rules as your\n")
 	b.WriteString("\t// architecture takes shape:\n")
@@ -225,19 +179,10 @@ func cmdInit(args []string) int {
 		}
 	}
 
-	projectPath, recipe, err := parseInitArgs(args)
+	projectPath, err := parseInitArgs(args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n\n%s", err, recipeHelp())
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return 1
-	}
-
-	if recipe != "" {
-		archGo, ok := recipeArchGo(recipe)
-		if !ok {
-			fmt.Fprintf(os.Stderr, "Error: unknown recipe '%s'\n\n%s", recipe, recipeHelp())
-			return 1
-		}
-		return writeScaffold(projectPath, archGo, scaffoldMainGoV1, fmt.Sprintf(" (%s recipe)", recipe))
 	}
 
 	// Default scaffold: declare the project's real directory tree so
@@ -248,10 +193,8 @@ func cmdInit(args []string) int {
 }
 
 // writeScaffold creates the .go-arch-lint directory with go.mod, arch.go and
-// main.go. archGo is the spec body (plain scaffold or a recipe); mainGo is
-// the runner matching the spec's DSL generation (v2 runner for the default
-// scaffold, v1 runner for recipes); label is appended to the final
-// "scaffold created" line, may be empty.
+// main.go. archGo is the spec body; label is
+// appended to the final "scaffold created" line, may be empty.
 func writeScaffold(projectPath, archGo, mainGo, label string) int {
 	archDir := filepath.Join(projectPath, ".go-arch-lint")
 
@@ -282,7 +225,7 @@ func writeScaffold(projectPath, archGo, mainGo, label string) int {
 
 	fmt.Printf("\nScaffold created%s. Next steps:\n", label)
 	fmt.Printf("  1. Edit %s/arch.go to describe your architecture\n", archDir)
-	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint/v2 dependency\n", archDir)
+	fmt.Printf("  2. Run 'cd %s && go mod tidy' to resolve the github.com/vsfedorenko/go-arch-lint/v3 dependency\n", archDir)
 	fmt.Printf("  3. Run 'go-arch-lint check' to lint your project\n")
 
 	return 0

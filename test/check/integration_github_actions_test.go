@@ -14,32 +14,22 @@ import (
 const archGitHubActionsTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Allow(func() { DepOnAnyVendor(false) })
-		Exclude("internal/excluded", "vendor", "variadic")
-		ExcludeFiles("^.*_test\\.go$")
-		Component("main", "internal/.")
-		Component("a", "internal/a")
-		Component("allowb", "internal/a/allowb")
-		Component("b", "internal/b")
-		Component("c", "internal/c")
-		Component("e", "internal/e")
-		Component("common", "internal/common/**")
-		Component("models", "internal/d/models/*/model")
-		CommonComponents("common")
-		Deps("e", func() {
-			MayDependOn("models")
-			AnyVendorDeps(true)
-		})
-		Deps("allowb", func() { MayDependOn("b") })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Exclude("internal/excluded", "variadic")
+		common := s.Path("internal/common/**")
+		models := s.Path("internal/d/models")
+		b := s.Path("internal/b")
+		s.Path("internal/a/allowb", func() { s.Use(b) })
+		s.Path("internal/a", func() { s.Use(common) })
+		s.Path("internal/c")
+		s.Path("internal/e", func() { s.Use(models, common) })
 	})
-	archlint.MustRun(spec,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 		archlint.WithFormat("github-actions"),

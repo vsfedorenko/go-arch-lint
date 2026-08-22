@@ -12,7 +12,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 // driverVersionDefault is reported as tool.driver.version in SARIF output

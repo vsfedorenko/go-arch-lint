@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/app"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/app"
 )
 
 const (
@@ -226,7 +226,6 @@ Usage:
 
 Commands:
 	init          Create .go-arch-lint/ scaffold (go.mod, arch.go + main.go)
-	              init --recipe <clean|hexagonal|ddd> starts from a known pattern
   check         Check project architecture against arch rules
   mapping       Show package-to-component mapping
   graph         Generate dependency graph

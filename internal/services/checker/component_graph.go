@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
 )
 
 // This file is the SHARED foundation every graph-based checker builds on:

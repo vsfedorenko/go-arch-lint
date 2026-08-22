@@ -46,16 +46,16 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	// arch.go is the user-editable spec: v2 DSL import, Spec entry, NO runner.
 	archgo, err := os.ReadFile(filepath.Join(archDir, "arch.go"))
 	require.NoError(t, err, "read arch.go")
-	assert.Contains(t, string(archgo), "v2.Spec(func(s *v2.SpecBuilder)", "arch.go missing v2 Spec entry: %s", archgo)
-	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"`, "arch.go missing dsl/v2 import: %s", archgo)
+	assert.Contains(t, string(archgo), "dsl.Spec(func(s *dsl.SpecBuilder)", "arch.go missing Spec entry: %s", archgo)
+	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v3/dsl"`, "arch.go missing dsl import: %s", archgo)
 	assert.Contains(t, string(archgo), `s.Path(".")`, "arch.go missing the module-root component: %s", archgo)
 	assert.NotContains(t, string(archgo), "func main()", "arch.go must not contain the runner: %s", archgo)
 
 	// main.go is the stable runner: command+flag passthrough, NO spec definition.
 	maingo, err := os.ReadFile(filepath.Join(archDir, "main.go"))
 	require.NoError(t, err, "read main.go")
-	assert.Contains(t, string(maingo), "archlint.MustRunCLIV2(build, os.Args[1:])", "main.go missing command passthrough: %s", maingo)
-	assert.NotContains(t, string(maingo), "v2.Spec(", "main.go must not contain the spec: %s", maingo)
+	assert.Contains(t, string(maingo), "archlint.MustRunCLI(build, os.Args[1:])", "main.go missing command passthrough: %s", maingo)
+	assert.NotContains(t, string(maingo), "dsl.Spec(", "main.go must not contain the spec: %s", maingo)
 }
 
 func TestCmdInit_AlreadyExists(t *testing.T) {
@@ -81,7 +81,7 @@ func TestScaffoldSplit_RegenerateRunnerKeepsSpec(t *testing.T) {
 
 	// Simulate the user editing their spec.
 	archPath := filepath.Join(".go-arch-lint", "arch.go")
-	edited := "package main\n\nimport (\n\t. \"github.com/vsfedorenko/go-arch-lint/v2/dsl\"\n)\n\nvar spec = Spec(func() {\n\tVersion(1)\n\tComponent(\"mine\", \"internal/mine/*\")\n})\n"
+	edited := "package main\n\nimport (\n\t. \"github.com/vsfedorenko/go-arch-lint/v3/dsl\"\n)\n\nvar spec = Spec(func() {\n\tVersion(1)\n\tComponent(\"mine\", \"internal/mine/*\")\n})\n"
 	require.NoError(t, os.WriteFile(archPath, []byte(edited), 0o600), "write edited arch.go") //nolint:gosec // test fixture in t.TempDir()
 
 	// Regenerate ONLY the runner, as an upgrade would.
@@ -93,84 +93,26 @@ func TestScaffoldSplit_RegenerateRunnerKeepsSpec(t *testing.T) {
 	assert.Equal(t, edited, string(got), "arch.go changed after runner regeneration")
 }
 
-// Recipe names reused across table tests (goconst); must match the
-// launcher's registry.
-const (
-	tcRecipeClean     = "clean"
-	tcRecipeDDD       = "ddd"
-	tcRecipeHexagonal = "hexagonal"
-	tcTmpPath         = "/tmp/x"
-)
+// Shared fixture path for flag-parsing table tests (goconst).
+const tcTmpPath = "/tmp/x"
 
-// Every recipe must scaffold into a compiling-eligible arch.go: DSL import,
-// Spec entry, no runner, single-backslash regex, and a comment marking the
-// recipe so users can trace where the file came from.
-func TestCmdInit_Recipes(t *testing.T) {
-	for _, recipe := range []string{tcRecipeClean, tcRecipeHexagonal, tcRecipeDDD} {
-		t.Run(recipe, func(t *testing.T) {
-			cleanup := chdirTemp(t)
-			defer cleanup()
-
-			code := cmdInit([]string{recipeFlag, recipe})
-			require.Equal(t, 0, code, "cmdInit --recipe %s returned %d, want 0")
-
-			archgo, err := os.ReadFile(filepath.Join(".go-arch-lint", "arch.go"))
-			require.NoError(t, err, "read arch.go")
-			s := string(archgo)
-			assert.Contains(t, s, "Spec(func()", "%s: arch.go missing Spec entry", recipe)
-			assert.Contains(t, s, `. "github.com/vsfedorenko/go-arch-lint/v2/dsl"`, "%s: arch.go missing dsl import", recipe)
-			assert.NotContains(t, s, "func main()", "%s: arch.go must not contain the runner", recipe)
-			assert.NotContains(t, s, `\\.`, "%s: ExcludeFiles double-backslash bug present", recipe)
-			// Recipes tolerate not-yet-created directories.
-			assert.Contains(t, s, "IgnoreNotFoundComponents(true)", "%s: recipe must set IgnoreNotFoundComponents(true)", recipe)
-
-			// go.mod is shared with the plain scaffold; main.go must match the
-			// spec's DSL generation: recipes write a v1 spec (`var spec`), so
-			// the runner must reference `spec` — a v2 runner (`build`) next to
-			// a v1 spec does not compile ("undefined: build").
-			gomod, err := os.ReadFile(filepath.Join(".go-arch-lint", "go.mod"))
-			require.NoError(t, err, "%s: bad go.mod", recipe)
-			assert.Contains(t, string(gomod), "module arch-lint-local", "%s: bad go.mod", recipe)
-			maingo, err := os.ReadFile(filepath.Join(".go-arch-lint", "main.go"))
-			require.NoError(t, err, "%s: bad main.go", recipe)
-			assert.Contains(t, string(maingo), "archlint.MustRunCLI(spec, os.Args[1:])", "%s: main.go must run the v1 spec via MustRunCLI", recipe)
-			assert.NotContains(t, string(maingo), "MustRunCLIV2", "%s: main.go must not use the v2 runner for a v1 spec", recipe)
-		})
-	}
-}
-
-func TestCmdInit_UnknownRecipe(t *testing.T) {
-	cleanup := chdirTemp(t)
-	defer cleanup()
-
-	code := cmdInit([]string{recipeFlag, "bogus"})
-	assert.Equal(t, 1, code, "unknown recipe exit = %d, want 1")
-	// Nothing must be created on failure.
-	assert.NoFileExists(t, ".go-arch-lint", "must not exist after failed recipe")
-}
-
-// The flag parser accepts both "--recipe x" and "--recipe=x", mirroring the
-// equals-form support shipped for other flags (#41).
+// The flag parser accepts both "-p x" and "--project-path=x" forms (#41).
 func TestParseInitArgs(t *testing.T) {
 	cases := []struct {
-		name       string
-		args       []string
-		wantPath   string
-		wantRecipe string
+		name     string
+		args     []string
+		wantPath string
 	}{
-		{"none", nil, ".", ""},
-		{"space form", []string{"--recipe", tcRecipeDDD}, ".", tcRecipeDDD},
-		{"equals form", []string{"--recipe=" + tcRecipeDDD}, ".", tcRecipeDDD},
-		{"path space form", []string{"-p", tcTmpPath}, tcTmpPath, ""},
-		{"path equals form", []string{"--project-path=" + tcTmpPath}, tcTmpPath, ""},
-		{"both", []string{"-p", tcTmpPath, "--recipe=" + tcRecipeClean}, tcTmpPath, tcRecipeClean},
+		{"none", nil, "."},
+		{"path space form", []string{"-p", tcTmpPath}, tcTmpPath},
+		{"path equals form", []string{"--project-path=" + tcTmpPath}, tcTmpPath},
+		{"default", nil, "."},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			p, r, parseErr := parseInitArgs(tc.args)
+			p, parseErr := parseInitArgs(tc.args)
 			require.NoError(t, parseErr)
 			assert.Equal(t, tc.wantPath, p, "parseInitArgs(%v) path", tc.args)
-			assert.Equal(t, tc.wantRecipe, r, "parseInitArgs(%v) recipe", tc.args)
 		})
 	}
 }
@@ -188,7 +130,7 @@ func TestCmdInit_HelpDoesNotScaffold(t *testing.T) {
 }
 
 func TestCmdInit_ValuelessFlagsFailFast(t *testing.T) {
-	for _, args := range [][]string{{"--recipe"}, {"-p"}, {"--project-path"}} {
+	for _, args := range [][]string{{"-p"}, {"--project-path"}} {
 		cleanup := chdirTemp(t)
 		func() {
 			defer cleanup()

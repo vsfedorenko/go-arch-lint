@@ -1,6 +1,6 @@
 package models
 
-import "github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+import "github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 
 type (
 	CmdSelfInspectIn struct {

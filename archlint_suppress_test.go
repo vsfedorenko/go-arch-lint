@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 /**
@@ -55,13 +55,11 @@ func writeSuppressProject(t *testing.T, alphaDirective, gammaDirective string) s
 }
 
 // suppressSpec: nobody may depend on anybody (both imports violate).
-func suppressSpec() dsl.SpecDef {
-	return dsl.Spec(func() {
-		dsl.Version(1)
-		dsl.Workdir("internal")
-		dsl.Component("alpha", "alpha/**")
-		dsl.Component("beta", "beta/**")
-		dsl.Component("gamma", "gamma/**")
+func suppressSpec() *dsl.Build {
+	return dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path("internal/alpha/**")
+		s.Path("internal/beta/**")
+		s.Path("internal/gamma/**")
 	})
 }
 

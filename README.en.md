@@ -20,7 +20,7 @@ and dependency-injection violations automatically.
 ## Install
 
 ```bash
-go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
+go install github.com/vsfedorenko/go-arch-lint/v3/cmd/arch-lint@latest
 ```
 
 Or use [Docker](https://github.com/vsfedorenko/go-arch-lint/pkgs/container/go-arch-lint):
@@ -31,9 +31,9 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 
 Or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/releases).
 
-> The module path is `github.com/vsfedorenko/go-arch-lint/v2` (the suffix is
-> mandatory for Go major versions). Upgrading from v2.0/v2.1: update the
-> imports in `.go-arch-lint/` to `/v2`, or just re-run `go-arch-lint init`.
+> The module path is `github.com/vsfedorenko/go-arch-lint/v3` (the suffix is
+> mandatory for Go major versions). Upgrading from v2.x: update the
+> imports in `.go-arch-lint/` to `/v3` and migrate the spec (see “Migrating from v2.x” below), or just re-run `go-arch-lint init`.
 
 ## Requirements
 
@@ -56,7 +56,7 @@ Creates `.go-arch-lint/` with three files. The spec and the runner are separate:
 package main
 
 import (
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 var build = v2.Spec(func(s *v2.SpecBuilder) {
@@ -80,7 +80,7 @@ package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
 )
 
 func main() {
@@ -95,9 +95,7 @@ How this works:
 — `Vendor(name, import)` — an external library as a legal target; the standard library is always allowed.
 — Declaration order mirrors dependency direction: referring forward is a Go compile error.
 
-Full v2 walkthrough — in the [v2 DSL](#v2-dsl-experimental) section below.
-The first-generation DSL reference (`Component`/`Deps`/`Workdir`) lives in
-the [syntax docs](docs/syntax/README.md) or via `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
+Full DSL function reference: [syntax docs](docs/syntax/README.md) or `go doc github.com/vsfedorenko/go-arch-lint/v3/dsl`.
 
 ### Init recipes
 
@@ -215,63 +213,26 @@ Additional flags: `--type=di` (reverse graph, DI direction), `--focus=handler` (
 
 ## Programmatic API
 
-go-arch-lint is not just a CLI — it's a library. Run checks from Go code:
+go-arch-lint is not just a CLI — it's a library. The spec is written in
+the Path DSL — the entire language is four calls:
 
 ```go
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func runArchCheck() error {
-	spec := Spec(func() {
-		Version(1)
-		Workdir("internal")
-		Component("handler", "handlers/*")
-		Component("service", "services/**")
-		Deps("handler", func() { MayDependOn("service") })
-	})
-
-	return archlint.Run(spec,
-		archlint.WithProjectPath("."),
-		archlint.WithMaxWarnings(100),
-	)
-}
-```
-
-`archlint.MustRun(spec)` does the same but exits the process with the
-conventional exit code: `1` on violations, `2` on a configuration error
-(see `archlint.ExitCode`).
-
-`archlint.RunCLI(spec, os.Args[1:])` is the entry point for the scaffolded
-`.go-arch-lint/main.go`: it routes the delegated commands (`check`,
-`mapping`, `graph`, `self-inspect`) to their own behavior instead of
-silently running `check`. The launcher dialect (`-p`, `--no-colors`,
-`selfInspect`) is translated automatically, and an invocation without a
-command defaults to `check`. `MustRunCLI` is the conventional-exit-code
-variant.
-
-### v2 DSL (experimental)
-
-The DSL above is the first generation (`dsl`). There is a second, simpler
-one — the entire language is four calls.
-
-```go
-import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
-)
-
-func runArchCheck() error {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		domain := s.Path("shop/domain")
+		pgx := s.Vendor("pgx", "github.com/jackc/pgx/v5")
 
 		s.Path("shop/core", func() {
-			s.Use(domain) // core may use domain
+			s.Use(domain, pgx) // core uses domain and pgx
 		})
 	})
 
-	return archlint.RunV2(build, archlint.WithProjectPath("."))
+	return archlint.Run(build, archlint.WithProjectPath("."))
 }
 ```
 
@@ -281,29 +242,52 @@ The rules are simple:
   `Path("a/b/**")` — the whole subtree as one component. `Path(".")` —
   the module root (the root package, without subdirectories).
 - `Use(...)` — the only rule: "this path uses these targets". Targets
-  are `Path`/`Vendor` variables only, mixed freely.
-- `Vendor(name, import)` — an external package, a legal `Use` target.
-  The standard library (`fmt`, `strings`, …) is always allowed and
-  never needs a `Vendor`.
-- By default everything is denied until a `Use` allows it. Every
-  directory with Go files must be declared with `Path` — an undeclared
-  directory is not "ignored", it fails with `not attached to any
-  component`.
+  are `Path`/`Vendor` variables only, mixed freely. Imports inside a
+  declared path into its own subdirectories are always allowed.
+- `Vendor(name, imports...)` — an external package (multiple import
+  paths per name allowed), a legal `Use` target. The standard library
+  (`fmt`, `strings`, …) is always allowed and never needs a `Vendor`.
+- `Exclude(paths...)` — glob paths outside the architecture: test
+  fixtures, examples, nested modules. A directory neither declared in
+  `Path` nor excluded fails with `not attached to any component`.
+- By default everything is denied until a `Use` allows it.
 
 Declaration order mirrors dependency direction: referring forward is a
 Go compile error. Typos and malformed specs panic at build time with
 file:line. Directories are verified against the filesystem: a missing
 path is a config error with a "did you mean" hint.
 
-`archlint.MustRunV2(build)` is the conventional-exit-code variant.
-`archlint.RunCLIV2(build, os.Args[1:])` / `MustRunCLIV2` is the CLI wrapper
-over a v2 build: it routes the delegated commands (`check`, `mapping`,
-`graph`, `self-inspect`) to their own behavior; an invocation without a
-command defaults to `check`. This is what the `init` scaffold writes into
-`main.go`.
+`archlint.MustRun(build)` does the same but exits the process with the
+conventional exit code: `1` on violations, `2` on a configuration error
+(see `archlint.ExitCode`).
 
-The package is experimental: the API may change before it replaces the
-first generation (stage 4 of the v3 roadmap).
+`archlint.RunCLI(build, os.Args[1:])` is the entry point for the scaffolded
+`.go-arch-lint/main.go`: it routes the delegated commands (`check`,
+`mapping`, `graph`, `self-inspect`) to their own behavior instead of
+silently running `check`. The launcher dialect (`-p`, `--no-colors`,
+`selfInspect`) is translated automatically, and an invocation without a
+command defaults to `check`. `MustRunCLI` is the conventional-exit-code
+variant.
+
+### Migrating from v2.x
+
+The first-generation DSL (`Version`/`Workdir`/`Component`/`Deps`/
+`CommonComponents`) has been removed. Mechanical mapping:
+
+| v2.x (removed)         | v3                                            |
+|------------------------|-----------------------------------------------|
+| `Component("n", "a/b")`| `n := s.Path("a/b")`                          |
+| `Deps("n", …MayDependOn("m"))` | `s.Path("a/b", func() { s.Use(m) })` |
+| `CommonComponents("n")`| a `Use(n)` for everyone who needs it          |
+| `AnyProjectDeps(true)` | list the targets explicitly in `Use`          |
+| `Vendor(name, imp)` (single path) | `s.Vendor(name, imp1, imp2)`     |
+| `Workdir("internal")`  | drop it: `Path` paths are module-relative     |
+
+The easiest route is to re-run `go-arch-lint init`: it generates a spec
+with every directory of your project. `RunV2`/`MustRunV2`/`RunCLIV2`/
+`MustRunCLIV2` were renamed to `Run`/`MustRun`/`RunCLI`/`MustRunCLI`.
+The first-generation `Naming`, `Tiers`, `Visibility` and `Interfaces`
+rules are not part of v3 — candidates to return as separate extensions.
 
 ## Commands
 
@@ -393,7 +377,7 @@ directly on the diff lines, binary installed from the release — no JS glue:
 - uses: actions/checkout@v7
 - uses: actions/setup-go@v7
   with: { go-version: '1.25.13' }
-- uses: vsfedorenko/go-arch-lint@v2.4.3
+- uses: vsfedorenko/go-arch-lint@v3.0.0
 ```
 
 Details and all inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).

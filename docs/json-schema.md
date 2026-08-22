@@ -167,7 +167,7 @@ jobs:
         with:
           go-version: '1.25'
       - name: Install go-arch-lint
-        run: go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
+        run: go install github.com/vsfedorenko/go-arch-lint/v3/cmd/arch-lint@latest
       - name: Init scaffold (once; commit the .go-arch-lint/ dir)
         run: arch-lint init && cd .go-arch-lint && go mod tidy
       - name: Architecture check
@@ -198,7 +198,7 @@ arch-check:
   stage: test
   image: golang:1.25
   script:
-    - go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
+    - go install github.com/vsfedorenko/go-arch-lint/v3/cmd/arch-lint@latest
     - arch-lint init && cd .go-arch-lint && go mod tidy && cd ..
     - |
       arch-lint check --format json --project-path . > arch-violations.json
@@ -259,7 +259,7 @@ jobs:
         with:
           go-version: '1.25'
       - name: Install go-arch-lint
-        run: go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
+        run: go install github.com/vsfedorenko/go-arch-lint/v3/cmd/arch-lint@latest
       - name: Init scaffold (once; commit the .go-arch-lint/ dir)
         run: arch-lint init && cd .go-arch-lint && go mod tidy && cd ..
       - name: Architecture check (SARIF)

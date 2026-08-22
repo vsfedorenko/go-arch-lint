@@ -6,8 +6,8 @@ package container
 
 import (
 	mock "github.com/stretchr/testify/mock"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/spec"
 )
 
 // NewMockSpecDecoder creates a new instance of MockSpecDecoder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

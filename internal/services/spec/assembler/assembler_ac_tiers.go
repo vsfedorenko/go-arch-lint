@@ -1,9 +1,9 @@
 package assembler
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/spec"
 )
 
 // tiersAssembler copies the ordered tier list from the document into the
