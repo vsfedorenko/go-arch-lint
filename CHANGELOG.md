@@ -55,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `init` no longer declares nested Go modules (directories with their own `go.mod`) and `testdata` directories as components; both are scaffolded as explicit `s.Exclude` globs instead, so a fresh `init` produces a spec `check` agrees with on monorepos.
+- README (RU/EN): the v2→v3 migration note no longer suggests re-running `init` over an existing `.go-arch-lint` (it refuses); the documented route is now `rm -rf .go-arch-lint && go-arch-lint init`.
+
 ## [2.6.0] — 2026-08-22
 
 ### Fixed

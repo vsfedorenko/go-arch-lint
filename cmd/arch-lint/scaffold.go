@@ -93,8 +93,8 @@ Flags:
 // sorted, excluding .go-arch-lint, vendor, hidden dirs and testdata)
 // that directly contains a .go file. The scaffold declares each as a
 // Path() so the fresh spec satisfies the declare-everything rule.
-func scanGoDirs(root string) []string { //nolint:gosec // root is the init --project-path argument, same trust level as every other init write
-	var dirs []string
+func scanGoDirs(root string) ([]string, []string) { //nolint:gosec // root is the init --project-path argument, same trust level as every other init write
+	var dirs, excludes []string
 	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error { //nolint:gosec // root is the init --project-path argument, same trust level as every other init write
 		if err != nil {
 			return nil //nolint:nilerr // unreadable entries are skipped
@@ -117,7 +117,22 @@ func scanGoDirs(root string) []string { //nolint:gosec // root is the init --pro
 			return nil
 		}
 		name := d.Name()
-		if name == ".go-arch-lint" || name == "vendor" || name == "testdata" || strings.HasPrefix(name, ".") {
+		if name == ".go-arch-lint" || name == "vendor" || strings.HasPrefix(name, ".") {
+			return filepath.SkipDir
+		}
+		rel, _ := filepath.Rel(root, p)
+		relSlash := filepath.ToSlash(rel)
+		if name == "testdata" {
+			// testdata is outside the architecture but still scanned by
+			// check: exclude it explicitly, or a fresh scaffold is red.
+			excludes = append(excludes, relSlash+"/**")
+			return filepath.SkipDir
+		}
+		if hasModuleFile(p) {
+			// a nested module is its own unit: its packages are not
+			// importable from this module, so it is not declared — but
+			// the scanner still walks the tree, so exclude it too.
+			excludes = append(excludes, relSlash+"/**")
 			return filepath.SkipDir
 		}
 		entries, readErr := os.ReadDir(p)
@@ -126,21 +141,39 @@ func scanGoDirs(root string) []string { //nolint:gosec // root is the init --pro
 		}
 		for _, e := range entries {
 			if !e.IsDir() && strings.HasSuffix(e.Name(), ".go") {
-				rel, _ := filepath.Rel(root, p)
-				dirs = append(dirs, filepath.ToSlash(rel))
+				dirs = append(dirs, relSlash)
 				break
 			}
 		}
 		return nil
 	})
 	sort.Strings(dirs)
-	return dirs
+	sort.Strings(excludes)
+	return dirs, excludes
+}
+
+// moduleFileName is the module boundary marker: a directory holding it is
+// its own Go module and not part of this module's package graph.
+const moduleFileName = "go.mod"
+
+// hasModuleFile reports whether dir contains its own go.mod.
+func hasModuleFile(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if !e.IsDir() && e.Name() == moduleFileName {
+			return true
+		}
+	}
+	return false
 }
 
 // v2SpecFromDirs renders the scaffolded arch.go body declaring every
 // discovered Go directory as a Path component. A module without any Go
 // subdirectory falls back to the module root alone.
-func v2SpecFromDirs(dirs []string) string {
+func v2SpecFromDirs(dirs, excludes []string) string {
 	var b strings.Builder
 	b.WriteString("var build = dsl.Spec(func(s *dsl.SpecBuilder) {\n")
 	b.WriteString("\t// Every directory with Go code is declared: the v2 language\n")
@@ -154,6 +187,17 @@ func v2SpecFromDirs(dirs []string) string {
 		for _, d := range dirs {
 			fmt.Fprintf(&b, "\ts.Path(%q)\n", d)
 		}
+	}
+	if len(excludes) > 0 {
+		b.WriteString("\t// Outside the architecture, but inside the tree:\n")
+		b.WriteString("\ts.Exclude(")
+		for i, e := range excludes {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+			fmt.Fprintf(&b, "%q", e)
+		}
+		b.WriteString(")\n")
 	}
 	b.WriteString("})\n")
 	return b.String()
@@ -188,7 +232,8 @@ func cmdInit(args []string) int {
 	// Default scaffold: declare the project's real directory tree so
 	// the fresh spec passes the declare-everything rule day one.
 	prefix := scaffoldPrefix()
-	body := prefix + v2SpecFromDirs(scanGoDirs(projectPath)) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
+	dirs, excludes := scanGoDirs(projectPath)
+	body := prefix + v2SpecFromDirs(dirs, excludes) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
 	return writeScaffold(projectPath, body, scaffoldMainGo, "")
 }
 

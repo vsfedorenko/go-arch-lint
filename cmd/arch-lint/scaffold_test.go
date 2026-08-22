@@ -58,6 +58,47 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	assert.NotContains(t, string(maingo), "dsl.Spec(", "main.go must not contain the spec: %s", maingo)
 }
 
+// TestScanGoDirs pins the scaffold contract for monorepos: nested modules
+// and testdata leave the declared set and land in the exclude list instead —
+// a fresh `init` must scaffold a spec `check` agrees with.
+func TestScanGoDirs(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		path := filepath.Join(root, rel)
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755), "mkdir %s", rel)
+		require.NoError(t, os.WriteFile(path, []byte(body), 0o600), "write %s", rel)
+	}
+
+	write(moduleFileName, "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nfunc main() {}\n")
+	write("internal/app/app.go", "package app\n")
+	write("internal/testdata/fixture.go", "package testdata\n")
+	write("examples/sub/"+moduleFileName, "module fixt/examples/sub\n\ngo 1.25\n")
+	write("examples/sub/main.go", "package sub\n")
+	write("vendor/x/x.go", "package x\n")
+	write(".hidden/h.go", "package h\n")
+
+	dirs, excludes := scanGoDirs(root)
+
+	assert.Equal(t, []string{".", "internal/app"}, dirs,
+		"declared dirs must be root + plain Go dirs only, got %v", dirs)
+	assert.Equal(t, []string{"examples/sub/**", "internal/testdata/**"}, excludes,
+		"nested modules and testdata must be excluded explicitly, got %v", excludes)
+}
+
+// TestV2SpecFromDirs_ExcludeLine pins the rendered spec: excluded globs
+// appear in one s.Exclude call after the Path declarations.
+func TestV2SpecFromDirs_ExcludeLine(t *testing.T) {
+	spec := v2SpecFromDirs([]string{".", "internal/app"}, []string{"testdata/**"})
+	assert.Contains(t, spec, `s.Path(".")`, "spec missing Path decl: %s", spec)
+	assert.Contains(t, spec, `s.Exclude("testdata/**")`, "spec missing Exclude call: %s", spec)
+
+	// no excludes -> no Exclude call and no comment noise
+	plain := v2SpecFromDirs([]string{"."}, nil)
+	assert.NotContains(t, plain, "s.Exclude(", "unexpected Exclude in %s", plain)
+}
+
 func TestCmdInit_AlreadyExists(t *testing.T) {
 	cleanup := chdirTemp(t)
 	defer cleanup()
