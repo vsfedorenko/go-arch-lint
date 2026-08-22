@@ -2,10 +2,15 @@ package main
 
 import (
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"golang.org/x/mod/modfile"
 )
 
 const scaffoldGoMod = `module arch-lint-local
@@ -171,26 +176,57 @@ func hasModuleFile(dir string) bool {
 }
 
 // v2SpecFromDirs renders the scaffolded arch.go body declaring every
-// discovered Go directory as a Path component. A module without any Go
-// subdirectory falls back to the module root alone.
-func v2SpecFromDirs(dirs, excludes []string) string {
+// discovered Go directory as a Path component, with Use rules mirroring
+// the imports that already exist (dependencies declared first, so the
+// spec compiles). A module without any Go subdirectory falls back to the
+// module root alone.
+func v2SpecFromDirs(dirs, excludes []string, edges map[string][]string) string {
+	names := specVarNames(dirs)
+	// A path needs a variable only when it is REFERENCED by a later Use
+	// rule (a Use target). Sources are consumed by their own statement.
+	needsVar := map[string]bool{}
+	for _, targets := range edges {
+		for _, t := range targets {
+			needsVar[t] = true
+		}
+	}
 	var b strings.Builder
 	b.WriteString("var build = Spec(func() {\n")
-	b.WriteString("\t// Every directory with Go code is declared: the language\n")
-	b.WriteString("\t// fails on undeclared directories. Add Use rules as your\n")
-	b.WriteString("\t// architecture takes shape:\n")
-	b.WriteString("\t//\n")
-	b.WriteString("\t//     Path(\"internal/core\", func() { Use(domain) })\n")
+	b.WriteString("	// Every directory with Go code is declared, and every import\n")
+	b.WriteString("	// that exists today is allowed: the scaffold mirrors the code\n")
+	b.WriteString("	// as-is. Tighten the Use rules as your architecture takes shape:\n")
+	b.WriteString("	//\n")
+	b.WriteString("	//     domain := Path(\"internal/domain\")\n")
+	b.WriteString("	//     Path(\"internal/core\", func() { Use(domain) })\n")
 	if len(dirs) == 0 {
-		b.WriteString("\tPath(\".\")\n")
-	} else {
-		for _, d := range dirs {
-			fmt.Fprintf(&b, "\tPath(%q)\n", d)
+		// A module with no Go files yet: the root alone keeps the spec
+		// valid (at least one component must be defined).
+		b.WriteString("	Path(\".\")\n")
+	}
+	for _, d := range specDeclOrder(dirs, edges) {
+		targets := edges[d]
+		if len(targets) > 0 {
+			uses := make([]string, 0, len(targets))
+			for _, t := range targets {
+				uses = append(uses, names[t])
+			}
+			decl := fmt.Sprintf("Path(%q, func() { Use(%s) })", d, strings.Join(uses, ", "))
+			if needsVar[d] {
+				fmt.Fprintf(&b, "	%s := %s\n", names[d], decl)
+			} else {
+				fmt.Fprintf(&b, "	%s\n", decl)
+			}
+			continue
+		}
+		if needsVar[d] {
+			fmt.Fprintf(&b, "	%s := Path(%q)\n", names[d], d)
+		} else {
+			fmt.Fprintf(&b, "	Path(%q)\n", d)
 		}
 	}
 	if len(excludes) > 0 {
-		b.WriteString("\t// Outside the architecture, but inside the tree:\n")
-		b.WriteString("\tExclude(")
+		b.WriteString("	// Outside the architecture, but inside the tree:\n")
+		b.WriteString("	Exclude(")
 		for i, e := range excludes {
 			if i > 0 {
 				b.WriteString(", ")
@@ -201,6 +237,178 @@ func v2SpecFromDirs(dirs, excludes []string) string {
 	}
 	b.WriteString("})\n")
 	return b.String()
+}
+
+// specVarName derives the Go identifier for a declared path: the module
+// root becomes "root", every other directory its last element (sanitized
+// to letters/digits, lowercased, with a "p" fallback for empty names so
+// the identifier is never a Go keyword clash handled below).
+func specVarName(dir string) string {
+	if dir == "." {
+		return "root"
+	}
+	base := path.Base(dir)
+	var b strings.Builder
+	for _, r := range base {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r + 'a' - 'A')
+		default:
+			// separators and symbols fold away
+		}
+	}
+	name := b.String()
+	if name == "" {
+		return "p"
+	}
+	if name[0] >= '0' && name[0] <= '9' {
+		return "p" + name
+	}
+	return name
+}
+
+// goKeywords are reserved words a scaffolded variable name must not use.
+var goKeywords = map[string]bool{
+	"break": true, "case": true, "chan": true, "const": true, "continue": true,
+	"default": true, "defer": true, "else": true, "fallthrough": true, "for": true,
+	"func": true, "go": true, "goto": true, "if": true, "import": true,
+	"interface": true, "map": true, "package": true, "range": true, "return": true,
+	"select": true, "struct": true, "switch": true, "type": true, "var": true,
+}
+
+// specVarNames assigns a unique Go identifier to every declared path:
+// the module root becomes "root", other directories take their last
+// element (lowercased, symbols folded away). Collisions get a numeric
+// suffix; Go keywords and the reserved "build" get a trailing underscore.
+func specVarNames(dirs []string) map[string]string {
+	names := make(map[string]string, len(dirs))
+	taken := map[string]bool{}
+	for _, d := range dirs {
+		base := specVarName(d)
+		if goKeywords[base] || base == "build" {
+			base += "_"
+		}
+		name := base
+		for i := 2; taken[name]; i++ {
+			name = fmt.Sprintf("%s%d", base, i)
+		}
+		taken[name] = true
+		names[d] = name
+	}
+	return names
+}
+
+// specDeclOrder orders declarations dependencies-first (Kahn's algorithm
+// over the Use edges) so every referenced variable is declared before its
+// first Use. Non-test Go imports cannot cycle, but the sort is defensive:
+// any leftover (impossible cycle) appends in sorted order rather than
+// looping forever.
+func specDeclOrder(dirs []string, edges map[string][]string) []string {
+	sorted := append([]string(nil), dirs...)
+	sort.Strings(sorted)
+	deps := make(map[string][]string, len(edges))
+	indeg := make(map[string]int, len(sorted))
+	for _, d := range sorted {
+		indeg[d] = 0
+	}
+	for from, targets := range edges {
+		for _, t := range targets {
+			if t == from {
+				continue
+			}
+			deps[t] = append(deps[t], from)
+			indeg[from]++
+		}
+	}
+	var queue []string
+	for _, d := range sorted {
+		if indeg[d] == 0 {
+			queue = append(queue, d)
+		}
+	}
+	var order []string
+	for len(queue) > 0 {
+		d := queue[0]
+		queue = queue[1:]
+		order = append(order, d)
+		for _, dependent := range deps[d] {
+			indeg[dependent]--
+			if indeg[dependent] == 0 {
+				queue = append(queue, dependent)
+			}
+		}
+	}
+	if len(order) == len(sorted) {
+		return order
+	}
+	return sorted // unreachable with real Go imports; defensive fallback
+}
+
+// scanImports maps every declared directory to the declared directories
+// its non-test Go files import. Import paths are matched against the
+// module path from go.mod: module "probe" makes "probe/internal/hello"
+// resolve to the directory "internal/hello". Test files are skipped —
+// the checker does not flag test imports, and test-only edges may cycle.
+func scanImports(root string, dirs []string) map[string][]string {
+	edges := make(map[string][]string, len(dirs))
+	if moduleName(root) == "" {
+		return edges
+	}
+	byImport := make(map[string]string, len(dirs)+1)
+	for _, d := range dirs {
+		if d == "." {
+			byImport[moduleName(root)] = "."
+			continue
+		}
+		byImport[moduleName(root)+"/"+d] = d
+	}
+	fset := token.NewFileSet()
+	for _, d := range dirs {
+		entries, err := os.ReadDir(filepath.Join(root, filepath.FromSlash(d)))
+		if err != nil {
+			continue
+		}
+		seen := map[string]bool{}
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
+				continue
+			}
+			file := filepath.Join(root, filepath.FromSlash(d), e.Name())
+			astFile, err := parser.ParseFile(fset, file, nil, parser.ImportsOnly)
+			if err != nil {
+				continue
+			}
+			for _, imp := range astFile.Imports {
+				target, ok := byImport[strings.Trim(imp.Path.Value, `"`)]
+				if !ok || target == d || seen[target] {
+					continue
+				}
+				seen[target] = true
+				edges[d] = append(edges[d], target)
+			}
+		}
+		sort.Strings(edges[d])
+	}
+	return edges
+}
+
+// moduleName reads the module path from the go.mod at root. An empty
+// string (no go.mod, unreadable, unparsable) disables import scanning.
+func moduleName(root string) string {
+	data, err := os.ReadFile(filepath.Join(root, moduleFileName)) //nolint:gosec // root is the init --project-path argument, same trust level as every other init read
+	if err != nil {
+		return ""
+	}
+	f, err := modfile.Parse(moduleFileName, data, nil)
+	if err != nil {
+		return ""
+	}
+	if f.Module == nil {
+		return ""
+	}
+	return f.Module.Mod.Path
 }
 
 // scaffoldPrefix is everything of scaffoldArchGo before the spec body —
@@ -230,10 +438,12 @@ func cmdInit(args []string) int {
 	}
 
 	// Default scaffold: declare the project's real directory tree so
-	// the fresh spec passes the declare-everything rule day one.
+	// the fresh spec passes the declare-everything rule day one, with
+	// Use rules mirroring the imports that already exist.
 	prefix := scaffoldPrefix()
 	dirs, excludes := scanGoDirs(projectPath)
-	body := prefix + v2SpecFromDirs(dirs, excludes) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
+	edges := scanImports(projectPath, dirs)
+	body := prefix + v2SpecFromDirs(dirs, excludes, edges) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
 	return writeScaffold(projectPath, body, scaffoldMainGo, "")
 }
 

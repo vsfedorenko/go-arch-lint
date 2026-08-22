@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Fixed
+- The default `init` scaffold was red on the canonical Go project shape:
+  the module-root package importing an internal package (`main.go` →
+  `internal/...`) failed the "3. Run check" next-step with
+  `Component . shouldn't depend on ...` — declare-everything declared the
+  paths but no `Use` rules, and everything is denied by default. `init`
+  now scans non-test imports (module path from go.mod) and renders every
+  existing import as a `Use` rule, dependencies-first (Kahn's order), with
+  collision-safe identifiers (`app`/`app2`, keyword escapes). The fresh
+  scaffold mirrors the code as-is and checks green on day one; tightening
+  is deleting a `Use` line. Test files are not scanned (the checker does
+  not flag test imports). Found by probing a fresh `init` as a consumer;
+  pinned by a new integration test with a root→internal import fixture.
+
 ## [3.1.0] — 2026-08-22
 
 ### Added

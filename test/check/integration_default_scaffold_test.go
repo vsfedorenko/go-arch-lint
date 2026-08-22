@@ -69,6 +69,34 @@ func TestDefaultScaffoldChecksGreen(t *testing.T) {
 	assert.Contains(t, out, "No warnings found", "expected OK banner")
 }
 
+// TestDefaultScaffoldWithImportsChecksGreen covers the canonical Go shape
+// the plain fixture misses: a root main package importing an internal
+// package. The declare-everything scaffold used to flag exactly this as a
+// violation ("Component . shouldn't depend on fixt/internal/hello"),
+// making init's advertised "3. Run 'go-arch-lint check'" next-step red on
+// day one. The scaffold now mirrors existing imports as Use rules.
+func TestDefaultScaffoldWithImportsChecksGreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds the launcher binary")
+	}
+	root := repoRoot(t)
+
+	proj := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(proj, "internal", "hello"), 0o755), "mkdir internal/hello") //nolint:gosec // test fixture dirs
+	write := func(rel, body string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(proj, rel), []byte(body), 0o600), "write %s", rel) //nolint:gosec // test fixture in t.TempDir()
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport (\n	\"fmt\"\n\n	\"fixt/internal/hello\"\n)\n\nfunc main() { fmt.Println(hello.Hi()) }\n")
+	write("internal/hello/hello.go", "package hello\n\nfunc Hi() string { return \"hi\" }\n")
+
+	scaffoldDefaultArchDir(t, proj, root)
+	out, code := runArchCheck(t, proj)
+	assert.Equal(t, 0, code, "fresh scaffold with imports must check green; exit %d.\noutput:\n%s", code, out)
+	assert.Contains(t, out, "No warnings found", "expected OK banner")
+}
+
 // TestDefaultScaffoldEmptyModuleChecksGreen covers the empty-project corner:
 // a module with no packages at all must still check green (the scaffold used
 // to fail on a missing internal/ workdir before any code existed).
