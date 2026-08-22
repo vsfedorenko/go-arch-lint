@@ -43,33 +43,19 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	require.NoError(t, err, "read go.mod")
 	assert.Contains(t, string(gomod), "module arch-lint-local", "go.mod missing module declaration: %s", gomod)
 
-	// arch.go is the user-editable spec: DSL import, Spec entry, NO runner.
+	// arch.go is the user-editable spec: v2 DSL import, Spec entry, NO runner.
 	archgo, err := os.ReadFile(filepath.Join(archDir, "arch.go"))
 	require.NoError(t, err, "read arch.go")
-	assert.Contains(t, string(archgo), "Spec(func()", "arch.go missing Spec entry: %s", archgo)
-	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v2/dsl"`, "arch.go missing dsl import: %s", archgo)
+	assert.Contains(t, string(archgo), "v2.Spec(func(s *v2.SpecBuilder)", "arch.go missing v2 Spec entry: %s", archgo)
+	assert.Contains(t, string(archgo), `"github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"`, "arch.go missing dsl/v2 import: %s", archgo)
+	assert.Contains(t, string(archgo), `s.Path(".")`, "arch.go missing the module-root component: %s", archgo)
 	assert.NotContains(t, string(archgo), "func main()", "arch.go must not contain the runner: %s", archgo)
 
 	// main.go is the stable runner: command+flag passthrough, NO spec definition.
 	maingo, err := os.ReadFile(filepath.Join(archDir, "main.go"))
 	require.NoError(t, err, "read main.go")
-	assert.Contains(t, string(maingo), "archlint.MustRunCLI(spec, os.Args[1:])", "main.go missing command passthrough: %s", maingo)
-	assert.NotContains(t, string(maingo), "Spec(func()", "main.go must not contain the spec: %s", maingo)
-}
-
-// The scaffolded ExcludeFiles regex must escape the dot with ONE backslash
-// (`\.`), so it actually matches *_test.go files. A historical double escape
-// (`\\.`) required a literal backslash in file names and never matched.
-func TestScaffold_ExcludeFilesRegexEscapesDotOnce(t *testing.T) {
-	cleanup := chdirTemp(t)
-	defer cleanup()
-
-	assert.Equal(t, 0, cmdInit(nil))
-
-	archgo, err := os.ReadFile(filepath.Join(".go-arch-lint", "arch.go"))
-	require.NoError(t, err, "read arch.go")
-	assert.NotContains(t, string(archgo), `\\.`, "ExcludeFiles double backslash matches no files:\n%s", archgo)
-	assert.Contains(t, string(archgo), "^.*_test\\.go$", "arch.go missing ExcludeFiles pattern:\n%s", archgo)
+	assert.Contains(t, string(maingo), "archlint.MustRunCLIV2(build, os.Args[1:])", "main.go missing command passthrough: %s", maingo)
+	assert.NotContains(t, string(maingo), "v2.Spec(", "main.go must not contain the spec: %s", maingo)
 }
 
 func TestCmdInit_AlreadyExists(t *testing.T) {

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `init` scaffolds the v2 Path-based DSL (stage 3 of the v3 roadmap):
+  the generated `arch.go` declares every directory containing Go code
+  as a `Path()` (the declare-everything rule holds day one; the module
+  root itself is declared as `.` when it has Go files), and the runner
+  calls `archlint.MustRunCLIV2`. New public API: `RunCLIV2` /
+  `MustRunCLIV2` — the delegated CLI surface (check, mapping, graph,
+  self-inspect, version) over a v2 build. The v2 pipeline now excludes
+  `.go-arch-lint/` and `vendor/` unconditionally (the linter's own
+  scaffold is never part of the architecture), and `Path(".")` is the
+  root package only — matching the README contract.
+
 ## [2.5.0] — 2026-08-22
 
 ### Added

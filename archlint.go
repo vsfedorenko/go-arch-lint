@@ -422,6 +422,31 @@ func MustRunCLI(spec dsl.SpecDef, args []string) {
 	os.Exit(ExitCodeOK)
 }
 
+// RunCLIV2 is [RunCLI] for a v2 Path-based DSL build: the delegated
+// command surface (check, mapping, graph, self-inspect, version) driven
+// by a dsl/v2 build. This is what a v2 scaffolded `.go-arch-lint/main.go`
+// calls.
+func RunCLIV2(build *v2.Build, args []string) error {
+	if build == nil {
+		return fmt.Errorf("build is empty — ensure v2.Spec(...) was called")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	return app.RunCLI(ctx, decoder.NewV2SpecDocument(build), args)
+}
+
+// MustRunCLIV2 is [RunCLIV2] with the conventional exit-code mapping (see
+// [MustRunCLI]).
+func MustRunCLIV2(build *v2.Build, args []string) {
+	if err := RunCLIV2(build, args); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err.Error())
+		os.Exit(ExitCode(err))
+	}
+	os.Exit(ExitCodeOK)
+}
+
 // Exit codes follow the linter convention (same as golangci-lint):
 //
 //	0 — success, no violations

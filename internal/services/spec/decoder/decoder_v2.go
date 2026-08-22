@@ -133,9 +133,13 @@ func (d *V2SpecDocument) Options() spec.Options {
 }
 
 func (d *V2SpecDocument) ExcludedDirectories() []domain.Referable[string] {
-	// .go-arch-lint and vendor are excluded by the pipeline's defaults,
-	// not by the document.
-	return nil
+	// The v2 language has no Exclude call: the linter's own scaffold
+	// directory and vendored dependencies are never part of the
+	// architecture and are excluded unconditionally.
+	return []domain.Referable[string]{
+		domain.NewReferable(".go-arch-lint", domain.NewEmptyReference()),
+		domain.NewReferable("vendor", domain.NewEmptyReference()),
+	}
 }
 
 func (d *V2SpecDocument) ExcludedFilesRegExp() []domain.Referable[string] {
