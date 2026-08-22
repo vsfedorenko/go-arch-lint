@@ -33,7 +33,7 @@ Or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/rel
 
 > The module path is `github.com/vsfedorenko/go-arch-lint/v3` (the suffix is
 > mandatory for Go major versions). Upgrading from v2.x: update the
-> imports in `.go-arch-lint/` to `/v3` and migrate the spec (see “Migrating from v2.x” below), or just re-run `go-arch-lint init`.
+> imports in `.go-arch-lint/` to `/v3` and migrate the spec (see “Migrating from v2.x” below), or start fresh: `rm -rf .go-arch-lint && go-arch-lint init`.
 
 ## Requirements
 
@@ -283,8 +283,9 @@ The first-generation DSL (`Version`/`Workdir`/`Component`/`Deps`/
 | `Vendor(name, imp)` (single path) | `s.Vendor(name, imp1, imp2)`     |
 | `Workdir("internal")`  | drop it: `Path` paths are module-relative     |
 
-The easiest route is to re-run `go-arch-lint init`: it generates a spec
-with every directory of your project. `RunV2`/`MustRunV2`/`RunCLIV2`/
+The easiest route is a fresh scaffold: `rm -rf .go-arch-lint && go-arch-lint init`
+regenerates a spec with every directory of your project (`init` refuses to
+overwrite an existing directory, and the v2 spec is incompatible anyway). `RunV2`/`MustRunV2`/`RunCLIV2`/
 `MustRunCLIV2` were renamed to `Run`/`MustRun`/`RunCLI`/`MustRunCLI`.
 The first-generation `Naming`, `Tiers`, `Visibility` and `Interfaces`
 rules are not part of v3 — candidates to return as separate extensions.
