@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/vsfedorenko/go-arch-lint/v3/internal/app"
+	versionop "github.com/vsfedorenko/go-arch-lint/v3/internal/operations/version"
 )
 
 const (
@@ -110,7 +111,12 @@ func run() int {
 
 	switch command {
 	case "version":
-		fmt.Printf("go-arch-lint launcher %s (commit %s, built %s)\n", app.Version, app.CommitHash, app.BuildTime)
+		out, err := versionop.NewOperation(app.Version, app.BuildTime, app.CommitHash).Behave()
+		if err != nil {
+			fmt.Printf("go-arch-lint launcher %s (commit %s, built %s)\n", app.Version, app.CommitHash, app.BuildTime)
+			return 0
+		}
+		fmt.Printf("go-arch-lint launcher %s (commit %s, built %s)\n", out.LinterVersion, out.CommitHash, out.BuildTime)
 		return 0
 	case "init":
 		return cmdInit(os.Args[2:])
