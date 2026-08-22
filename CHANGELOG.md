@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4] — 2026-08-22
+
+### Fixed
+- `graph` polluted stdout with two `WARN missing slog.Logger in context`
+  blocks carrying full goroutine stack traces (~80 lines) on every svg
+  run: d2's internal logger warns whenever the context carries no
+  `slog.Logger`, and the layout engine calls it twice per compile. The
+  graph operation now attaches a WARN-capped logger to the context, so
+  the debug chatter stays silent while real d2 errors keep flowing
+  through the returned error. Found by probing the released v3.0.3
+  artifact as a consumer.
+
 ## [3.0.3] — 2026-08-22
 
 ### Fixed
