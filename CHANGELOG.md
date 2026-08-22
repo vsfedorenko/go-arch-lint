@@ -18,6 +18,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a v2 build — verified live: a conforming chain passes clean, an
   illegal import reports the violating component (and cycles).
   `Path(".")` now declares the module root.
+- `archlint.MustRunV2` — the v2 counterpart of [MustRun] (exit-code
+  plumbing for CLI-style runners), plus end-to-end coverage of the v2
+  pipeline (`test/check/integration_v2_test.go` + the
+  `test/check/project-v2` fixture module): clean spec → exit 0, upward
+  import → exit 1 with the component named and the cycle reported,
+  missing path → exit 2 with a did-you-mean hint.
+
+### Fixed
+- v2 root component: `Path(".")` produced a component with an EMPTY
+  name — violations rendered as "Component  shouldn't depend on",
+  `Use(root)` panicked with a misleading "never assigned from
+  Path(...)" (the empty name collided with the zero-value PathID), and
+  `Use(...)` inside `Path(".", func(){...})` panicked "must be called
+  inside Path". The module root now uses the canonical key `"."`, and
+  the dead `from == ""` guard is gone. Found by probing the freshly
+  merged stage-2 pipeline live as a consumer; pinned by
+  `TestPath_Root`, `TestUse_InsideRootPath`, and the v2 e2e suite.
 
 ## [2.4.3] — 2026-08-21
 
