@@ -23,6 +23,9 @@ const (
 	// defaultGraphOutFile mirrors the graph command's own default output
 	// file name (internal/app/container/container_cmd_graph.go).
 	defaultGraphOutFile = "go-arch-lint-graph.svg"
+
+	// cmdGraph is the delegated graph command name (see run's switch).
+	cmdGraph = "graph"
 )
 
 // splitPathFlag recognizes a path-carrying flag in both its forms:
@@ -169,12 +172,16 @@ func cmdDelegate(command string, args []string) int {
 		// both "--flag value" and "--flag=value". The delegated process
 		// runs with cwd=.go-arch-lint/, so a relative path would resolve
 		// against the wrong directory — absolutize it against the user's
-		// cwd first. A missing value falls through verbatim so the
-		// delegated cobra parser reports the flag by name.
+		// cwd first. A missing value (last token or followed by another
+		// flag) fails fast HERE: the launcher appends its own defaults
+		// (--project-path, graph's --out), which would silently satisfy
+		// the delegated parser and degrade to default behavior — the
+		// exact silent no-op the flag contract forbids.
 		if value == "" {
 			if i+1 >= len(args) || isFlagLike(args[i+1]) {
-				delegatedArgs = append(delegatedArgs, args[i])
-				continue
+				fmt.Fprintf(os.Stderr, "Error: flag needs an argument: %s\n", name)
+				fmt.Fprintf(os.Stderr, "Run 'go-arch-lint help' for usage.\n")
+				return 1
 			}
 			value = args[i+1]
 			i++ // consume the value token of the space form
@@ -196,7 +203,7 @@ func cmdDelegate(command string, args []string) int {
 	if !projectPathSet {
 		delegatedArgs = append(delegatedArgs, flagProjectPath+"="+absProjectPath)
 	}
-	if command == "graph" && !outSet {
+	if command == cmdGraph && !outSet {
 		// The graph command's own default ("./go-arch-lint-graph.svg") would
 		// resolve against the delegated cwd (.go-arch-lint/) — pin it to the
 		// project root, exactly where an explicit --out lands.
