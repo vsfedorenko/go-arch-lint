@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-08-22
+
 ### Added
+- v2 Path-based DSL core (stage 1 of the v3 roadmap): the `dsl/v2`
+  package — `Spec`/`Path`/`Use`/`Vendor`. A directory containing Go
+  code IS a component; `Use` is the only rule ("this path uses these
+  targets"); defaults deny everything until a `Use` says otherwise.
+  Malformed specs panic at build time with file:line (duplicate
+  paths, `Use` outside a `Path` fn, self-use, raw strings as
+  targets, misplaced `**`). Forward references are a Go compile
+  error — declaration order mirrors dependency direction.
 - v2 DSL pipeline integration (stage 2 of the v3 roadmap):
   `V2SpecDocument` adapts a `dsl/v2.Build` to the checker's spec surface
   (paths → components with `/**` globs, Use rules → dependency rules with
