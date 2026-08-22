@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.1] — 2026-08-22
+
 ### Fixed
 - The default `init` scaffold was red on the canonical Go project shape:
   the module-root package importing an internal package (`main.go` →
