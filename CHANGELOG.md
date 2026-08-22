@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rule for every declared path).
 - Migration guide: README → «Миграция с v2.x» / “Migrating from v2.x”.
 
-## [Unreleased]
+## [3.0.2]
 
 ### Fixed
 - `init` no longer declares nested Go modules (directories with their own `go.mod`) and `testdata` directories as components; both are scaffolded as explicit `s.Exclude` globs instead, so a fresh `init` produces a spec `check` agrees with on monorepos.
