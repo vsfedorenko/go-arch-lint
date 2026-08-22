@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.3] — 2026-08-22
+
+### Fixed
+- The delegated `graph` command wrote its svg into `.go-arch-lint/`
+  instead of the project root: the delegated process runs with
+  `cwd=.go-arch-lint/`, so the command's default relative output path
+  resolved against the wrong directory. The launcher now absolutizes
+  every path-carrying flag (`--project-path`, `--baseline`, `--out`) in
+  both `--flag value` and `--flag=value` forms and pins `graph`'s
+  default output to the project root (#96).
+- A path flag without a value (`go-arch-lint graph --out`) silently
+  fell back to the default output location and exited 0 — the launcher's
+  own appended defaults satisfied the delegated parser. Valueless path
+  flags now fail fast with `Error: flag needs an argument: --out` and
+  exit 1 (#96).
+- Repo hygiene: a 26 MB launcher binary accidentally committed in #47
+  is untracked and gitignored (#99).
+
 ## [3.0.1] — 2026-08-22
 
 ### Fixed
