@@ -96,6 +96,52 @@ func TestLauncher_BrokenSpec_PrintsContext(t *testing.T) {
 	assert.Contains(t, out, "go-arch-lint init", "expected init hint on stderr")
 }
 
+// TestLauncher_PathFlagWithoutValue_FailsFast pins the flag contract for
+// path-carrying flags: a valueless `--out`/`--baseline`/`--project-path`
+// must fail with an error naming the flag, never silently degrade to the
+// default behavior. The launcher appends its own --project-path and
+// graph's --out defaults, which would otherwise silently satisfy the
+// delegated parser and write the graph to the default location as if the
+// user asked for it (probed live: `graph --out` wrote the default svg
+// and exited 0 before this guard existed). The guard fires before `go
+// run` is spawned, so no toolchain is needed on PATH.
+func TestLauncher_PathFlagWithoutValue_FailsFast(t *testing.T) {
+	bin := buildLauncher(t)
+	dir := writeFixture(t, "package main\n\nfunc main() {}\n")
+
+	tests := []struct {
+		name string
+		args []string
+		flag string
+	}{
+		{"out as last token", []string{cmdGraph, flagOut}, flagOut},
+		{"out followed by flag", []string{cmdGraph, flagOut, "--verbose"}, flagOut},
+		{"baseline as last token", []string{"check", flagBaseline}, flagBaseline},
+		{"project path as last token", []string{"check", flagProjectPath}, flagProjectPath},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//nolint:gosec // intentional: runs the launcher binary built by this test with fixed table args
+			cmd := exec.Command(bin, tt.args...)
+			cmd.Dir = dir
+			cmd.Env = []string{"PATH=" + t.TempDir(), "HOME=" + t.TempDir()}
+
+			var stderr bytes.Buffer
+			cmd.Stderr = &stderr
+
+			err := cmd.Run()
+			require.Error(t, err, "%v must exit non-zero", tt.args)
+
+			var exitErr *exec.ExitError
+			require.ErrorAs(t, err, &exitErr)
+			assert.Equal(t, 1, exitErr.ExitCode(), "%v exit code", tt.args)
+			assert.Contains(t, stderr.String(), "flag needs an argument", "expected flag-naming error on stderr")
+			assert.Contains(t, stderr.String(), tt.flag, "error must name the flag")
+		})
+	}
+}
+
 // TestLauncher_HelpOutsideProject_ShowsUsage pins the "help must never
 // require a project" contract: `check --help` run where no .go-arch-lint/
 // exists prints the launcher usage and exits 0 instead of the

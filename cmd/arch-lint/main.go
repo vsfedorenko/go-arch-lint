@@ -19,7 +19,36 @@ const (
 	flagBaseline    = "--baseline"
 	flagOut         = "--out"
 	flagHelp        = "--help"
+
+	// defaultGraphOutFile mirrors the graph command's own default output
+	// file name (internal/app/container/container_cmd_graph.go).
+	defaultGraphOutFile = "go-arch-lint-graph.svg"
+
+	// cmdGraph is the delegated graph command name (see run's switch).
+	cmdGraph = "graph"
 )
+
+// splitPathFlag recognizes a path-carrying flag in both its forms:
+// "--flag value" (value empty, caller consumes the next arg) and
+// "--flag=value" (value carried inline). isPath reports whether the token
+// is a path flag at all.
+func splitPathFlag(token string) (name, value string, isPath bool) {
+	for _, name := range []string{flagProjectPath, "-p", flagBaseline, flagOut} {
+		if token == name {
+			return name, "", true
+		}
+		if strings.HasPrefix(token, name+"=") {
+			return name, strings.TrimPrefix(token, name+"="), true
+		}
+	}
+	return "", "", false
+}
+
+// isFlagLike reports whether a token looks like a flag rather than a value;
+// used to avoid swallowing the next flag when a path flag lost its value.
+func isFlagLike(token string) bool {
+	return strings.HasPrefix(token, "-")
+}
 
 // `go run` does not propagate the child's exit code: any non-zero child exit
 // becomes go run's exit 1, with the original code mentioned only in the last
@@ -131,42 +160,54 @@ func cmdDelegate(command string, args []string) int {
 
 	delegatedArgs := make([]string, 0, len(args)+4)
 	projectPathSet := false
+	outSet := false
 	for i := 0; i < len(args); i++ {
-		isPathFlag := args[i] == flagProjectPath || args[i] == "-p"
-		hasValue := i+1 < len(args)
-
-		switch {
-		case isPathFlag && hasValue:
-			delegatedArgs = append(delegatedArgs, args[i], absProjectPath)
-			projectPathSet = true
-			i++
-		case args[i] == flagBaseline && hasValue:
-			// The delegated process runs with cwd=.go-arch-lint/, so a
-			// relative baseline path would resolve against the wrong
-			// directory — absolutize it against the user's cwd first
-			// (same treatment as --project-path).
-			absBaseline, err := filepath.Abs(args[i+1])
-			if err != nil {
-				absBaseline = args[i+1]
-			}
-			delegatedArgs = append(delegatedArgs, args[i], absBaseline)
-			i++
-		case args[i] == flagOut && hasValue:
-			// Same cwd story as --baseline: `graph --out ./graph.svg`
-			// must land next to the user's project, not inside
-			// .go-arch-lint/.
-			absOut, err := filepath.Abs(args[i+1])
-			if err != nil {
-				absOut = args[i+1]
-			}
-			delegatedArgs = append(delegatedArgs, args[i], absOut)
-			i++
-		default:
+		name, value, isPath := splitPathFlag(args[i])
+		if !isPath {
 			delegatedArgs = append(delegatedArgs, args[i])
+			continue
+		}
+
+		// Path-carrying flags (--project-path, --baseline, --out) accept
+		// both "--flag value" and "--flag=value". The delegated process
+		// runs with cwd=.go-arch-lint/, so a relative path would resolve
+		// against the wrong directory — absolutize it against the user's
+		// cwd first. A missing value (last token or followed by another
+		// flag) fails fast HERE: the launcher appends its own defaults
+		// (--project-path, graph's --out), which would silently satisfy
+		// the delegated parser and degrade to default behavior — the
+		// exact silent no-op the flag contract forbids.
+		if value == "" {
+			if i+1 >= len(args) || isFlagLike(args[i+1]) {
+				fmt.Fprintf(os.Stderr, "Error: flag needs an argument: %s\n", name)
+				fmt.Fprintf(os.Stderr, "Run 'go-arch-lint help' for usage.\n")
+				return 1
+			}
+			value = args[i+1]
+			i++ // consume the value token of the space form
+		}
+
+		absValue, err := filepath.Abs(value)
+		if err != nil {
+			absValue = value
+		}
+		delegatedArgs = append(delegatedArgs, name+"="+absValue)
+
+		switch name {
+		case flagProjectPath, "-p":
+			projectPathSet = true
+		case flagOut:
+			outSet = true
 		}
 	}
 	if !projectPathSet {
-		delegatedArgs = append(delegatedArgs, flagProjectPath, absProjectPath)
+		delegatedArgs = append(delegatedArgs, flagProjectPath+"="+absProjectPath)
+	}
+	if command == cmdGraph && !outSet {
+		// The graph command's own default ("./go-arch-lint-graph.svg") would
+		// resolve against the delegated cwd (.go-arch-lint/) — pin it to the
+		// project root, exactly where an explicit --out lands.
+		delegatedArgs = append(delegatedArgs, flagOut+"="+filepath.Join(absProjectPath, defaultGraphOutFile))
 	}
 
 	// .go-arch-lint/ has its own go.mod; -C runs go from that directory.
