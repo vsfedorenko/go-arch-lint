@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -10,6 +11,7 @@ import (
 	"oss.terrastruct.com/d2/d2layouts/d2dagrelayout"
 	"oss.terrastruct.com/d2/d2lib"
 	"oss.terrastruct.com/d2/d2renderers/d2svg"
+	d2log "oss.terrastruct.com/d2/lib/log"
 	"oss.terrastruct.com/d2/lib/textmeasure"
 
 	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
@@ -219,6 +221,15 @@ func (o *Operation) compileGraph(ctx context.Context, d2Code string) ([]byte, er
 	if err != nil {
 		return nil, fmt.Errorf("failed create ruler: %w", err)
 	}
+
+	// d2's internal log helpers warn (with a full goroutine stack) on every
+	// call when the context carries no slog.Logger — two stacks per graph
+	// compile on a plain stdout run. Attach a logger capped at WARN so the
+	// layout engine's debug chatter stays silent while real d2 errors keep
+	// flowing through the returned error.
+	ctx = d2log.With(ctx, slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelWarn,
+	})))
 
 	sketch := true
 	renderOpts := &d2svg.RenderOpts{
