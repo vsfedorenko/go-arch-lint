@@ -2,8 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Fixed
+- `graph` failed to compile with `invalid text beginning unquoted key` on
+  every spec declaring the module root (`Path(".")`) — d2 keys are now
+  quoted, so path-shaped component names (`.`, `pkg.v1`, `internal/a`)
+  survive d2 compilation in the default svg format. Regression of v3.0.0:
+  v2 component aliases never collided with d2's reserved tokens.
+- Self-dependency edges (the implicit "a component may import itself"
+  rule) no longer render as self-loops in any graph format — they were
+  noise, not architecture.
 
 ## [3.0.0] — v3: the Path DSL is the only DSL
 

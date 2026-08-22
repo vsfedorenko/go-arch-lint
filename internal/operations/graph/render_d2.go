@@ -27,9 +27,9 @@ func (o *Operation) renderD2(edges []graphEdge, opts models.CmdGraphIn) string {
     style.filled: false
   }
 }
-`, e.to, e.to, e.from, flow, e.to))
+`, d2Key(e.to), d2Key(e.to), d2Key(e.from), flow, d2Key(e.to)))
 		} else {
-			linesBuff = append(linesBuff, fmt.Sprintf("%s %s %s\n", e.from, flow, e.to))
+			linesBuff = append(linesBuff, fmt.Sprintf("%s %s %s\n", d2Key(e.from), flow, d2Key(e.to)))
 		}
 	}
 
@@ -41,6 +41,14 @@ func (o *Operation) renderD2(edges []graphEdge, opts models.CmdGraphIn) string {
 	}
 
 	return buff.String()
+}
+
+// d2Key quotes a component name for use as a d2 key. Component names are
+// directory paths: "." (the module root) is a reserved token in d2 and a
+// dotted path segment ("pkg.v1") would nest instead of naming a node, so
+// every key is quoted uniformly.
+func d2Key(name string) string {
+	return fmt.Sprintf("%q", name)
 }
 
 func d2Arrow(graphType models.GraphType) string {

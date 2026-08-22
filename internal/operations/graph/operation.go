@@ -132,6 +132,12 @@ func (o *Operation) collectEdges(spec arch.Spec, opts models.CmdGraphIn, whiteLi
 		}
 
 		for _, dep := range cmp.MayDependOn {
+			if dep.Value == cmp.Name.Value {
+				// Every component may import itself (the implicit v3 rule
+				// that keeps intra-component packages a single unit) — a
+				// self-loop renders as noise in every graph format.
+				continue
+			}
 			if _, visible := whiteList[dep.Value]; !visible {
 				continue
 			}
