@@ -1,6 +1,7 @@
 // Package dsl is the Path-based architecture DSL.
 //
-// The entire language is four calls:
+// The entire language is four calls, available both as SpecBuilder methods
+// and as package-level functions (dot-import friendly):
 //
 //	Path(path, fn?)        a directory (trailing "**" = the whole subtree).
 //	                       A directory containing Go code IS a component.
@@ -8,16 +9,26 @@
 //	Vendor(name, import)   an external package; a legal Use target.
 //	Spec(fn)               the single entry point.
 //
+// With a dot import the spec reads without a receiver:
+//
+//	import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
+//
+//	var build = Spec(func() {
+//		domain := Path("internal/domain")
+//		Path("internal", func() {
+//			Path("app", func() { Use(domain) })
+//		})
+//	})
+//
+// The package-level form routes every call to the Spec builder currently
+// running on this goroutine, so both styles may be mixed freely; the
+// method form stays the explicit, global-free fallback.
+//
 // Defaults: nothing may use anything until a Use says so. The order of
 // declarations mirrors the direction of dependencies (referring forward is
 // a Go compile error). Malformed specs panic at build time with file:line
 // (duplicate paths, Use outside a Path fn, self-use, raw strings as
-// targets, misplaced "**"). Filesystem verification of declared paths and
-// did-you-mean suggestions arrive with the checker-pipeline integration
-// (stage 2 of the v3 roadmap).
-//
-// This package is experimental: the API may change before it replaces the
-// first-generation dsl package.
+// targets, misplaced "**", package-level calls outside Spec).
 package dsl
 
 import (
@@ -25,6 +36,7 @@ import (
 	"path"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 // PathID identifies a declared path (component). Produced by Path.
@@ -97,8 +109,14 @@ type Build struct {
 }
 
 // callerRef returns file:line of the DSL call site (the direct caller).
-func callerRef() (string, int) {
-	_, file, line, ok := runtime.Caller(2)
+// skip is extra frames to climb when the call arrives through a
+// package-level sugar wrapper.
+func callerRef(skip ...int) (string, int) {
+	add := 0
+	if len(skip) > 0 {
+		add = skip[0]
+	}
+	_, file, line, ok := runtime.Caller(2 + add)
 	if !ok {
 		return "", 0
 	}
@@ -106,17 +124,126 @@ func callerRef() (string, int) {
 	return parts[len(parts)-1], line
 }
 
-// Spec builds the architecture description. fn must contain every Path,
-// Use and Vendor call. The returned Build is ready for the checker.
-func Spec(fn func(s *SpecBuilder)) *Build {
+// current routes package-level Path/Use/Vendor/Exclude calls to the
+// innermost Spec builder running on the SAME goroutine. Builders are
+// keyed by goroutine id (parsed from runtime.Stack — the standard
+// goroutine-local workaround used by logging/validation libraries), so
+// Specs running in parallel never see each other. The call chain
+// Spec -> fn -> Path never leaves the calling goroutine, which is what
+// makes the routing sound.
+var current sync.Map // goroutine id -> *[]*SpecBuilder (per-goroutine stack)
+
+// goid returns the current goroutine id.
+func goid() uint64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	// "goroutine 27 [running]:"
+	id := uint64(0)
+	i := len("goroutine ")
+	for i < n && buf[i] >= '0' && buf[i] <= '9' {
+		id = id*10 + uint64(buf[i]-'0')
+		i++
+	}
+	return id
+}
+
+func builderStack() *[]*SpecBuilder {
+	key := goid()
+	if v, ok := current.Load(key); ok {
+		return v.(*[]*SpecBuilder)
+	}
+	fresh := &[]*SpecBuilder{}
+	current.Store(key, fresh)
+	return fresh
+}
+
+// pushBuilder registers b as the innermost running Spec builder of the
+// current goroutine.
+func pushBuilder(b *SpecBuilder) {
+	st := builderStack()
+	*st = append(*st, b)
+}
+
+// popBuilder removes the innermost running Spec builder of the current
+// goroutine and forgets the goroutine entirely once its last Spec ends.
+func popBuilder() {
+	st := builderStack()
+	*st = (*st)[:len(*st)-1]
+	if len(*st) == 0 {
+		current.Delete(goid())
+	}
+}
+
+// Spec builds the architecture description and accepts both closure
+// shapes: the receiverless dot-import form and the explicit builder form.
+//
+//	// dot-import style (package-level Path/Use/Vendor/Exclude):
+//	var build = Spec(func() {
+//		domain := Path("internal/domain")
+//		Path("internal/core", func() { Use(domain) })
+//	})
+//
+//	// explicit builder style:
+//	var build = Spec(func(s *SpecBuilder) {
+//		domain := s.Path("internal/domain")
+//		s.Path("internal/core", func() { s.Use(domain) })
+//	})
+//
+// Any other fn shape is a build-time panic. The returned Build is ready
+// for the checker.
+func Spec(fn any) *Build {
 	s := &SpecBuilder{
 		paths:    map[string]*Entry{},
 		vendors:  map[string]*VendorEntry{},
 		uses:     map[string]*UseEntry{},
 		declared: map[string]bool{},
 	}
-	fn(s)
+	pushBuilder(s)
+	defer popBuilder()
+
+	switch f := fn.(type) {
+	case func():
+		f()
+	case func(s *SpecBuilder):
+		f(s)
+	default:
+		panic(fmt.Errorf("Spec(fn) — fn must be func() (dot-import style) or func(s *SpecBuilder), got %T", fn))
+	}
 	return s.finish()
+}
+
+// currentBuilder returns the innermost running Spec builder.
+func currentBuilder() *SpecBuilder {
+	st := builderStack()
+	if len(*st) == 0 {
+		file, line := callerRef(1)
+		panic(fmt.Errorf("%s:%d: package-level DSL calls work only inside Spec(func(){...}) — this one ran with no Spec on the goroutine", file, line))
+	}
+	return (*st)[len(*st)-1]
+}
+
+// Path declares a directory relative to the module root. Package-level
+// form of (*SpecBuilder).Path — see the method for the full contract.
+func Path(p string, fn ...func()) PathID {
+	return currentBuilder().path(p, 1, fn...)
+}
+
+// Use declares the ONLY rule from the enclosing path. Package-level form
+// of (*SpecBuilder).Use.
+func Use(targets ...any) {
+	currentBuilder().use(1, targets...)
+}
+
+// Vendor declares an external dependency. Package-level form of
+// (*SpecBuilder).Vendor.
+func Vendor(name string, importPaths ...string) VendorID {
+	return currentBuilder().vendor(name, 1, importPaths...)
+}
+
+// Exclude removes directories from the checked tree. Package-level form
+// of (*SpecBuilder).Exclude.
+func Exclude(paths ...string) {
+	currentBuilder().exclude(1, paths...)
 }
 
 // Path declares a directory relative to the module root. With fn it also
@@ -127,7 +254,12 @@ func Spec(fn func(s *SpecBuilder)) *Build {
 //	all := Path("legacy/**")  // the whole subtree is one component
 //	root := Path(".")         // the module root itself is a component
 func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
-	file, line := callerRef()
+	return s.path(p, 0, fn...)
+}
+
+// path is Path with an extra caller-skip for the package-level sugar.
+func (s *SpecBuilder) path(p string, skip int, fn ...func()) PathID {
+	file, line := callerRef(skip)
 
 	// A child Path joins the enclosing Path's prefix; at the top level
 	// the prefix is empty. Absolute-looking inputs ("/x") stay top-level
@@ -180,7 +312,12 @@ func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 
 // Vendor declares an external dependency as a named Use target.
 func (s *SpecBuilder) Vendor(name string, importPaths ...string) VendorID {
-	file, line := callerRef()
+	return s.vendor(name, 0, importPaths...)
+}
+
+// vendor is Vendor with an extra caller-skip for the package-level sugar.
+func (s *SpecBuilder) vendor(name string, skip int, importPaths ...string) VendorID {
+	file, line := callerRef(skip)
 	if name == "" || len(importPaths) == 0 {
 		panic(fmt.Errorf("%s:%d: Vendor(name, imports...) — name and at least one import are required", file, line))
 	}
@@ -204,7 +341,12 @@ func (s *SpecBuilder) Vendor(name string, importPaths ...string) VendorID {
 //	    Use(domain, pgx)   // core uses domain and pgx
 //	})
 func (s *SpecBuilder) Use(targets ...any) {
-	file, line := callerRef()
+	s.use(0, targets...)
+}
+
+// use is Use with an extra caller-skip for the package-level sugar.
+func (s *SpecBuilder) use(skip int, targets ...any) {
+	file, line := callerRef(skip)
 
 	if s.top == nil {
 		panic(fmt.Errorf("%s:%d: Use(...) must be called inside Path(path, func(){...})", file, line))
@@ -335,7 +477,12 @@ func levenshtein(a, b string) int {
 // package. Paths are module-root relative; a trailing "/**" excludes a
 // whole subtree.
 func (s *SpecBuilder) Exclude(paths ...string) {
-	file, line := callerRef()
+	s.exclude(0, paths...)
+}
+
+// exclude is Exclude with an extra caller-skip for the package-level sugar.
+func (s *SpecBuilder) exclude(skip int, paths ...string) {
+	file, line := callerRef(skip)
 	if len(paths) == 0 {
 		panic(fmt.Errorf("%s:%d: Exclude(paths...) — at least one path is required", file, line))
 	}
