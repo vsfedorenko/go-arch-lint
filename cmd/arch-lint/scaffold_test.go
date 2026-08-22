@@ -48,7 +48,7 @@ func TestCmdInit_CreatesScaffold(t *testing.T) {
 	require.NoError(t, err, "read arch.go")
 	assert.Contains(t, string(archgo), "Spec(func() {", "arch.go missing Spec entry: %s", archgo)
 	assert.Contains(t, string(archgo), `. "github.com/vsfedorenko/go-arch-lint/v3/dsl"`, "arch.go missing dot-import: %s", archgo)
-	assert.Contains(t, string(archgo), `Path(".")`, "arch.go missing the module-root component: %s", archgo)
+	assert.Contains(t, string(archgo), `Path(".")`, "arch.go missing the module-root fallback for an empty module: %s", archgo)
 	assert.NotContains(t, string(archgo), "func main()", "arch.go must not contain the runner: %s", archgo)
 
 	// main.go is the stable runner: command+flag passthrough, NO spec definition.
@@ -87,16 +87,89 @@ func TestScanGoDirs(t *testing.T) {
 		"nested modules and testdata must be excluded explicitly, got %v", excludes)
 }
 
+// Shared fixture paths for spec-render tests (goconst).
+const (
+	tcDirApp      = "internal/app"
+	tcDirDomain   = "internal/domain"
+	tcDirHandlers = "internal/handlers"
+	tcDirHello    = "internal/hello"
+)
+
 // TestV2SpecFromDirs_ExcludeLine pins the rendered spec: excluded globs
-// appear in one s.Exclude call after the Path declarations.
+// appear in one Exclude call after the Path declarations.
 func TestV2SpecFromDirs_ExcludeLine(t *testing.T) {
-	spec := v2SpecFromDirs([]string{".", "internal/app"}, []string{"testdata/**"})
-	assert.Contains(t, spec, `Path(".")`, "spec missing Path decl: %s", spec)
+	spec := v2SpecFromDirs([]string{".", tcDirApp}, []string{"testdata/**"}, map[string][]string{
+		".": {tcDirApp},
+	})
+	assert.Contains(t, spec, `Path("`+tcDirApp+`")`, "spec missing Path decl: %s", spec)
 	assert.Contains(t, spec, `Exclude("testdata/**")`, "spec missing Exclude call: %s", spec)
 
+	// Use edges render as Use(...) with declared-first variables: only
+	// referenced targets become vars; sources stay as plain statements.
+	assert.Regexp(t, `app := Path\("`+tcDirApp+`"\)`,
+		spec, "dependency must be declared as a var first")
+	assert.Regexp(t, `Path\(".", func\(\) \{ Use\(app\) \}\)`,
+		spec, "root's Use rule references the dependency var")
+
 	// no excludes -> no Exclude call and no comment noise
-	plain := v2SpecFromDirs([]string{"."}, nil)
+	plain := v2SpecFromDirs([]string{"."}, nil, nil)
 	assert.NotContains(t, plain, "Exclude(", "unexpected Exclude in %s", plain)
+	assert.Contains(t, plain, `Path(".")`, "empty module falls back to the root: %s", plain)
+}
+
+// TestSpecVarNames pins identifier derivation: root, sanitized basenames,
+// collision suffixes and keyword escapes.
+func TestSpecVarNames(t *testing.T) {
+	names := specVarNames([]string{".", "internal/app", "pkg/app", "cmd/type", "weird/My-Dir"})
+	assert.Equal(t, "root", names["."], "module root identifier")
+	assert.Equal(t, "app", names["internal/app"], "basename identifier")
+	assert.Equal(t, "app2", names["pkg/app"], "collision gets a numeric suffix")
+	assert.Equal(t, "type_", names["cmd/type"], "keyword gets a trailing underscore")
+	assert.Equal(t, "mydir", names["weird/My-Dir"], "symbols fold, case lowers")
+}
+
+// TestSpecDeclOrder pins dependencies-first ordering: a referenced path
+// is declared before any path that Uses it.
+func TestSpecDeclOrder(t *testing.T) {
+	dirs := []string{".", tcDirHandlers, tcDirDomain}
+	edges := map[string][]string{
+		".":           {tcDirHandlers},
+		tcDirHandlers: {tcDirDomain},
+	}
+	order := specDeclOrder(dirs, edges)
+	pos := map[string]int{}
+	for i, d := range order {
+		pos[d] = i
+	}
+	assert.Less(t, pos["internal/domain"], pos["internal/handlers"],
+		"domain must be declared before handlers: %v", order)
+	assert.Less(t, pos["internal/handlers"], pos["."],
+		"handlers must be declared before the root: %v", order)
+}
+
+// TestScanImports pins the import-edge scan: module-path matching,
+// test-file skipping and self-import filtering.
+func TestScanImports(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		p := filepath.Join(root, rel)
+		require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o755), "mkdir %s", rel)
+		require.NoError(t, os.WriteFile(p, []byte(body), 0o600), "write %s", rel)
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport \"fixt/internal/hello\"\n")
+	write("internal/hello/hello.go", "package hello\n")
+	write("internal/hello/hello_test.go", "package hello_test\n\nimport _ \"fixt\"\n")
+
+	edges := scanImports(root, []string{".", "internal/hello"})
+	assert.Equal(t, map[string][]string{
+		".": {"internal/hello"},
+	}, edges, "only the non-test root->hello edge must be scanned")
+
+	// no go.mod -> no edges, scaffold still renders declarations
+	nomod := t.TempDir()
+	assert.Empty(t, scanImports(nomod, []string{"."}), "missing go.mod disables the scan")
 }
 
 func TestCmdInit_AlreadyExists(t *testing.T) {

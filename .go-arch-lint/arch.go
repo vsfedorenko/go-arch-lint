@@ -27,7 +27,7 @@ var build = Spec(func() {
 	})
 
 	Path("cmd/arch-lint", func() {
-		Use(internal, cobra)
+		Use(internal, cobra, goAST)
 	})
 
 	Path(".", func() {
