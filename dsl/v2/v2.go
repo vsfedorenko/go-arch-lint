@@ -136,7 +136,13 @@ func (s *SpecBuilder) Path(p string, fn ...func()) PathID {
 	} else {
 		clean = strings.TrimPrefix(path.Clean("/"+rel), "/")
 	}
-	if clean == "" || clean == "." {
+	if clean == "." {
+		clean = "" // the module root itself is a legal path
+	}
+	if clean == "" && p != "." && p != "" {
+		panic(fmt.Errorf("%s:%d: Path(%q) — empty path", file, line, p))
+	}
+	if clean == "" && p == "" {
 		panic(fmt.Errorf("%s:%d: Path(\"\") — empty path", file, line))
 	}
 	subtree := strings.HasSuffix(clean, "/**")

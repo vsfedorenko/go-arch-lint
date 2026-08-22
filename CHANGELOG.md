@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- v2 DSL pipeline integration (stage 2 of the v3 roadmap):
+  `V2SpecDocument` adapts a `dsl/v2.Build` to the checker's spec surface
+  (paths → components with `/**` globs, Use rules → dependency rules with
+  path/vendor targets split), `FSVerify` checks every declared path
+  against the real filesystem (missing directories get a did-you-mean
+  suggestion from sibling directories; empty `/**` subtrees are named),
+  and `archlint.RunV2(build, opts...)` runs the full check pipeline over
+  a v2 build — verified live: a conforming chain passes clean, an
+  illegal import reports the violating component (and cycles).
+  `Path(".")` now declares the module root.
+
 ## [2.4.3] — 2026-08-21
 
 ### Changed

@@ -31,10 +31,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
 	"github.com/vsfedorenko/go-arch-lint/v2/internal/app"
 	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec/decoder"
@@ -326,6 +328,58 @@ func Run(spec dsl.SpecDef, opts ...Option) error {
 	// internal app layer consumes a services-layer GoDecoder. Converting
 	// here keeps internal/app free of dsl imports (see .go-arch-lint spec).
 	return app.RunCheck(ctx, decoder.NewGoDecoder(spec.Builder()), checkOpts)
+}
+
+// RunV2 executes a check driven by a v2 Path-based DSL build (dsl/v2).
+// It is the v2 counterpart of [Run]: the build is first verified against
+// the real filesystem (missing directories and empty /** subtrees become
+// config errors with file:line of the offending Path call), then the same
+// check pipeline runs. Stage 2 of the v3 roadmap; the v1 Run stays until
+// the /v3 module bump removes it.
+func RunV2(build *v2.Build, opts ...Option) error {
+	if build == nil {
+		return fmt.Errorf("build is empty — ensure v2.Spec(...) was called")
+	}
+
+	cfg := config{
+		projectPath: "../",
+		maxWarnings: 512,
+		useColors:   true,
+		format:      models.FormatText,
+	}
+	for _, o := range opts {
+		o(&cfg)
+	}
+
+	absProject, err := filepath.Abs(cfg.projectPath)
+	if err != nil {
+		return fmt.Errorf("resolve project path: %w", err)
+	}
+
+	doc := decoder.NewV2SpecDocument(build)
+	if notices := doc.FSVerify(absProject); len(notices) > 0 {
+		first := notices[0]
+		return models.NewConfigError(fmt.Sprintf("%s:%d: %s", first.Ref.File, first.Ref.Line, first.Notice))
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	checkOpts := models.CheckOptions{
+		ProjectPath:       cfg.projectPath,
+		MaxWarnings:       cfg.maxWarnings,
+		UseColors:         cfg.useColors,
+		Format:            cfg.format,
+		OutputType:        cfg.outputType,
+		OutputJSONOneLine: cfg.outputJSONOneLine,
+		BaselinePath:      cfg.baselinePath,
+		BaselineUpdate:    cfg.baselineUpdate,
+	}
+	if err := checkOpts.ValidateFlagPairs(); err != nil {
+		return err
+	}
+
+	return app.RunCheck(ctx, doc, checkOpts)
 }
 
 // RunCLI executes the delegated CLI command surface (check, mapping,
