@@ -2,15 +2,15 @@ package main
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/v3"
-	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = dsl.Spec(func(s *dsl.SpecBuilder) {
-	domain := s.Path("internal/domain")
-	core := s.Path("internal/core", func() { s.Use(domain) })
-	http := s.Path("internal/adapter/http", func() { s.Use(core) })
-	db := s.Path("internal/adapter/db", func() { s.Use(core, domain) })
-	s.Path(".", func() { s.Use(core, db, http) })
+var build = Spec(func() {
+	domain := Path("internal/domain")
+	core := Path("internal/core", func() { Use(domain) })
+	http := Path("internal/adapter/http", func() { Use(core) })
+	db := Path("internal/adapter/db", func() { Use(core, domain) })
+	Path(".", func() { Use(core, db, http) })
 })
 
 func main() {

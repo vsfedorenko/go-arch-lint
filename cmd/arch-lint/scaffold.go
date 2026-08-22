@@ -24,17 +24,17 @@ go 1.25
 const scaffoldArchGo = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+var build = Spec(func() {
 	// The whole module as one component keeps the fresh scaffold green.
 	// Split it into real directories and add Use rules as your
 	// architecture takes shape:
 	//
-	//     domain := s.Path("internal/domain")
-	//     s.Path("internal/core", func() { s.Use(domain) })
-	s.Path(".")
+	//     domain := Path("internal/domain")
+	//     Path("internal/core", func() { Use(domain) })
+	Path(".")
 })
 `
 
@@ -175,22 +175,22 @@ func hasModuleFile(dir string) bool {
 // subdirectory falls back to the module root alone.
 func v2SpecFromDirs(dirs, excludes []string) string {
 	var b strings.Builder
-	b.WriteString("var build = dsl.Spec(func(s *dsl.SpecBuilder) {\n")
-	b.WriteString("\t// Every directory with Go code is declared: the v2 language\n")
+	b.WriteString("var build = Spec(func() {\n")
+	b.WriteString("\t// Every directory with Go code is declared: the language\n")
 	b.WriteString("\t// fails on undeclared directories. Add Use rules as your\n")
 	b.WriteString("\t// architecture takes shape:\n")
 	b.WriteString("\t//\n")
-	b.WriteString("\t//     s.Path(\"internal/core\", func() { s.Use(domain) })\n")
+	b.WriteString("\t//     Path(\"internal/core\", func() { Use(domain) })\n")
 	if len(dirs) == 0 {
-		b.WriteString("\ts.Path(\".\")\n")
+		b.WriteString("\tPath(\".\")\n")
 	} else {
 		for _, d := range dirs {
-			fmt.Fprintf(&b, "\ts.Path(%q)\n", d)
+			fmt.Fprintf(&b, "\tPath(%q)\n", d)
 		}
 	}
 	if len(excludes) > 0 {
 		b.WriteString("\t// Outside the architecture, but inside the tree:\n")
-		b.WriteString("\ts.Exclude(")
+		b.WriteString("\tExclude(")
 		for i, e := range excludes {
 			if i > 0 {
 				b.WriteString(", ")

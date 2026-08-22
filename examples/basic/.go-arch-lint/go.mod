@@ -36,4 +36,4 @@ require (
 
 replace github.com/vsfedorenko/go-arch-lint => ../../..
 
-replace github.com/vsfedorenko/go-arch-lint/v3 => /opt/data/wt/gal-v3
+replace github.com/vsfedorenko/go-arch-lint/v3 => ../../../

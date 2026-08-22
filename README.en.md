@@ -52,24 +52,24 @@ go-arch-lint init
 Creates `.go-arch-lint/` with three files. The spec and the runner are separate: `arch.go` is yours to edit, `main.go` is generated plumbing you never touch:
 
 ```go
-// arch.go — describe your architecture here
+// arch.go — this file describes your architecture
 package main
 
 import (
 	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+var build = Spec(func() {
 	// Every directory with Go code is declared: the v3 language
 	// fails on undeclared directories. Add Use rules as your
 	// architecture takes shape:
 	//
-	//     domain := s.Path("internal/domain")
-	//     s.Path("internal/core", func() { s.Use(domain) })
-	s.Path(".")
-	s.Path("cmd/app")
-	s.Path("internal/handlers")
-	s.Path("internal/services")
+	//     domain := Path("internal/domain")
+	//     Path("internal/core", func() { Use(domain) })
+	Path(".")
+	Path("cmd/app")
+	Path("internal/handlers")
+	Path("internal/services")
 })
 ```
 
@@ -219,22 +219,27 @@ the Path DSL — the entire language is four calls:
 ```go
 import (
 	"github.com/vsfedorenko/go-arch-lint/v3"
-	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func runArchCheck() error {
-	build := dsl.Spec(func(s *dsl.SpecBuilder) {
-		domain := s.Path("shop/domain")
-		pgx := s.Vendor("pgx", "github.com/jackc/pgx/v5")
+	build := Spec(func() {
+		domain := Path("shop/domain")
+		pgx := Vendor("pgx", "github.com/jackc/pgx/v5")
 
-		s.Path("shop/core", func() {
-			s.Use(domain, pgx) // core uses domain and pgx
+		Path("shop/core", func() {
+			Use(domain, pgx) // core uses domain and pgx
 		})
 	})
 
 	return archlint.Run(build, archlint.WithProjectPath("."))
 }
 ```
+
+Both forms are equivalent: the dot import with `Spec(func() {...})` is the
+compact style, while the explicit `Spec(func(s *dsl.SpecBuilder) {...})`
+with methods does without the package-level routing. The styles may be
+mixed within one spec.
 
 The rules are simple:
 
@@ -276,8 +281,8 @@ The first-generation DSL (`Version`/`Workdir`/`Component`/`Deps`/
 
 | v2.x (removed)         | v3                                            |
 |------------------------|-----------------------------------------------|
-| `Component("n", "a/b")`| `n := s.Path("a/b")`                          |
-| `Deps("n", …MayDependOn("m"))` | `s.Path("a/b", func() { s.Use(m) })` |
+| `Component("n", "a/b")`| `n := Path("a/b")`                             |
+| `Deps("n", …MayDependOn("m"))` | `Path("a/b", func() { Use(m) })`     |
 | `CommonComponents("n")`| a `Use(n)` for everyone who needs it          |
 | `AnyProjectDeps(true)` | list the targets explicitly in `Use`          |
 | `Vendor(name, imp)` (single path) | `s.Vendor(name, imp1, imp2)`     |

@@ -2,15 +2,15 @@ package main
 
 import (
 	"github.com/vsfedorenko/go-arch-lint/v3"
-	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = dsl.Spec(func(s *dsl.SpecBuilder) {
-	models := s.Path("internal/models")
-	repository := s.Path("internal/repository", func() { s.Use(models) })
-	service := s.Path("internal/service", func() { s.Use(models, repository) })
-	handler := s.Path("internal/handler", func() { s.Use(service) })
-	s.Path(".", func() { s.Use(handler, service, repository) }) // main wires everything
+var build = Spec(func() {
+	models := Path("internal/models")
+	repository := Path("internal/repository", func() { Use(models) })
+	service := Path("internal/service", func() { Use(models, repository) })
+	handler := Path("internal/handler", func() { Use(service) })
+	Path(".", func() { Use(handler, service, repository) }) // main wires everything
 })
 
 func main() {
