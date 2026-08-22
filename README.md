@@ -38,6 +38,77 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 > свежую спеку со всеми каталогами проекта (init не перезаписывает существующий
 > каталог, а v2-спека всё равно несовместима).
 
+## Примеры: гексагональная и чистая архитектуры
+
+Спека — это дерево зависимостей, записанное в порядке «зависимости раньше».
+Два канонических шаблона:
+
+### Гексагональная (ports & adapters)
+
+```
+internal/
+├── domain/            # сердце: сущности, ноль внешних зависимостей
+├── core/              # логика приложения: использует только domain
+└── adapter/           # периферия: доставляет запросы в core
+    ├── http/
+    └── db/
+```
+
+```go
+var build = Spec(func() {
+	domain := Path("internal/domain")
+
+	core := Path("internal/core", func() { Use(domain) })
+
+	http := Path("internal/adapter/http", func() { Use(core) })
+	db := Path("internal/adapter/db", func() { Use(core, domain) })
+
+	Path(".", func() { Use(core, db, http) }) // main собирает всё
+})
+```
+
+Стрелки смотрят внутрь: адаптеры знают про core, core — только про domain.
+Импорт `domain` из `adapter/http` проверка забракует: в правиле `Use` его нет.
+
+### Чистая архитектура (Clean)
+
+```
+internal/
+├── entity/        # Enterprise-правила: сущности
+├── usecase/       # сценарии приложения
+├── adapter/       # интерфейсы наружу: repo, web
+│   ├── repo/
+│   └── web/
+└── framework/     # драйверы: БД, http-сервер
+```
+
+```go
+var build = Spec(func() {
+	entity := Path("internal/entity")
+
+	usecase := Path("internal/usecase", func() { Use(entity) })
+
+	repo := Path("internal/adapter/repo", func() { Use(usecase, entity) })
+	web := Path("internal/adapter/web", func() { Use(usecase, entity) })
+
+	pg := Vendor("pgx", "github.com/jackc/pgx/v5")
+	chi := Vendor("chi", "github.com/go-chi/chi/v5")
+
+	Path("internal/framework", func() { Use(repo, web, usecase, entity, pgx, chi) })
+
+	Path("cmd", func() {
+		Path("app", func() { Use(usecase, entity, repo, web, pgx, chi) })
+	})
+})
+```
+
+Вендоры (`pgx`, `chi`) живут в одном внешнем слое — framework и точка входа;
+внутренние слои не знают о них ничего. Попытка импортировать `pgx` из
+`usecase` — нарушение на файл:строке.
+
+Оба примера — живые проекты в [examples/](examples/): гексагональный
+проверяется CI, чистый можно собрать `go-arch-lint init` и сверить.
+
 ## Требования
 
 - **Go 1.25+** (поддерживаются две последние мажорные версии: 1.25 и 1.26; CI тестирует обе).

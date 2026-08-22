@@ -35,6 +35,79 @@ Or grab a [binary from releases](https://github.com/vsfedorenko/go-arch-lint/rel
 > mandatory for Go major versions). Upgrading from v2.x: update the
 > imports in `.go-arch-lint/` to `/v3` and migrate the spec (see “Migrating from v2.x” below), or start fresh: `rm -rf .go-arch-lint && go-arch-lint init`.
 
+## Examples: hexagonal and clean architectures
+
+A spec is the dependency tree written dependencies-first. Two canonical
+templates:
+
+### Hexagonal (ports & adapters)
+
+```
+internal/
+├── domain/            # the heart: entities, zero external dependencies
+├── core/              # application logic: uses domain only
+└── adapter/           # the periphery: delivers requests into core
+    ├── http/
+    └── db/
+```
+
+```go
+var build = Spec(func() {
+	domain := Path("internal/domain")
+
+	core := Path("internal/core", func() { Use(domain) })
+
+	http := Path("internal/adapter/http", func() { Use(core) })
+	db := Path("internal/adapter/db", func() { Use(core, domain) })
+
+	Path(".", func() { Use(core, db, http) }) // main wires everything
+})
+```
+
+Arrows point inward: adapters know about core, core only about domain.
+Importing `domain` from `adapter/http` fails the check — its `Use` rule
+does not allow it.
+
+### Clean architecture
+
+```
+internal/
+├── entity/        # enterprise rules: entities
+├── usecase/       # application scenarios
+├── adapter/       # interfaces to the outside: repo, web
+│   ├── repo/
+│   └── web/
+└── framework/     # drivers: DB, http server
+```
+
+```go
+var build = Spec(func() {
+	entity := Path("internal/entity")
+
+	usecase := Path("internal/usecase", func() { Use(entity) })
+
+	repo := Path("internal/adapter/repo", func() { Use(usecase, entity) })
+	web := Path("internal/adapter/web", func() { Use(usecase, entity) })
+
+	pg := Vendor("pgx", "github.com/jackc/pgx/v5")
+	chi := Vendor("chi", "github.com/go-chi/chi/v5")
+
+	Path("internal/framework", func() { Use(repo, web, usecase, entity, pgx, chi) })
+
+	Path("cmd", func() {
+		Path("app", func() { Use(usecase, entity, repo, web, pgx, chi) })
+	})
+})
+```
+
+Vendors (`pgx`, `chi`) live in the single outermost layer — framework and
+the entry point; inner layers know nothing about them. Importing `pgx`
+from `usecase` is a file:line violation.
+
+Both are real projects in [examples/](examples/): the hexagonal one is
+CI-checked, the clean one you can scaffold with `go-arch-lint init` and
+compare.
+
 ## Requirements
 
 - **Go 1.25+** (the two latest major versions are supported: 1.25 and 1.26; CI tests both).
