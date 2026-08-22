@@ -283,11 +283,16 @@ The rules are simple:
 
 - `Path("a/b")` — a directory with Go code, i.e. a component.
   `Path("a/b/**")` — the whole subtree as one component. `Path(".")` —
-  the module root.
+  the module root (the root package, without subdirectories).
 - `Use(...)` — the only rule: "this path uses these targets". Targets
   are `Path`/`Vendor` variables only, mixed freely.
 - `Vendor(name, import)` — an external package, a legal `Use` target.
-- By default everything is denied until a `Use` allows it.
+  The standard library (`fmt`, `strings`, …) is always allowed and
+  never needs a `Vendor`.
+- By default everything is denied until a `Use` allows it. Every
+  directory with Go files must be declared with `Path` — an undeclared
+  directory is not "ignored", it fails with `not attached to any
+  component`.
 
 Declaration order mirrors dependency direction: referring forward is a
 Go compile error. Typos and malformed specs panic at build time with
