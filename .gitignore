@@ -444,3 +444,6 @@ web_modules/
 wheels/
 yarn-debug.log*
 yarn-error.log*
+
+# Launcher binary accidentally committed (built by verification runs in the repo root)
+/arch-lint
