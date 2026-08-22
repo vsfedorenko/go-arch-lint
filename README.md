@@ -63,8 +63,8 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = v2.Spec(func(s *v2.SpecBuilder) {
-	// Каждый каталог с Go-кодом объявлен: язык v2 падает на
+var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+	// Каждый каталог с Go-кодом объявлен: язык v3 падает на
 	// необъявленных каталогах. Добавляйте правила Use по мере
 	// роста архитектуры:
 	//
@@ -88,7 +88,7 @@ import (
 )
 
 func main() {
-	archlint.MustRunCLIV2(build, os.Args[1:])
+	archlint.MustRunCLI(build, os.Args[1:])
 }
 ```
 

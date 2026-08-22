@@ -59,8 +59,8 @@ import (
 	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var build = v2.Spec(func(s *v2.SpecBuilder) {
-	// Every directory with Go code is declared: the v2 language
+var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+	// Every directory with Go code is declared: the v3 language
 	// fails on undeclared directories. Add Use rules as your
 	// architecture takes shape:
 	//
@@ -84,7 +84,7 @@ import (
 )
 
 func main() {
-	archlint.MustRunCLIV2(build, os.Args[1:])
+	archlint.MustRunCLI(build, os.Args[1:])
 }
 ```
 

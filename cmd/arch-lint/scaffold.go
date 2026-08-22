@@ -40,7 +40,7 @@ var build = dsl.Spec(func(s *dsl.SpecBuilder) {
 
 // scaffoldMainGo is the stable runner for v2 specs. Keep user-facing
 // configuration in arch.go; this file only forwards CLI flags and executes
-// the spec. MustRunCLIV2 (not MustRunV2) so delegated commands (mapping,
+// the spec. MustRunCLI so delegated commands (mapping,
 // graph, selfInspect) keep their own behavior instead of silently
 // degrading to a check run.
 const scaffoldMainGo = `package main

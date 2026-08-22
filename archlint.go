@@ -277,12 +277,10 @@ func boolFlag(args []string, name string) bool {
 // error to a process exit code, or [MustRun] for the common CLI pattern.
 //
 
-// RunV2 executes a check driven by a v2 Path-based DSL build (dsl/v2).
-// It is the v2 counterpart of [Run]: the build is first verified against
-// the real filesystem (missing directories and empty /** subtrees become
-// config errors with file:line of the offending Path call), then the same
-// check pipeline runs. Stage 2 of the v3 roadmap; the v1 Run stays until
-// the /v3 module bump removes it.
+// Run executes a check driven by a Path-based DSL build (dsl). The build
+// is first verified against the real filesystem (missing directories and
+// empty /** subtrees become config errors with file:line of the offending
+// Path call), then the check pipeline runs.
 func Run(build *dsl.Build, opts ...Option) error {
 	if build == nil {
 		return fmt.Errorf("build is empty — ensure dsl.Spec(...) was called")
@@ -336,10 +334,9 @@ func Run(build *dsl.Build, opts ...Option) error {
 	return app.RunCheck(ctx, doc, checkOpts)
 }
 
-// RunCLIV2 is [RunCLI] for a v2 Path-based DSL build: the delegated
-// command surface (check, mapping, graph, self-inspect, version) driven
-// by a dsl/v2 build. This is what a v2 scaffolded `.go-arch-lint/main.go`
-// calls.
+// RunCLI is the delegated command surface (check, mapping, graph,
+// self-inspect, version) driven by a dsl build. This is what a scaffolded
+// `.go-arch-lint/main.go` calls.
 func RunCLI(build *dsl.Build, args []string) error {
 	if build == nil {
 		return fmt.Errorf("build is empty — ensure dsl.Spec(...) was called")
@@ -351,8 +348,8 @@ func RunCLI(build *dsl.Build, args []string) error {
 	return app.RunCLI(ctx, decoder.NewV2SpecDocument(build), args)
 }
 
-// MustRunCLIV2 is [RunCLIV2] with the conventional exit-code mapping (see
-// [MustRunCLI]).
+// MustRunCLI is [RunCLI] with the conventional exit-code mapping: check
+// violations exit 1, config errors exit 2.
 func MustRunCLI(build *dsl.Build, args []string) {
 	if err := RunCLI(build, args); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err.Error())
@@ -391,7 +388,8 @@ func ExitCode(err error) int {
 	}
 }
 
-// MustRunV2 is [MustRun] for a v2 build (see [Run]).
+// MustRun is [Run] with the conventional exit-code mapping: check
+// violations exit 1, config errors exit 2.
 func MustRun(build *dsl.Build, opts ...Option) {
 	if err := Run(build, opts...); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err.Error())
