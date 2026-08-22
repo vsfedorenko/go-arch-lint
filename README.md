@@ -57,25 +57,20 @@ go-arch-lint init
 package main
 
 import (
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
 )
 
-var spec = Spec(func() {
-	Version(1)
-	Workdir("internal")
-
-	Component("handler", "handlers/*")
-	Component("service", "services/**")
-	Component("repository", "domain/*/repository")
-
-	CommonComponents("model")
-
-	Deps("handler", func() {
-		MayDependOn("service")
-	})
-	Deps("service", func() {
-		MayDependOn("repository")
-	})
+var build = v2.Spec(func(s *v2.SpecBuilder) {
+	// Каждый каталог с Go-кодом объявлен: язык v2 падает на
+	// необъявленных каталогах. Добавляйте правила Use по мере
+	// роста архитектуры:
+	//
+	//     domain := s.Path("internal/domain")
+	//     s.Path("internal/core", func() { s.Use(domain) })
+	s.Path(".")
+	s.Path("cmd/app")
+	s.Path("internal/handlers")
+	s.Path("internal/services")
 })
 ```
 
@@ -90,19 +85,20 @@ import (
 )
 
 func main() {
-	archlint.MustRunCLI(spec, os.Args[1:])
+	archlint.MustRunCLIV2(build, os.Args[1:])
 }
 ```
 
 Что здесь происходит:
 
-— `Workdir` задаёт корень, ниже которого линтер ищет Go-пакеты.
-— `Component` связывает имя компонента с glob-шаблоном путей.
-— `Deps` описывает, на какие компоненты разрешено зависеть.
-— `CommonComponents` — компоненты, доступные всем (утилиты, модели).
-— `Vendor` и `CanUse` — сторонние библиотеки, разрешённые конкретному компоненту.
+— `init` сканирует проект и объявляет каждый каталог с Go-кодом как компонент (`Path`). Свежий каркас честный: все пути объявлены, а реальные нарушения отсутствующих правил `Use` видны сразу.
+— `Use` — единственное правило: «этот путь использует эти цели». Без явного `Use` запрещено всё.
+— `Vendor(name, import)` — внешняя библиотека как легальная цель; стандартная библиотека разрешена всегда.
+— Порядок объявления = направление зависимостей: сослаться вперёд нельзя, это ошибка компиляции Go.
 
-Полный список функций DSL — в [документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
+Полный разбор v2 — в разделе [v2 DSL](#v2-dsl-экспериментальный) ниже.
+Справочник первого поколения DSL (`Component`/`Deps`/`Workdir`) — в
+[документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
 
 ### Рецепты init
 
@@ -114,7 +110,7 @@ go-arch-lint init --recipe ddd         # DDD: bounded contexts + application/inf
 go-arch-lint init --recipe clean       # чистая архитектура: domain ← usecase ← delivery
 ```
 
-Рецепт пишет тот же каркас (`.go-arch-lint/`), но `arch.go` сразу описывает слои и правила зависимостей выбранного паттерна. Спека включает `IgnoreNotFoundComponents(true)` — директории слоёв можно создавать постепенно, линтер не упадёт, пока какого-то слоя ещё нет.
+Рецепт пишет тот же каркас (`.go-arch-lint/`), но `arch.go` сразу описывает слои и правила зависимостей выбранного паттерна на первом поколении DSL (`Spec`/`Component`/`Deps` — справочник в [docs/syntax](docs/syntax/README.md)). Спека включает `IgnoreNotFoundComponents(true)` — директории слоёв можно создавать постепенно, линтер не упадёт, пока какого-то слоя ещё нет (v2 такого послабления не даёт: он требует, чтобы каталоги уже существовали).
 
 ## Проверка
 
@@ -287,6 +283,10 @@ file:line. Каталоги проверяются по диску: несуще
 конфигурации с подсказкой «did you mean».
 
 `archlint.MustRunV2(build)` — то же, но с конвенциональными кодами возврата.
+`archlint.RunCLIV2(build, os.Args[1:])` / `MustRunCLIV2` — CLI-обёртка над v2-спекой:
+маршрутизирует делегированные команды (`check`, `mapping`, `graph`,
+`self-inspect`) по их собственному поведению; запуск без команды по умолчанию —
+`check`. Именно её пишет скаффолд `init` в `main.go`.
 
 Пакет экспериментальный: API может измениться, пока он не заменит первое
 поколение (stage 4 дорожной карты v3).

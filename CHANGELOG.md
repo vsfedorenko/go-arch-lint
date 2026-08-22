@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `init --recipe <name>` scaffolds a compiling pair again: recipes write a
+  first-generation spec (`var spec`), but the shared runner referenced the
+  v2 `build` variable introduced in #89 — the generated `main.go` did not
+  compile ("undefined: build"). Recipes now get the matching v1 runner
+  (`MustRunCLI(spec, …)`); the default scaffold keeps the v2 runner. The
+  recipe integration test now runs the launcher's OWN `main.go` (a
+  hand-written runner used to hide this class of drift).
+
 ### Changed
 - `init` scaffolds the v2 Path-based DSL (stage 3 of the v3 roadmap):
   the generated `arch.go` declares every directory containing Go code
@@ -18,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.go-arch-lint/` and `vendor/` unconditionally (the linter's own
   scaffold is never part of the architecture), and `Path(".")` is the
   root package only — matching the README contract.
+- README (RU/EN): the Configuration section now shows the real v2
+  scaffold `init` writes; recipes are documented as first-generation
+  specs; `RunCLIV2`/`MustRunCLIV2` documented in the v2 DSL section.
+  EN translation caught up with the interface-placement and naming
+  sections (structural parity: H2/H3/fence/table counts equal).
 
 ## [2.5.0] — 2026-08-22
 
