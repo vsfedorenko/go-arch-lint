@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
 )
 
 // End-to-end contracts for the output flags on the scaffold path — the
@@ -26,23 +26,16 @@ const archOutputFlagsTpl = `package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Workdir("internal")
-		Component("x", "wei rd::name/x")
-		Component("y", "wei rd::name/y")
-		Deps("x", func() {
-			MayDependOn("y")
-			AnyVendorDeps(true)
-		})
-		Deps("y", func() { AnyVendorDeps(true) })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		y := s.Path("internal/wei rd::name/y")
+		s.Path("internal/wei rd::name/x", func() { s.Use(y) })
 	})
-	archlint.MustRun(spec, archlint.OptionsFromFlags(os.Args[1:])...)
+	archlint.MustRun(build, archlint.OptionsFromFlags(os.Args[1:])...)
 }
 `
 

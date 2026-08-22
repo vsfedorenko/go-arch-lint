@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 /**
@@ -18,14 +18,10 @@ import (
  * instead of silently degrading them to a check run.
  */
 
-func cliSpec() dsl.SpecDef {
-	return dsl.Spec(func() {
-		dsl.Version(1)
-		dsl.Workdir("internal")
-		dsl.Component("alpha", "alpha/**")
-		dsl.Component("beta", "beta/**")
-		dsl.Deps("alpha", func() { dsl.AnyProjectDeps(true) })
-		dsl.Deps("beta", func() { dsl.AnyProjectDeps(true) })
+func cliSpec() *dsl.Build {
+	return dsl.Spec(func(s *dsl.SpecBuilder) {
+		beta := s.Path("internal/beta/**")
+		s.Path("internal/alpha/**", func() { s.Use(beta) })
 	})
 }
 
@@ -48,14 +44,10 @@ func TestRunCLI_no_command_defaults_to_check(t *testing.T) {
 func TestRunCLI_violations_exit_contract_preserved(t *testing.T) {
 	root := writeProject(t, false)
 
-	spec := dsl.Spec(func() {
-		dsl.Version(1)
-		dsl.Workdir("internal")
-		dsl.Component("alpha", "alpha/**")
-		dsl.Component("beta", "beta/**")
-		// alpha imports beta, but only alpha itself is allowed.
-		dsl.Deps("alpha", func() { dsl.MayDependOn("alpha") })
-		dsl.Deps("beta", func() { dsl.AnyProjectDeps(true) })
+	// alpha imports beta, but no Use allows it.
+	spec := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path("internal/alpha/**")
+		s.Path("internal/beta/**")
 	})
 
 	err := archlint.RunCLI(spec, []string{tcCmdCheck, flProjectPath, root, flNoColors})
@@ -145,7 +137,7 @@ func TestRunCLI_one_line_with_json_still_works(t *testing.T) {
 }
 
 func TestRunCLI_empty_spec_rejected(t *testing.T) {
-	err := archlint.RunCLI(dsl.SpecDef{}, []string{tcCmdCheck})
+	err := archlint.RunCLI(nil, []string{tcCmdCheck})
 	require.Error(t, err)
 	assert.Equal(t, archlint.ExitCodeConfigError, archlint.ExitCode(err))
 }

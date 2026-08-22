@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/mod/modfile"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 type Assembler struct{}

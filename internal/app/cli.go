@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/app/container"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/app/container"
 )
 
 // Flag spellings shared by the translator and its tests. Kept as

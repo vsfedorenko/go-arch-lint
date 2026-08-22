@@ -1,8 +1,8 @@
 package allowb
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2/test/check/project/internal/b"
-	"github.com/vsfedorenko/go-arch-lint/v2/test/check/project/internal/common/sub/foo/bar"
+	"github.com/vsfedorenko/go-arch-lint/v3/test/check/project/internal/b"
+	"github.com/vsfedorenko/go-arch-lint/v3/test/check/project/internal/common/sub/foo/bar"
 )
 
 func AA1() {

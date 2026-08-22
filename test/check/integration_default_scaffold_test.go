@@ -64,7 +64,7 @@ func TestDefaultScaffoldChecksGreen(t *testing.T) {
 	write("pkg/a.go", "package pkg\n\nfunc A() {}\n")
 
 	scaffoldDefaultArchDir(t, proj, root)
-	out, code := runRecipeCheck(t, proj)
+	out, code := runArchCheck(t, proj)
 	assert.Equal(t, 0, code, "fresh default scaffold must check green; exit %d.\noutput:\n%s", code, out)
 	assert.Contains(t, out, "No warnings found", "expected OK banner")
 }
@@ -82,6 +82,6 @@ func TestDefaultScaffoldEmptyModuleChecksGreen(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(proj, "go.mod"), []byte("module fixt\n\ngo 1.25\n"), 0o600), "write go.mod") //nolint:gosec // test fixture in t.TempDir()
 
 	scaffoldDefaultArchDir(t, proj, root)
-	out, code := runRecipeCheck(t, proj)
+	out, code := runArchCheck(t, proj)
 	assert.Equal(t, 0, code, "empty module must check green; exit %d.\noutput:\n%s", code, out)
 }

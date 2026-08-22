@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 // Fixture paths reused across filter tests (goconst).

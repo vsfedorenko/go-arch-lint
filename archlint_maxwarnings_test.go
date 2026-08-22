@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	archlint "github.com/vsfedorenko/go-arch-lint/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/dsl"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	archlint "github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 // Synthetic stress fixture: 30 components in a ring, each importing the
@@ -32,14 +32,11 @@ func writeStressRing(t *testing.T) string {
 	return root
 }
 
-func stressRingSpec() dsl.SpecDef {
-	return dsl.Spec(func() {
-		dsl.Version(1)
-		dsl.Workdir("internal")
+func stressRingSpec() *dsl.Build {
+	return dsl.Spec(func(s *dsl.SpecBuilder) {
+		// no Use rules: every edge violates
 		for _, c := range []string{"ca", "cb", "cc", "cd", "ce", "cf"} {
-			dsl.Component(c, c)
-			// everything disallowed -> every edge violates
-			dsl.Deps(c, func() { dsl.AnyVendorDeps(true) })
+			s.Path("internal/" + c)
 		}
 	})
 }

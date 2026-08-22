@@ -1,45 +1,19 @@
 package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var spec = Spec(func() {
-	Version(1)
-	Workdir("internal")
-
-	Allow(func() {
-		DepOnAnyVendor(false)
-	})
-
-	ExcludeFiles(`^.*_test\.go$`)
-
-	Component("user-domain", "domain/user")
-	Component("order-domain", "domain/order")
-	Component("application", "application")
-	Component("infrastructure", "infrastructure")
-	Component("interfaces", "interfaces")
-
-	CommonComponents("user-domain")
-
-	Deps("order-domain", func() {
-		MayDependOn("user-domain")
-	})
-
-	Deps("application", func() {
-		MayDependOn("order-domain")
-	})
-
-	Deps("infrastructure", func() {
-		MayDependOn("application", "order-domain")
-	})
-
-	Deps("interfaces", func() {
-		MayDependOn("application")
-	})
+var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+	user := s.Path("internal/domain/user")
+	order := s.Path("internal/domain/order", func() { s.Use(user) })
+	application := s.Path("internal/application", func() { s.Use(user, order) })
+	infrastructure := s.Path("internal/infrastructure", func() { s.Use(user, order) })
+	interfaces := s.Path("internal/interfaces", func() { s.Use(application) })
+	s.Path(".", func() { s.Use(application, infrastructure, interfaces) })
 })
 
 func main() {
-	archlint.MustRun(spec)
+	archlint.MustRun(build, archlint.WithProjectPath("../"))
 }

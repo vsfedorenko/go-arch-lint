@@ -16,9 +16,9 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X 'github.com/vsfedorenko/go-arch-lint/v2/internal/app.Version={{.Version}}'
-      - -X 'github.com/vsfedorenko/go-arch-lint/v2/internal/app.CommitHash={{.Commit}}'
-      - -X 'github.com/vsfedorenko/go-arch-lint/v2/internal/app.BuildTime={{.Date}}'
+      - -X 'github.com/vsfedorenko/go-arch-lint/v3/internal/app.Version={{.Version}}'
+      - -X 'github.com/vsfedorenko/go-arch-lint/v3/internal/app.CommitHash={{.Commit}}'
+      - -X 'github.com/vsfedorenko/go-arch-lint/v3/internal/app.BuildTime={{.Date}}'
 
 archives:
   - format_overrides:

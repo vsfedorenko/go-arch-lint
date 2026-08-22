@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/project/scanner"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/project/scanner"
 )
 
 // TestScan_SkipsUnreadableExcludedDir reproduces the case where an excluded

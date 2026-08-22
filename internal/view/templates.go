@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 //go:embed view_check.gohtml

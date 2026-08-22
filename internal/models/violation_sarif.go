@@ -174,7 +174,7 @@ func (out CmdCheckOut) ToSARIF(driverVersion string) SARIFLog {
 				Driver: SARIFDriver{
 					Name:           "go-arch-lint",
 					Version:        driverVersion,
-					InformationURI: "https://github.com/vsfedorenko/go-arch-lint/v2",
+					InformationURI: "https://github.com/vsfedorenko/go-arch-lint/v3",
 					Rules:          rules,
 				},
 			},

@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/operations/check"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/operations/check"
 )
 
 func (c *Container) commandCheck() (*cobra.Command, runner) {

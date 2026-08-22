@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/checker/deepscan"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/checker/deepscan"
 )
 
 // The nested fixture module must stay resolvable: its go.mod module path

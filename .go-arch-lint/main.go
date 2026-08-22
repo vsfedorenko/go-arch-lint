@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
 )
 
 func main() {
-	archlint.MustRunCLI(spec, os.Args[1:])
+	archlint.MustRunCLI(build, os.Args[1:])
 }

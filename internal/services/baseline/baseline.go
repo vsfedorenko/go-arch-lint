@@ -15,7 +15,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 // SchemeVersion is the fingerprint scheme of the baseline file format.

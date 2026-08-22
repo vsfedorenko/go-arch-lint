@@ -7,15 +7,15 @@ import (
 	"sort"
 	"strings"
 
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/spec"
 )
 
 // V2SpecDocument implements spec.Document on top of the v2 Path-based
-// DSL build (dsl/v2.Build). The mapping is intentionally thin:
+// DSL build (dsl/dsl.Build). The mapping is intentionally thin:
 //
 //	Path("a/b")        -> one Component whose RelativePaths is ["a/b"]
 //	                    ("a/b/**" subtrees keep the /** suffix in the glob)
@@ -27,11 +27,11 @@ import (
 // checker then enforces exactly the v2 semantics: nothing may use
 // anything unless a Use said so.
 type V2SpecDocument struct {
-	build *v2.Build
+	build *dsl.Build
 }
 
 // NewV2SpecDocument wraps a finished v2 build.
-func NewV2SpecDocument(b *v2.Build) *V2SpecDocument {
+func NewV2SpecDocument(b *dsl.Build) *V2SpecDocument {
 	return &V2SpecDocument{build: b}
 }
 
@@ -62,7 +62,7 @@ func (d *V2SpecDocument) FSVerify(root string) []arch.Notice {
 				continue
 			}
 			notices = append(notices, arch.Notice{
-				Notice: fmt.Errorf("Path(%q): directory %q does not exist — did you mean %q?", e.Full, e.Full, v2.Suggest(e.Full, siblingDirs(root, e.Full))),
+				Notice: fmt.Errorf("Path(%q): directory %q does not exist — did you mean %q?", e.Full, e.Full, dsl.Suggest(e.Full, siblingDirs(root, e.Full))),
 				Ref:    ref(e.File, e.Line),
 			})
 		case e.Subtree && !hasGoFiles(abs):
@@ -136,20 +136,28 @@ func (d *V2SpecDocument) ExcludedDirectories() []domain.Referable[string] {
 	// The v2 language has no Exclude call: the linter's own scaffold
 	// directory and vendored dependencies are never part of the
 	// architecture and are excluded unconditionally.
-	return []domain.Referable[string]{
+	out := []domain.Referable[string]{
 		domain.NewReferable(".go-arch-lint", domain.NewEmptyReference()),
 		domain.NewReferable("vendor", domain.NewEmptyReference()),
 	}
+	for _, p := range d.build.Excluded {
+		out = append(out, domain.NewReferable(p, domain.NewEmptyReference()))
+	}
+	return out
 }
 
 func (d *V2SpecDocument) ExcludedFilesRegExp() []domain.Referable[string] {
-	return nil
+	// Tests are not architecture: every *_test.go file is excluded
+	// unconditionally in the v2 pipeline.
+	return []domain.Referable[string]{
+		domain.NewReferable(`^.*_test\.go$`, domain.NewEmptyReference()),
+	}
 }
 
 func (d *V2SpecDocument) Vendors() spec.Vendors {
 	out := spec.Vendors{}
 	for name, v := range d.build.Vendors {
-		out[name] = domain.NewReferable(spec.Vendor(v2Vendor{importPath: v.ImportPath}), ref(v.File, v.Line))
+		out[name] = domain.NewReferable(spec.Vendor(v2Vendor{importPaths: v.ImportPaths}), ref(v.File, v.Line))
 	}
 	return out
 }
@@ -176,12 +184,24 @@ func (d *V2SpecDocument) CommonComponents() []domain.Referable[string] { return 
 
 func (d *V2SpecDocument) Dependencies() spec.Dependencies {
 	out := spec.Dependencies{}
+	// Every component may always import itself: the packages inside one
+	// component (e.g. a "dir/**" subtree) are a single architectural
+	// unit. The assembler turns the name into the component's own paths,
+	// so even a component without any Use rule keeps its self-imports.
+	for name := range d.build.Paths {
+		out[name] = domain.NewReferable(
+			spec.DependencyRule(v2Dependency{mayDependOn: []string{name}}),
+			domain.NewEmptyReference(),
+		)
+	}
 	for from, u := range d.build.Uses {
-		rule := v2Dependency{
-			mayDependOn: u.Paths,
-			canUse:      u.Vends,
-		}
-		out[from] = domain.NewReferable(spec.DependencyRule(rule), ref(u.File, u.Line))
+		out[from] = domain.NewReferable(
+			spec.DependencyRule(v2Dependency{
+				mayDependOn: append([]string{from}, u.Paths...),
+				canUse:      u.Vends,
+			}),
+			ref(u.File, u.Line),
+		)
 	}
 	return out
 }
@@ -212,10 +232,14 @@ func (v2Options) IgnoreNotFoundComponents() domain.Referable[bool] {
 	return domain.NewReferable(false, domain.NewEmptyReference())
 }
 
-type v2Vendor struct{ importPath string }
+type v2Vendor struct{ importPaths []string }
 
 func (v v2Vendor) ImportPaths() []models.Glob {
-	return []models.Glob{models.Glob(v.importPath)}
+	out := make([]models.Glob, 0, len(v.importPaths))
+	for _, p := range v.importPaths {
+		out = append(out, models.Glob(p))
+	}
+	return out
 }
 
 type v2Component struct{ paths []models.Glob }

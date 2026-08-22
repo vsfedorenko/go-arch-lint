@@ -42,20 +42,16 @@ func writeWeirdProject(t *testing.T) string {
 const archWeirdTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Workdir("internal")
-		Component("x", "wei rd::name/x")
-		Component("y", "wei rd::name/y")
-		Deps("x", func() { AnyVendorDeps(true) })
-		Deps("y", func() { AnyVendorDeps(true) })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path("internal/wei rd::name/x")
+		s.Path("internal/wei rd::name/y")
 	})
-	archlint.MustRun(spec, archlint.WithProjectPath(%q), archlint.WithFormat(%q))
+	archlint.MustRun(build, archlint.WithProjectPath(%q), archlint.WithFormat(%q))
 }
 `
 

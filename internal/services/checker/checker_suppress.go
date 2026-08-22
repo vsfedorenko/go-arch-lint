@@ -3,7 +3,7 @@ package checker
 import (
 	"strings"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 // SuppressIndex is the port the composite uses to apply source-level

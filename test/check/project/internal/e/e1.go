@@ -4,8 +4,8 @@ import (
 	libA "github.com/example/a"
 	libB "github.com/example/b"
 
-	modelA "github.com/vsfedorenko/go-arch-lint/v2/test/check/project/internal/d/models/a/model"
-	modelB "github.com/vsfedorenko/go-arch-lint/v2/test/check/project/internal/d/models/b/model"
+	modelA "github.com/vsfedorenko/go-arch-lint/v3/test/check/project/internal/d/models/a/model"
+	modelB "github.com/vsfedorenko/go-arch-lint/v3/test/check/project/internal/d/models/b/model"
 )
 
 func E1() {

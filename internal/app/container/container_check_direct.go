@@ -3,9 +3,9 @@ package container
 import (
 	"context"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/services/spec"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/services/spec"
 )
 
 // SpecDecoder is the port for an in-process arch spec source. The

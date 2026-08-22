@@ -1,36 +1,18 @@
 package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
-var spec = Spec(func() {
-	Version(1)
-	Workdir("internal")
-
-	Allow(func() {
-		DepOnAnyVendor(false)
-	})
-
-	ExcludeFiles(`^.*_test\.go$`)
-
-	Component("handler", "handler")
-	Component("service", "service")
-	Component("repository", "repository")
-	Component("models", "models")
-
-	CommonComponents("models")
-
-	Deps("handler", func() {
-		MayDependOn("service")
-	})
-
-	Deps("service", func() {
-		MayDependOn("repository")
-	})
+var build = dsl.Spec(func(s *dsl.SpecBuilder) {
+	models := s.Path("internal/models")
+	repository := s.Path("internal/repository", func() { s.Use(models) })
+	service := s.Path("internal/service", func() { s.Use(models, repository) })
+	handler := s.Path("internal/handler", func() { s.Use(service) })
+	s.Path(".", func() { s.Use(handler, service, repository) }) // main wires everything
 })
 
 func main() {
-	archlint.MustRun(spec)
+	archlint.MustRun(build, archlint.WithProjectPath("../"))
 }

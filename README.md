@@ -20,7 +20,7 @@
 ## Установка
 
 ```bash
-go install github.com/vsfedorenko/go-arch-lint/v2/cmd/arch-lint@latest
+go install github.com/vsfedorenko/go-arch-lint/v3/cmd/arch-lint@latest
 ```
 
 Или через [Docker](https://github.com/vsfedorenko/go-arch-lint/pkgs/container/go-arch-lint):
@@ -31,9 +31,10 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 
 Или [бинарник из релизов](https://github.com/vsfedorenko/go-arch-lint/releases).
 
-> Путь модуля — `github.com/vsfedorenko/go-arch-lint/v2` (суффикс обязателен для
-> мажорных версий Go-семвера). Если вы обновляетесь с v2.0/v2.1: замените импорты
-> в `.go-arch-lint/` на `/v2` (или просто перезапустите `go-arch-lint init`).
+> Путь модуля — `github.com/vsfedorenko/go-arch-lint/v3` (суффикс обязателен для
+> мажорных версий Go-семвера). Если вы обновляетесь с v2.x: замените импорты
+> в `.go-arch-lint/` на `/v3` и мигрируйте спеку (см. «Миграция с v2.x» ниже)
+> — или просто перезапустите `go-arch-lint init`.
 
 ## Требования
 
@@ -57,7 +58,7 @@ go-arch-lint init
 package main
 
 import (
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
+	. "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 var build = v2.Spec(func(s *v2.SpecBuilder) {
@@ -81,7 +82,7 @@ package main
 import (
 	"os"
 
-	"github.com/vsfedorenko/go-arch-lint/v2"
+	"github.com/vsfedorenko/go-arch-lint/v3"
 )
 
 func main() {
@@ -96,9 +97,7 @@ func main() {
 — `Vendor(name, import)` — внешняя библиотека как легальная цель; стандартная библиотека разрешена всегда.
 — Порядок объявления = направление зависимостей: сослаться вперёд нельзя, это ошибка компиляции Go.
 
-Полный разбор v2 — в разделе [v2 DSL](#v2-dsl-экспериментальный) ниже.
-Справочник первого поколения DSL (`Component`/`Deps`/`Workdir`) — в
-[документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/v2/dsl`.
+Полный список функций DSL — в [документации синтаксиса](docs/syntax/README.md) или через `go doc github.com/vsfedorenko/go-arch-lint/v3/dsl`.
 
 ### Рецепты init
 
@@ -208,59 +207,26 @@ graph LR
 
 ## Программный API
 
-go-arch-lint — не только CLI, но и библиотека. Вызов проверки из Go-кода:
+go-arch-lint — не только CLI, но и библиотека. Спека описывается Path-DSL —
+весь язык умещается в четыре вызова:
 
 ```go
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func runArchCheck() error {
-	spec := Spec(func() {
-		Version(1)
-		Workdir("internal")
-		Component("handler", "handlers/*")
-		Component("service", "services/**")
-		Deps("handler", func() { MayDependOn("service") })
-	})
-
-	return archlint.Run(spec,
-		archlint.WithProjectPath("."),
-		archlint.WithMaxWarnings(100),
-	)
-}
-```
-
-`archlint.MustRun(spec)` — то же самое, но завершает процесс с конвенциональным
-кодом возврата: `1` при нарушениях, `2` при ошибке конфигурации (см. `archlint.ExitCode`).
-
-`archlint.RunCLI(spec, os.Args[1:])` — точка входа для скаффолда `.go-arch-lint/main.go`:
-маршрутизирует делегированные команды (`check`, `mapping`, `graph`, `self-inspect`)
-по их собственному поведению, а не молча выполняет `check`. Диалект лаунчера
-(`-p`, `--no-colors`, `selfInspect`) переводится автоматически; запуск без команды
-по умолчанию — `check`. `MustRunCLI` — вариант с конвенциональными кодами возврата.
-
-### v2 DSL (экспериментальный)
-
-Выше — первое поколение DSL (`dsl`). Есть второе, попроще: весь язык — четыре вызова.
-
-```go
-import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	v2 "github.com/vsfedorenko/go-arch-lint/v2/dsl/v2"
-)
-
-func runArchCheck() error {
-	build := v2.Spec(func(s *v2.SpecBuilder) {
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
 		domain := s.Path("shop/domain")
+		pgx := s.Vendor("pgx", "github.com/jackc/pgx/v5")
 
 		s.Path("shop/core", func() {
-			s.Use(domain) // core может использовать domain
+			s.Use(domain, pgx) // core использует domain и pgx
 		})
 	})
 
-	return archlint.RunV2(build, archlint.WithProjectPath("."))
+	return archlint.Run(build, archlint.WithProjectPath("."))
 }
 ```
 
@@ -270,26 +236,49 @@ func runArchCheck() error {
   поддерево как один компонент. `Path(".")` — корень модуля (пакет в корне,
   без подкаталогов).
 - `Use(...)` — единственное правило: «этот путь использует эти цели». Цели —
-  только `Path`/`Vendor` переменные, миксуются свободно.
-- `Vendor(name, import)` — внешний пакет, легальная цель для `Use`. Стандартная
-  библиотека (`fmt`, `strings`, …) разрешена всегда и `Vendor` не требует.
-- По умолчанию запрещено всё, что явно не разрешено `Use`. Каждый каталог с
-  Go-файлами обязан быть объявлен через `Path` — необъявленный каталог не
-  «игнорируется», а падает ошибкой `not attached to any component`.
+  только `Path`/`Vendor` переменные, миксуются свободно. Импорты внутри
+  объявленного пути к его собственным подкаталогам всегда разрешены.
+- `Vendor(name, imports...)` — внешний пакет (можно несколько путей на имя),
+  легальная цель для `Use`. Стандартная библиотека (`fmt`, `strings`, …)
+  разрешена всегда и `Vendor` не требует.
+- `Exclude(paths...)` —glob-пути вне архитектуры: тестовые фикстуры, examples,
+  вложенные модули. Необъявленный в `Path` и не исключённый каталог — ошибка
+  `not attached to any component`.
+- По умолчанию запрещено всё, что явно не разрешено `Use`.
 
 Порядок объявления = направление зависимостей: сослаться вперёд нельзя, это
 ошибка компиляции Go. Опечатки и некорректные спеки паникуют при сборке с
 file:line. Каталоги проверяются по диску: несуществующий путь — ошибка
 конфигурации с подсказкой «did you mean».
 
-`archlint.MustRunV2(build)` — то же, но с конвенциональными кодами возврата.
-`archlint.RunCLIV2(build, os.Args[1:])` / `MustRunCLIV2` — CLI-обёртка над v2-спекой:
-маршрутизирует делегированные команды (`check`, `mapping`, `graph`,
-`self-inspect`) по их собственному поведению; запуск без команды по умолчанию —
-`check`. Именно её пишет скаффолд `init` в `main.go`.
+`archlint.MustRun(build)` — то же, но с конвенциональными кодами возврата:
+`1` при нарушениях, `2` при ошибке конфигурации (см. `archlint.ExitCode`).
 
-Пакет экспериментальный: API может измениться, пока он не заменит первое
-поколение (stage 4 дорожной карты v3).
+`archlint.RunCLI(build, os.Args[1:])` — точка входа для скаффолда `.go-arch-lint/main.go`:
+маршрутизирует делегированные команды (`check`, `mapping`, `graph`, `self-inspect`)
+по их собственному поведению, а не молча выполняет `check`. Диалект лаунчера
+(`-p`, `--no-colors`, `selfInspect`) переводится автоматически; запуск без команды
+по умолчанию — `check`. `MustRunCLI` — вариант с конвенциональными кодами возврата.
+
+### Миграция с v2.x
+
+Первое поколение DSL (`Version`/`Workdir`/`Component`/`Deps`/`CommonComponents`)
+удалено. Механическая замена:
+
+| v2.x (удалено)         | v3                                            |
+|------------------------|-----------------------------------------------|
+| `Component("n", "a/b")`| `n := s.Path("a/b")`                          |
+| `Deps("n", …MayDependOn("m"))` | `s.Path("a/b", func() { s.Use(m) })` |
+| `CommonComponents("n")`| `Use(n)` у каждого, кому нужен                |
+| `AnyProjectDeps(true)` | перечислить цели явно в `Use`                 |
+| `Vendor(name, imp)` (один путь) | `s.Vendor(name, imp1, imp2)`         |
+| `Workdir("internal")`  | убрать: пути в `Path` — от корня модуля       |
+
+Проще всего — перезапустить `go-arch-lint init`: он сгенерирует спеку со всеми
+каталогами проекта. `RunV2`/`MustRunV2`/`RunCLIV2`/`MustRunCLIV2` переименованы
+в `Run`/`MustRun`/`RunCLI`/`MustRunCLI`. `Naming`, `Tiers`, `Visibility`,
+`Interfaces` правила первого поколения в v3 не входят — кандидаты на возврат
+отдельными расширениями.
 
 ## Команды
 
@@ -417,7 +406,7 @@ HTML-отчёт (инлайн-CSS, без скриптов и внешних а�
 - uses: actions/checkout@v7
 - uses: actions/setup-go@v7
   with: { go-version: '1.25.13' }
-- uses: vsfedorenko/go-arch-lint@v2.4.3
+- uses: vsfedorenko/go-arch-lint@v3.0.0
 ```
 
 Подробности и все inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).

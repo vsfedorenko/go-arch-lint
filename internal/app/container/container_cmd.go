@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 )
 
 type runner = func(cmd *cobra.Command) (any, error)
@@ -23,7 +23,7 @@ func (c *Container) CommandRoot() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:           "go-arch-lint",
 		Short:         "Golang architecture linter",
-		Long:          "Check all project imports and compare to arch rules defined in yaml file.\nRead full documentation in: https://github.com/vsfedorenko/go-arch-lint/v2",
+		Long:          "Check all project imports and compare to arch rules defined in yaml file.\nRead full documentation in: https://github.com/vsfedorenko/go-arch-lint/v3",
 		SilenceErrors: true, // redirect to stderr
 		SilenceUsage:  true,
 		RunE: func(act *cobra.Command, _ []string) error {

@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/arch"
-	"github.com/vsfedorenko/go-arch-lint/v2/internal/models/domain"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 // operation_test.go pins the check operation's branching at the unit layer

@@ -61,7 +61,7 @@ on the core; the core never depends on an adapter.
 ```go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var spec = Spec(func() {
     Version(1)
@@ -149,7 +149,7 @@ still gives you a dependency direction to enforce.
 ```go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var spec = Spec(func() {
     Version(1)
@@ -227,7 +227,7 @@ allow cross-context references only through explicitly declared dependencies.
 ```go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var spec = Spec(func() {
     Version(1)
@@ -317,7 +317,7 @@ movable.
 ```go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var spec = Spec(func() {
     Version(1)
@@ -384,7 +384,7 @@ full layered or hexagonal setup would be overkill.
 ```go
 package main
 
-import . "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+import . "github.com/vsfedorenko/go-arch-lint/v3/dsl"
 
 var spec = Spec(func() {
     Version(1)

@@ -65,7 +65,7 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 		}
 	}
 
-	goMod := fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint/v2 v2.0.0-dev\n\nreplace github.com/vsfedorenko/go-arch-lint/v2 => %s\n",
+	goMod := fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint/v3 v3.0.0-dev\n\nreplace github.com/vsfedorenko/go-arch-lint/v3 => %s\n",
 		strings.Join(graphLines, "\n"), repoRoot)
 
 	files := map[string]string{
@@ -92,6 +92,28 @@ func scaffoldArch(t *testing.T, repoRoot, mainGo string) string {
 // local checkout via a replace directive. A bare `require v0.0.0` forces
 // Go to look up intermediate module versions, which fails under
 // GOPROXY=off in CI (observed: cobra → go-md2man lookup).
+// runArchCheck runs the scaffolded check CLI from the project's
+// .go-arch-lint module, offline (repo replace + repo go.sum).
+func runArchCheck(t *testing.T, projectDir string) (string, int) {
+	t.Helper()
+	cmd := exec.Command("go", "run", ".", "check", "--project-path", projectDir)
+	cmd.Dir = filepath.Join(projectDir, ".go-arch-lint")
+	cmd.Env = append(os.Environ(),
+		"GOFLAGS=-mod=mod",
+		"GOSUMDB=off",
+		"GOPROXY=off",
+	)
+	var out strings.Builder
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	err := cmd.Run()
+	code := 0
+	if err != nil {
+		code = parseChildExitCode(out.String(), 1)
+	}
+	return out.String(), code
+}
+
 func offlineGoMod(t *testing.T, repoRoot string) string {
 	t.Helper()
 
@@ -112,7 +134,7 @@ func offlineGoMod(t *testing.T, repoRoot string) string {
 		}
 	}
 
-	return fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint/v2 v2.0.0-dev\n\nreplace github.com/vsfedorenko/go-arch-lint/v2 => %s\n",
+	return fmt.Sprintf("module arch-lint-local\n\n%s\n\nrequire github.com/vsfedorenko/go-arch-lint/v3 v3.0.0-dev\n\nreplace github.com/vsfedorenko/go-arch-lint/v3 => %s\n",
 		strings.Join(graphLines, "\n"), repoRoot)
 }
 
@@ -163,30 +185,26 @@ func parseChildExitCode(stderr string, fallback int) int {
 const archOKTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Allow(func() { DepOnAnyVendor(false) })
-		Exclude("internal/excluded", "vendor", "variadic")
-		ExcludeFiles("^.*_test\\.go$")
-		Component("main", "internal")
-		Component("a", "internal/a")
-		Component("allowb", "internal/a/allowb")
-		Component("b", "internal/b")
-		Component("c", "internal/c/**")
-		Component("d", "internal/d/**")
-		Component("e", "internal/e/**")
-		Component("nc", "internal/not_covered")
-		Component("common", "internal/common/**")
-		CommonComponents("common", "a", "c", "d", "e")
-		Deps("allowb", func() { MayDependOn("b") })
-		Deps("e", func() { AnyVendorDeps(true) })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Exclude("internal/excluded", "variadic")
+		common := s.Path("internal/common/**")
+		exA := s.Vendor("example/a", "github.com/example/a")
+		exB := s.Vendor("example/b", "github.com/example/b")
+		a := s.Path("internal/a", func() { s.Use(common) })
+		b := s.Path("internal/b", func() { s.Use(common) })
+		d := s.Path("internal/d/**", func() { s.Use(common) })
+		s.Path("internal/a/allowb", func() { s.Use(b, common) })
+		s.Path("internal/c/**", func() { s.Use(a, common) })
+		s.Path("internal/e/**", func() { s.Use(d, common, exA, exB) })
+		s.Path("internal/not_covered")
+		s.Path("internal")
 	})
-	archlint.MustRun(spec,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 	)
@@ -196,32 +214,24 @@ func main() {
 const archWarningsTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Allow(func() { DepOnAnyVendor(false) })
-		Exclude("internal/excluded", "vendor", "variadic")
-		ExcludeFiles("^.*_test\\.go$")
-		Component("main", "internal/.")
-		Component("a", "internal/a")
-		Component("allowb", "internal/a/allowb")
-		Component("b", "internal/b")
-		Component("c", "internal/c")
-		Component("e", "internal/e")
-		Component("common", "internal/common/**")
-		Component("models", "internal/d/models/*/model")
-		CommonComponents("common")
-		Deps("e", func() {
-			MayDependOn("models")
-			AnyVendorDeps(true)
-		})
-		Deps("allowb", func() { MayDependOn("b") })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Exclude("internal/excluded", "variadic")
+		common := s.Path("internal/common/**")
+		exA := s.Vendor("example/a", "github.com/example/a")
+		exB := s.Vendor("example/b", "github.com/example/b")
+		b := s.Path("internal/b", func() { s.Use(common) })
+		models := s.Path("internal/d/models/**")
+		s.Path("internal/a", func() { s.Use(common) })
+		s.Path("internal/a/allowb", func() { s.Use(b, common) })
+		s.Path("internal/c")
+		s.Path("internal/e", func() { s.Use(models, common, exA, exB) })
 	})
-	archlint.MustRun(spec,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 	)
@@ -231,23 +241,17 @@ func main() {
 const archInvalidSpecTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Allow(func() { DepOnAnyVendor(false) })
-		Component("main", "internal")
-		Component("a", "internal/a")
-		Component("not_exist", "internal/not_exist")
-		CommonComponents("models")
-		Deps("main", func() {
-			MayDependOn("not_exist_too_rnd_order")
-		})
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Path("internal")
+		s.Path("internal/a")
+		s.Path("internal/not_exist")
 	})
-	archlint.MustRun(spec,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 	)
@@ -257,32 +261,24 @@ func main() {
 const archSARIFTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Allow(func() { DepOnAnyVendor(false) })
-		Exclude("internal/excluded", "vendor", "variadic")
-		ExcludeFiles("^.*_test\\.go$")
-		Component("main", "internal/.")
-		Component("a", "internal/a")
-		Component("allowb", "internal/a/allowb")
-		Component("b", "internal/b")
-		Component("c", "internal/c")
-		Component("e", "internal/e")
-		Component("common", "internal/common/**")
-		Component("models", "internal/d/models/*/model")
-		CommonComponents("common")
-		Deps("e", func() {
-			MayDependOn("models")
-			AnyVendorDeps(true)
-		})
-		Deps("allowb", func() { MayDependOn("b") })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Exclude("internal/excluded", "variadic")
+		common := s.Path("internal/common/**")
+		exA := s.Vendor("example/a", "github.com/example/a")
+		exB := s.Vendor("example/b", "github.com/example/b")
+		b := s.Path("internal/b", func() { s.Use(common) })
+		models := s.Path("internal/d/models/**")
+		s.Path("internal/a", func() { s.Use(common) })
+		s.Path("internal/a/allowb", func() { s.Use(b, common) })
+		s.Path("internal/c")
+		s.Path("internal/e", func() { s.Use(models, common, exA, exB) })
 	})
-	archlint.MustRun(spec,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 		archlint.WithFormat("sarif"),
@@ -310,13 +306,13 @@ func TestCheckCommands(t *testing.T) {
 			name:       "warnings",
 			archGo:     fmt.Sprintf(archWarningsTpl, project),
 			wantExit:   1,
-			wantOutput: "Component c shouldn't depend on",
+			wantOutput: "Component internal/c shouldn't depend on",
 		},
 		{
 			name:       "invalid_spec",
 			archGo:     fmt.Sprintf(archInvalidSpecTpl, project),
-			wantExit:   2, // config error, distinct from violations (linter convention)
-			wantOutput: "not found directories",
+			wantExit:   2,                // config error, distinct from violations (linter convention)
+			wantOutput: "does not exist", // v2: Path FS-verify notice with did-you-mean
 		},
 	}
 
@@ -388,32 +384,24 @@ type sarifLog struct {
 const archJUnitTpl = `package main
 
 import (
-	"github.com/vsfedorenko/go-arch-lint/v2"
-	. "github.com/vsfedorenko/go-arch-lint/v2/dsl"
+	"github.com/vsfedorenko/go-arch-lint/v3"
+	"github.com/vsfedorenko/go-arch-lint/v3/dsl"
 )
 
 func main() {
-	spec := Spec(func() {
-		Version(1)
-		Allow(func() { DepOnAnyVendor(false) })
-		Exclude("internal/excluded", "vendor", "variadic")
-		ExcludeFiles("^.*_test\\.go$")
-		Component("main", "internal/.")
-		Component("a", "internal/a")
-		Component("allowb", "internal/a/allowb")
-		Component("b", "internal/b")
-		Component("c", "internal/c")
-		Component("e", "internal/e")
-		Component("common", "internal/common/**")
-		Component("models", "internal/d/models/*/model")
-		CommonComponents("common")
-		Deps("e", func() {
-			MayDependOn("models")
-			AnyVendorDeps(true)
-		})
-		Deps("allowb", func() { MayDependOn("b") })
+	build := dsl.Spec(func(s *dsl.SpecBuilder) {
+		s.Exclude("internal/excluded", "variadic")
+		common := s.Path("internal/common/**")
+		exA := s.Vendor("example/a", "github.com/example/a")
+		exB := s.Vendor("example/b", "github.com/example/b")
+		b := s.Path("internal/b", func() { s.Use(common) })
+		models := s.Path("internal/d/models/**")
+		s.Path("internal/a", func() { s.Use(common) })
+		s.Path("internal/a/allowb", func() { s.Use(b, common) })
+		s.Path("internal/c")
+		s.Path("internal/e", func() { s.Use(models, common, exA, exB) })
 	})
-	archlint.MustRun(spec,
+	archlint.MustRun(build,
 		archlint.WithProjectPath("%s"),
 		archlint.WithColors(false),
 		archlint.WithFormat("junit"),
