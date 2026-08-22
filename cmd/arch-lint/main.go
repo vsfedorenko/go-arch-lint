@@ -219,7 +219,7 @@ func dirExists(path string) bool {
 }
 
 func printUsage() {
-	fmt.Print(`go-arch-lint v2.0 — Go architectural linter
+	fmt.Print(`go-arch-lint v3.0 — Go architectural linter
 
 Usage:
   go-arch-lint <command> [flags]

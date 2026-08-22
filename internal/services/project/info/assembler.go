@@ -108,5 +108,5 @@ func checkArchFile(archFilePath string) (string, error) {
 }
 
 func checkArchFileURL(archFileURL string) (string, error) {
-	return "", errors.New("URL arch-file loading is not supported in v2.0 Go DSL mode; use a local .go-arch-lint/arch.go")
+	return "", errors.New("URL arch-file loading is not supported in v3 Go DSL mode; use a local .go-arch-lint/arch.go")
 }
