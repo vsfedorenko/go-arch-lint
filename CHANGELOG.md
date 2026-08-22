@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] — 2026-08-22
+
 ### Fixed
 - `init --recipe <name>` scaffolds a compiling pair again: recipes write a
   first-generation spec (`var spec`), but the shared runner referenced the
