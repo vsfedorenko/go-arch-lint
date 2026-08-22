@@ -46,6 +46,8 @@ docker run --rm -v ${PWD}:/app ghcr.io/vsfedorenko/go-arch-lint:latest check --p
 ### Гексагональная (ports & adapters)
 
 ```
+cmd/
+└── app/               # точка входа: собирает всё
 internal/
 ├── domain/            # сердце: сущности, ноль внешних зависимостей
 ├── core/              # логика приложения: использует только domain
@@ -63,7 +65,9 @@ var build = Spec(func() {
 	http := Path("internal/adapter/http", func() { Use(core) })
 	db := Path("internal/adapter/db", func() { Use(core, domain) })
 
-	Path(".", func() { Use(core, db, http) }) // main собирает всё
+	Path("cmd", func() {
+		Path("app", func() { Use(core, db, http) }) // точка входа собирает всё
+	})
 })
 ```
 

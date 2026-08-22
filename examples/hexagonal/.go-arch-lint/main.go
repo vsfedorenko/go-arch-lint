@@ -10,7 +10,9 @@ var build = Spec(func() {
 	core := Path("internal/core", func() { Use(domain) })
 	http := Path("internal/adapter/http", func() { Use(core) })
 	db := Path("internal/adapter/db", func() { Use(core, domain) })
-	Path(".", func() { Use(core, db, http) })
+	Path("cmd", func() {
+		Path("app", func() { Use(core, db, http) }) // main собирает всё
+	})
 })
 
 func main() {

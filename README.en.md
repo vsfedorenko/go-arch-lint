@@ -43,6 +43,8 @@ templates:
 ### Hexagonal (ports & adapters)
 
 ```
+cmd/
+└── app/               # the entry point: wires everything
 internal/
 ├── domain/            # the heart: entities, zero external dependencies
 ├── core/              # application logic: uses domain only
@@ -60,7 +62,9 @@ var build = Spec(func() {
 	http := Path("internal/adapter/http", func() { Use(core) })
 	db := Path("internal/adapter/db", func() { Use(core, domain) })
 
-	Path(".", func() { Use(core, db, http) }) // main wires everything
+	Path("cmd", func() {
+		Path("app", func() { Use(core, db, http) }) // the entry point wires everything
+	})
 })
 ```
 
