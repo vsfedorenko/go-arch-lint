@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.4] — 2026-08-22
 
 ### Fixed
+- `version` printed `launcher dev (commit unknown, built unknown)` on
+  `go install`-built binaries: the launcher printed the raw ldflags
+  variables instead of asking the version operation, whose
+  `debug.ReadBuildInfo` fallback already resolves the module version.
+  `go install ...@v3.0.4` now reports the real version. Goreleaser
+  builds (ldflags) are unchanged. Found by probing the released
+  artifact as a consumer.
 - `graph` polluted stdout with two `WARN missing slog.Logger in context`
   blocks carrying full goroutine stack traces (~80 lines) on every svg
   run: d2's internal logger warns whenever the context carries no
