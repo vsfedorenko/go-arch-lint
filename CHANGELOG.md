@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+- A flag-like first token was silently delegated as a command name:
+  `go-arch-lint --version` outside a project answered with the misleading
+  `.go-arch-lint/ directory not found` config error (told to run `init`
+  when asking for the version), and any unknown leading flag degraded the
+  same way instead of failing fast. The launcher now serves
+  `--version`/`-v`/`-V` locally (same output as `version`) and rejects
+  every other leading flag with `unknown flag or command: <token>` +
+  exit 1. Found by the post-merge consumer probe of v3.1.1.
+
 ## [3.1.1] — 2026-08-22
 
 ### Fixed
