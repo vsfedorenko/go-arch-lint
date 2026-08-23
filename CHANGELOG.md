@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.2] — 2026-08-23
+
 ### Fixed
 - A flag-like first token was silently delegated as a command name:
   `go-arch-lint --version` outside a project answered with the misleading
