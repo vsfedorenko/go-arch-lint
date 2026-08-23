@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.3] — 2026-08-23
+
 ### Fixed
 - `init` silently ignored every token it did not know: `init --recipe`
   (a v1/v2 flag removed in v3, still advertised by the README) scaffolded
@@ -11,7 +13,7 @@
   naming the token (`unknown flag or argument: …`) — init takes no
   positional arguments. README RU/EN: the stale `--recipe` section is
   replaced with the real `examples/` templates route, command tables
-  updated. Found by the post-merge consumer probe of v3.1.2.
+  updated. Found by the post-merge consumer probe of v3.1.2. (#116)
 
 ## [3.1.2] — 2026-08-23
 
