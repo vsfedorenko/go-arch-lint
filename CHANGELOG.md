@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Fixed
+- `init` silently ignored every token it did not know: `init --recipe`
+  (a v1/v2 flag removed in v3, still advertised by the README) scaffolded
+  the DEFAULT spec at the DEFAULT path with exit 0, and
+  `init --project-path -p` took the next flag as its value and created the
+  scaffold under a literal `-p/` directory. `parseInitArgs` now fails fast
+  naming the token (`unknown flag or argument: …`) — init takes no
+  positional arguments. README RU/EN: the stale `--recipe` section is
+  replaced with the real `examples/` templates route, command tables
+  updated. Found by the post-merge consumer probe of v3.1.2.
+
 ## [3.1.2] — 2026-08-23
 
 ### Fixed
