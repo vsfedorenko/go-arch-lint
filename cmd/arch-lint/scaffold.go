@@ -61,21 +61,29 @@ func main() {
 }`
 
 // parseInitArgs extracts --project-path/-p (space and = forms) from init's
-// args. A flag present without its value is an error — silently scaffolding
-// at the wrong path writes the wrong starting point.
+// args. Two fail-fast contracts, both pinned by tests:
+//   - a flag present without its value (last token or followed by another
+//     flag) is an error — silently scaffolding at the wrong path writes the
+//     wrong starting point;
+//   - any OTHER token is an error naming the token: init takes no positional
+//     arguments, and an unknown flag (e.g. the removed `--recipe`) silently
+//     scaffolding the default spec is exactly the lenient-flag bug class
+//     (#48, #114).
 func parseInitArgs(args []string) (projectPath string, err error) {
 	projectPath = "."
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		switch {
-		case a == "--project-path" || a == "-p":
-			if i+1 >= len(args) {
+		case a == flagProjectPath || a == "-p":
+			if i+1 >= len(args) || isFlagLike(args[i+1]) {
 				return "", fmt.Errorf("%s requires a value (the project directory)", a)
 			}
 			projectPath = args[i+1]
 			i++
 		case strings.HasPrefix(a, "--project-path="):
 			projectPath = strings.TrimPrefix(a, "--project-path=")
+		default:
+			return "", fmt.Errorf("unknown flag or argument: %s\ninit takes no positional arguments; the only flag is --project-path/-p", a)
 		}
 	}
 	return projectPath, nil

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -210,21 +213,42 @@ func TestScaffoldSplit_RegenerateRunnerKeepsSpec(t *testing.T) {
 // Shared fixture path for flag-parsing table tests (goconst).
 const tcTmpPath = "/tmp/x"
 
-// The flag parser accepts both "-p x" and "--project-path=x" forms (#41).
+// Regression anchors for the fail-fast flag contract (goconst).
+const (
+	tcRecipeFlag  = "--recipe"
+	tcPositional  = "myproject"
+	tcLauncherCmd = "init"
+)
+
+// The flag parser accepts both "-p x" and "--project-path=x" forms (#41),
+// and fails fast on every token it does not know: a value-less flag, a flag
+// whose value is another flag, an unknown flag (the removed `--recipe`),
+// and positional arguments — none of them may silently scaffold the default
+// spec at the default path (the lenient-flag bug class, #48/#114).
 func TestParseInitArgs(t *testing.T) {
 	cases := []struct {
 		name     string
 		args     []string
 		wantPath string
+		wantErr  string
 	}{
-		{"none", nil, "."},
-		{"path space form", []string{"-p", tcTmpPath}, tcTmpPath},
-		{"path equals form", []string{"--project-path=" + tcTmpPath}, tcTmpPath},
-		{"default", nil, "."},
+		{name: "none", args: nil, wantPath: "."},
+		{name: "path space form", args: []string{"-p", tcTmpPath}, wantPath: tcTmpPath},
+		{name: "path equals form", args: []string{"--project-path=" + tcTmpPath}, wantPath: tcTmpPath},
+		{name: "path long space form", args: []string{flagProjectPath, tcTmpPath}, wantPath: tcTmpPath},
+		{name: "value is next flag", args: []string{"--project-path", "-p"}, wantErr: "requires a value"},
+		{name: "unknown flag", args: []string{tcRecipeFlag}, wantErr: "unknown flag or argument: " + tcRecipeFlag},
+		{name: "removed recipe flag with value", args: []string{tcRecipeFlag, "hexagonal"}, wantErr: "unknown flag or argument: " + tcRecipeFlag},
+		{name: "positional argument", args: []string{tcPositional}, wantErr: "unknown flag or argument: " + tcPositional},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			p, parseErr := parseInitArgs(tc.args)
+			if tc.wantErr != "" {
+				require.Error(t, parseErr, "parseInitArgs(%v) must fail", tc.args)
+				assert.Contains(t, parseErr.Error(), tc.wantErr, "error must name the problem")
+				return
+			}
 			require.NoError(t, parseErr)
 			assert.Equal(t, tc.wantPath, p, "parseInitArgs(%v) path", tc.args)
 		})
@@ -251,5 +275,51 @@ func TestCmdInit_ValuelessFlagsFailFast(t *testing.T) {
 			assert.Equal(t, 1, cmdInit(args))
 			assert.NoFileExists(t, ".go-arch-lint", "init %v must not create the scaffold")
 		}()
+	}
+}
+
+// Black-box companion to the parseInitArgs table: through the REAL launcher
+// binary, an unknown init flag must fail fast naming the token and must not
+// create the scaffold. `--recipe` is the regression anchor — the flag was
+// removed in v3 (#92), and the README advertised it long after; users typing
+// it got a silently default scaffold with exit 0.
+func TestLauncher_InitUnknownFlagFailsFast(t *testing.T) {
+	bin := buildLauncher(t)
+	dir := t.TempDir()
+
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"removed recipe flag", []string{tcLauncherCmd, tcRecipeFlag}, "--recipe"},
+		{"removed recipe flag with value", []string{tcLauncherCmd, tcRecipeFlag, "hexagonal"}, "--recipe"},
+		{"arbitrary unknown flag", []string{tcLauncherCmd, "--totally-bogus"}, "--totally-bogus"},
+		{"positional argument", []string{tcLauncherCmd, tcPositional}, "myproject"},
+		{"flag value is a flag", []string{tcLauncherCmd, flagProjectPath, "-p"}, "requires a value"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//nolint:gosec // intentional: runs the launcher binary built by this test with fixed table args
+			cmd := exec.Command(bin, tt.args...)
+			cmd.Dir = dir
+			cmd.Env = []string{"PATH=" + t.TempDir(), "HOME=" + t.TempDir()}
+
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
+			err := cmd.Run()
+			var exitErr *exec.ExitError
+			require.ErrorAs(t, err, &exitErr, "init %v must exit non-zero", tt.args)
+			assert.Equal(t, 1, exitErr.ExitCode(), "init %v exit code", tt.args)
+			assert.Contains(t, stderr.String(), tt.want, "stderr must name the offending token")
+			if !strings.Contains(tt.want, "requires a value") {
+				assert.NotContains(t, stderr.String(), "requires a value", "value-less message only for the value-less case")
+			}
+			assert.NoFileExists(t, filepath.Join(dir, ".go-arch-lint"), "no scaffold may be created")
+			assert.Empty(t, stdout.String(), "nothing on stdout")
+		})
 	}
 }

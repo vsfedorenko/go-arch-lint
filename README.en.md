@@ -174,17 +174,11 @@ How this works:
 
 Full DSL function reference: [syntax docs](docs/syntax/README.md) or `go doc github.com/vsfedorenko/go-arch-lint/v3/dsl`.
 
-### Init recipes
+### Architecture templates
 
-Skip the blank page — start from a known architecture pattern:
+Skip the blank page — start from [`examples/`](examples/): copy the `.go-arch-lint/` from [basic](examples/basic/) (layers), [ddd](examples/ddd/) (bounded contexts) or [hexagonal](examples/hexagonal/) (ports & adapters) into your project and adjust the paths. Every example is a complete project with its spec on the current DSL.
 
-```bash
-go-arch-lint init --recipe hexagonal   # ports & adapters: domain+core at the center, http/db depend inward
-go-arch-lint init --recipe ddd         # DDD: bounded contexts + application/infrastructure/interfaces
-go-arch-lint init --recipe clean       # clean architecture: domain ← usecase ← delivery
-```
-
-A recipe writes the same scaffold (`.go-arch-lint/`), but `arch.go` already describes the layers and dependency rules of the chosen pattern in the first-generation DSL (`Spec`/`Component`/`Deps` — reference in [docs/syntax](docs/syntax/README.md)). The spec sets `IgnoreNotFoundComponents(true)` — you can create the layer directories gradually; the linter won't fail while a layer is still missing (v2 offers no such leniency: it requires the directories to exist).
+The `--recipe` flag existed in v1/v2 and was removed in v3: `init` no longer accepts it — or any other unknown flag; silently falling back to the default spec would be worse than an error.
 
 ## Check
 
@@ -376,7 +370,7 @@ rules are not part of v3 — candidates to return as separate extensions.
 
 | Command       | Purpose                                          |
 |---------------|--------------------------------------------------|
-| `init`        | Create `.go-arch-lint/` scaffold; `--recipe clean\|hexagonal\|ddd` starts from a known pattern |
+| `init`        | Create `.go-arch-lint/` scaffold (the only flag is `--project-path`/`-p`; architecture templates live in [examples/](examples/)) |
 | `check`       | Check project architecture                       |
 | `graph`       | Generate dependency graph                        |
 | `mapping`     | Show package-to-component mapping                |
