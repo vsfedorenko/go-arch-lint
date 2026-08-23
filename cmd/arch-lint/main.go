@@ -27,6 +27,10 @@ const (
 
 	// cmdGraph is the delegated graph command name (see run's switch).
 	cmdGraph = "graph"
+
+	// versionLinePrefix starts every version line; shared by the build-info
+	// path and the ldflags fallback so the two can never diverge.
+	versionLinePrefix = "go-arch-lint launcher "
 )
 
 // splitPathFlag recognizes a path-carrying flag in both its forms:
@@ -101,6 +105,19 @@ func main() {
 	os.Exit(run())
 }
 
+// printVersion serves the `version` command and its flag forms. When the
+// operation fails (no build info), it falls back to the ldflags defaults
+// rather than erroring: a version query must never fail.
+func printVersion() int {
+	out, err := versionop.NewOperation(app.Version, app.BuildTime, app.CommitHash).Behave()
+	if err != nil {
+		fmt.Printf("%s%s (commit %s, built %s)\n", versionLinePrefix, app.Version, app.CommitHash, app.BuildTime)
+		return 0
+	}
+	fmt.Printf("%s%s (commit %s, built %s)\n", versionLinePrefix, out.LinterVersion, out.CommitHash, out.BuildTime)
+	return 0
+}
+
 func run() int {
 	if len(os.Args) < 2 {
 		printUsage()
@@ -111,19 +128,30 @@ func run() int {
 
 	switch command {
 	case "version":
-		out, err := versionop.NewOperation(app.Version, app.BuildTime, app.CommitHash).Behave()
-		if err != nil {
-			fmt.Printf("go-arch-lint launcher %s (commit %s, built %s)\n", app.Version, app.CommitHash, app.BuildTime)
-			return 0
-		}
-		fmt.Printf("go-arch-lint launcher %s (commit %s, built %s)\n", out.LinterVersion, out.CommitHash, out.BuildTime)
-		return 0
+		return printVersion()
 	case "init":
 		return cmdInit(os.Args[2:])
 	case "help", flagHelp, "-h":
 		printUsage()
 		return 0
 	default:
+		// A flag-like first token is not a command: the documented
+		// form is `go-arch-lint <command> [flags]`. Before this guard,
+		// a leading flag was delegated as a command name and the user
+		// got a misleading ".go-arch-lint/ directory not found" config
+		// error outside a project (`--version` asked for a version and
+		// was told to run init) or cobra's generic "unknown flag"
+		// inside one. Serve the version flag forms here, fail fast
+		// naming the token otherwise.
+		if isFlagLike(command) {
+			switch command {
+			case "--version", "-v", "-V":
+				return printVersion()
+			}
+			fmt.Fprintf(os.Stderr, "Error: unknown flag or command: %s\n", command)
+			fmt.Fprintf(os.Stderr, "Run 'go-arch-lint help' for usage.\n")
+			return 1
+		}
 		// All other commands (check, mapping, graph, selfInspect) delegate
 		// to `go run .go-arch-lint/`
 		return cmdDelegate(command, os.Args[2:])

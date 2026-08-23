@@ -142,6 +142,71 @@ func TestLauncher_PathFlagWithoutValue_FailsFast(t *testing.T) {
 	}
 }
 
+// TestLauncher_FlagAsFirstToken pins the command-parsing contract: the
+// documented form is `go-arch-lint <command> [flags]`, so a flag-like
+// first token must never be delegated as a command name. Before this
+// guard, `--version` outside a project printed the misleading
+// ".go-arch-lint/ directory not found" config error (run init?!), and
+// `--bogus` degraded the same way — the silent-flag-drop bug class.
+func TestLauncher_FlagAsFirstToken(t *testing.T) {
+	bin := buildLauncher(t)
+
+	// Empty temp dir: no .go-arch-lint/, no go.mod — deliberately NOT a
+	// project. Version must print without one; unknown flags must fail
+	// fast naming the token, not the missing scaffold.
+	dir := t.TempDir()
+
+	tests := []struct {
+		name       string
+		arg        string
+		wantCode   int
+		wantStdout string
+		wantStderr string
+	}{
+		{"long version flag", "--version", 0, versionLinePrefix, ""},
+		{"short version flag", "-v", 0, versionLinePrefix, ""},
+		{"upper short version flag", "-V", 0, versionLinePrefix, ""},
+		{
+			"unknown long flag",
+			"--bogus-flag",
+			1,
+			"",
+			"unknown flag or command: --bogus-flag",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//nolint:gosec // intentional: runs the launcher binary built by this test with fixed table args
+			cmd := exec.Command(bin, tt.arg)
+			cmd.Dir = dir
+			cmd.Env = []string{"PATH=" + t.TempDir(), "HOME=" + t.TempDir()}
+
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
+			err := cmd.Run()
+
+			var exitErr *exec.ExitError
+			if tt.wantCode == 0 {
+				require.NoError(t, err, "%s must exit 0", tt.arg)
+			} else {
+				require.ErrorAs(t, err, &exitErr, "%s must exit non-zero", tt.arg)
+				assert.Equal(t, tt.wantCode, exitErr.ExitCode(), "%s exit code", tt.arg)
+			}
+
+			assert.Contains(t, stdout.String(), tt.wantStdout, "stdout")
+			if tt.wantStderr == "" {
+				assert.NotContains(t, stderr.String(), "directory not found",
+					"%s must not surface the missing-scaffold config error", tt.arg)
+			} else {
+				assert.Contains(t, stderr.String(), tt.wantStderr, "stderr")
+			}
+		})
+	}
+}
+
 // TestLauncher_HelpOutsideProject_ShowsUsage pins the "help must never
 // require a project" contract: `check --help` run where no .go-arch-lint/
 // exists prints the launcher usage and exits 0 instead of the
