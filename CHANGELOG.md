@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.1.6] — 2026-08-24
+
+### Fixed
+- A `go.work` workspace of sibling modules with no root `go.mod` failed with
+  a bare `not found project 'go.mod'` and no further context. When `go.mod`
+  is missing but `go.work` is present, the error now explains the layout:
+  run go-arch-lint from a directory with its own `go.mod`; a workspace of
+  sibling modules with no root module is not supported yet.
+
+### Documentation
+- README (RU/EN, synced) now documents workspace support: a project with a
+  root `go.mod` works fully — nested workspace member modules are excluded
+  by `init` and can be declared as components (`Path("two/y")`) with
+  working cross-module `Use` rules; a root-less sibling workspace is not
+  supported yet and the CLI says so.
+
 ## [3.1.5] — 2026-08-24
 
 ### Fixed
