@@ -59,6 +59,30 @@ func TestProjectInfo_MissingGoMod(t *testing.T) {
 	require.ErrorContains(t, err, "not found project 'go.mod'")
 }
 
+func TestProjectInfo_MissingGoModWithGoWork(t *testing.T) {
+	// A workspace of sibling modules without a root go.mod: the error must
+	// explain the layout instead of a bare "not found" (probe-found gap,
+	// go-arch-lint resolves packages relative to a root go.mod).
+	root := writeProject(t, "")
+	require.NoError(t, os.WriteFile(filepath.Join(root, "go.work"), []byte("go 1.25\n"), 0o600))
+
+	_, err := NewAssembler().ProjectInfo(root, ".go-arch-lint/arch.go")
+	require.Error(t, err, "missing go.mod must fail even with go.work present")
+	require.ErrorContains(t, err, "not found project 'go.mod'")
+	require.ErrorContains(t, err, "found go.work without a root go.mod")
+	require.ErrorContains(t, err, "not supported yet")
+}
+
+func TestProjectInfo_MissingGoModNoGoWork_KeepsBareError(t *testing.T) {
+	// Without go.work the hint must stay absent: a plain directory lacking
+	// go.mod is a different (ordinary) mistake.
+	root := writeProject(t, "")
+
+	_, err := NewAssembler().ProjectInfo(root, ".go-arch-lint/arch.go")
+	require.Error(t, err)
+	require.NotContains(t, err.Error(), "go.work")
+}
+
 func TestProjectInfo_BrokenGoMod(t *testing.T) {
 	root := writeProject(t, "this is not a go.mod file !!!\n")
 

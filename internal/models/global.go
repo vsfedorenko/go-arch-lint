@@ -3,9 +3,10 @@ package models
 const UnknownVersion = "dev"
 
 const (
-	DefaultProjectPath   = "./"
-	DefaultArchFileName  = ".go-arch-lint/arch.go"
-	DefaultGoModFileName = "go.mod"
+	DefaultProjectPath    = "./"
+	DefaultArchFileName   = ".go-arch-lint/arch.go"
+	DefaultGoModFileName  = "go.mod"
+	DefaultGoWorkFileName = "go.work"
 )
 
 const (
