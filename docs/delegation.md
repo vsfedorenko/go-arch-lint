@@ -98,6 +98,7 @@ Each row was reproduced against a real scaffold:
 | 4 | Spec does not compile (any Go error) | raw compiler errors, then the same footer pointing at `.go-arch-lint/arch.go` | `2` |
 | 5 | Violations found | normal report | `1` |
 | 6 | Child crashes / signal | no `exit status N` line → config/system error | `2` |
+| 7 | `go.work` at the project root | handled: the launcher runs the delegated build with `GOWORK=off` (the arch module is self-contained and not a workspace member) | `—` |
 
 The two system footers (#2, #4) exist so neither failure mode is ever silent
 or context-free; they are covered by `cmd/arch-lint/errors_ux_test.go`, and
