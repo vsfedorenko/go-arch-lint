@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Cross-module `Use` rules in `go.work` projects were broken for sibling
+  member modules with their own module path (`example.com/y` instead of
+  `example.com/root/two/y`): the import classified as a vendor dependency
+  and the allowed import path was built from the root module, so a
+  legitimate `Use(y)` always fired "shouldn't depend". The scanner now
+  classifies workspace member imports as project code, and spec path
+  resolution builds the import path from the member's own `go.mod`
+  (probe-found on v3.1.6 against a live workspace fixture).
+
 ## [3.1.6] — 2026-08-24
 
 ### Fixed

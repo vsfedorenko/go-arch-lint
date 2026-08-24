@@ -11,6 +11,7 @@ import (
 	mock "github.com/stretchr/testify/mock"
 	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/arch"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 )
 
 // newMockprojectFilesResolver creates a new instance of mockprojectFilesResolver. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
@@ -122,6 +123,98 @@ func (_c *mockprojectFilesResolver_Scan_Call) Return(projectFiles []models.Proje
 }
 
 func (_c *mockprojectFilesResolver_Scan_Call) RunAndReturn(run func(ctx context.Context, projectDirectory string, moduleName string, excludePaths []models.ResolvedPath, excludeFileMatchers []*regexp.Regexp) ([]models.ProjectFile, error)) *mockprojectFilesResolver_Scan_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ScanInWorkspace provides a mock function for the type mockprojectFilesResolver
+func (_mock *mockprojectFilesResolver) ScanInWorkspace(ctx context.Context, workspaceModules []domain.WorkspaceModule, projectDirectory string, moduleName string, excludePaths []models.ResolvedPath, excludeFileMatchers []*regexp.Regexp) ([]models.ProjectFile, error) {
+	ret := _mock.Called(ctx, workspaceModules, projectDirectory, moduleName, excludePaths, excludeFileMatchers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ScanInWorkspace")
+	}
+
+	var r0 []models.ProjectFile
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []domain.WorkspaceModule, string, string, []models.ResolvedPath, []*regexp.Regexp) ([]models.ProjectFile, error)); ok {
+		return returnFunc(ctx, workspaceModules, projectDirectory, moduleName, excludePaths, excludeFileMatchers)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []domain.WorkspaceModule, string, string, []models.ResolvedPath, []*regexp.Regexp) []models.ProjectFile); ok {
+		r0 = returnFunc(ctx, workspaceModules, projectDirectory, moduleName, excludePaths, excludeFileMatchers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]models.ProjectFile)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []domain.WorkspaceModule, string, string, []models.ResolvedPath, []*regexp.Regexp) error); ok {
+		r1 = returnFunc(ctx, workspaceModules, projectDirectory, moduleName, excludePaths, excludeFileMatchers)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// mockprojectFilesResolver_ScanInWorkspace_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ScanInWorkspace'
+type mockprojectFilesResolver_ScanInWorkspace_Call struct {
+	*mock.Call
+}
+
+// ScanInWorkspace is a helper method to define mock.On call
+//   - ctx context.Context
+//   - workspaceModules []domain.WorkspaceModule
+//   - projectDirectory string
+//   - moduleName string
+//   - excludePaths []models.ResolvedPath
+//   - excludeFileMatchers []*regexp.Regexp
+func (_e *mockprojectFilesResolver_Expecter) ScanInWorkspace(ctx any, workspaceModules any, projectDirectory any, moduleName any, excludePaths any, excludeFileMatchers any) *mockprojectFilesResolver_ScanInWorkspace_Call {
+	return &mockprojectFilesResolver_ScanInWorkspace_Call{Call: _e.mock.On("ScanInWorkspace", ctx, workspaceModules, projectDirectory, moduleName, excludePaths, excludeFileMatchers)}
+}
+
+func (_c *mockprojectFilesResolver_ScanInWorkspace_Call) Run(run func(ctx context.Context, workspaceModules []domain.WorkspaceModule, projectDirectory string, moduleName string, excludePaths []models.ResolvedPath, excludeFileMatchers []*regexp.Regexp)) *mockprojectFilesResolver_ScanInWorkspace_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []domain.WorkspaceModule
+		if args[1] != nil {
+			arg1 = args[1].([]domain.WorkspaceModule)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 []models.ResolvedPath
+		if args[4] != nil {
+			arg4 = args[4].([]models.ResolvedPath)
+		}
+		var arg5 []*regexp.Regexp
+		if args[5] != nil {
+			arg5 = args[5].([]*regexp.Regexp)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+			arg5,
+		)
+	})
+	return _c
+}
+
+func (_c *mockprojectFilesResolver_ScanInWorkspace_Call) Return(projectFiles []models.ProjectFile, err error) *mockprojectFilesResolver_ScanInWorkspace_Call {
+	_c.Call.Return(projectFiles, err)
+	return _c
+}
+
+func (_c *mockprojectFilesResolver_ScanInWorkspace_Call) RunAndReturn(run func(ctx context.Context, workspaceModules []domain.WorkspaceModule, projectDirectory string, moduleName string, excludePaths []models.ResolvedPath, excludeFileMatchers []*regexp.Regexp) ([]models.ProjectFile, error)) *mockprojectFilesResolver_ScanInWorkspace_Call {
 	_c.Call.Return(run)
 	return _c
 }

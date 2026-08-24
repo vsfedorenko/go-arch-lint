@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/go/packages"
 
 	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models/domain"
 	astUtil "github.com/vsfedorenko/go-arch-lint/v3/internal/services/common/ast"
 )
 
@@ -25,6 +26,7 @@ type (
 	resolveContext struct {
 		projectDirectory    string
 		moduleName          string
+		workspaceModules    []string
 		excludePaths        []models.ResolvedPath
 		excludeFileMatchers []*regexp.Regexp
 
@@ -51,15 +53,34 @@ func NewScanner() *Scanner {
 }
 
 func (r *Scanner) Scan(
-	_ context.Context,
+	ctx context.Context,
 	projectDirectory string,
 	moduleName string,
 	excludePaths []models.ResolvedPath,
 	excludeFileMatchers []*regexp.Regexp,
 ) ([]models.ProjectFile, error) {
+	return r.ScanInWorkspace(ctx, nil, projectDirectory, moduleName, excludePaths, excludeFileMatchers)
+}
+
+// ScanInWorkspace is Scan with go.work sibling modules: imports of those
+// modules classify as project imports instead of vendor.
+func (r *Scanner) ScanInWorkspace(
+	_ context.Context,
+	workspaceModules []domain.WorkspaceModule,
+	projectDirectory string,
+	moduleName string,
+	excludePaths []models.ResolvedPath,
+	excludeFileMatchers []*regexp.Regexp,
+) ([]models.ProjectFile, error) {
+	modulePaths := make([]string, 0, len(workspaceModules))
+	for _, module := range workspaceModules {
+		modulePaths = append(modulePaths, module.Path)
+	}
+
 	rctx := resolveContext{
 		projectDirectory:    projectDirectory,
 		moduleName:          moduleName,
+		workspaceModules:    modulePaths,
 		excludePaths:        excludePaths,
 		excludeFileMatchers: excludeFileMatchers,
 
@@ -150,7 +171,7 @@ func (r *Scanner) extractImports(ctx *resolveContext, fileAst *ast.File) []model
 		importPath := strings.Trim(goImport.Path.Value, "\"")
 		imports = append(imports, models.ResolvedImport{
 			Name:       importPath,
-			ImportType: models.GetImportType(importPath, ctx.moduleName, r.stdPackages),
+			ImportType: models.GetImportTypeInWorkspace(importPath, ctx.moduleName, ctx.workspaceModules, r.stdPackages),
 			Reference:  astUtil.PositionFromToken(ctx.tokenSet.Position(goImport.Pos())),
 		})
 	}

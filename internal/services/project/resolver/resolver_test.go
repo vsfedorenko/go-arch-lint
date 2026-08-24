@@ -60,8 +60,9 @@ func TestProjectFiles_ComposesScanAndHold(t *testing.T) {
 	files := []models.ProjectFile{{Path: "internal/a.go"}}
 	wants := []models.FileHold{{File: models.ProjectFile{Path: "internal/a.go"}}}
 
-	w.scan.EXPECT().Scan(
+	w.scan.EXPECT().ScanInWorkspace(
 		mock.Anything,
+		[]domain.WorkspaceModule(nil),
 		"/project/internal",
 		"example.com/m",
 		[]models.ResolvedPath{{ImportPath: "example.com/m/skip"}},
@@ -79,8 +80,8 @@ func TestProjectFiles_WorkdirDotCleans(t *testing.T) {
 	w := wireResolver(t)
 	spec := resSpec("/project", ".")
 
-	w.scan.EXPECT().Scan(
-		mock.Anything, "/project", mock.Anything, mock.Anything, mock.Anything,
+	w.scan.EXPECT().ScanInWorkspace(
+		mock.Anything, mock.Anything, "/project", mock.Anything, mock.Anything, mock.Anything,
 	).Return(nil, nil)
 	w.holder.EXPECT().HoldProjectFiles(mock.Anything, mock.Anything).Return(nil)
 
@@ -91,7 +92,7 @@ func TestProjectFiles_WorkdirDotCleans(t *testing.T) {
 // Scan failures surface with the operation's wrap message.
 func TestProjectFiles_ScanErrorWraps(t *testing.T) {
 	w := wireResolver(t)
-	w.scan.EXPECT().Scan(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	w.scan.EXPECT().ScanInWorkspace(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil, errors.New("walk failed"))
 
 	_, err := w.r.ProjectFiles(context.Background(), resSpec("/project", "internal"))

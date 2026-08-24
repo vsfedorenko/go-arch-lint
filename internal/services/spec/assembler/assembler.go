@@ -29,8 +29,9 @@ func NewAssembler(
 
 func (sa *Assembler) Assemble(prj domain.Project) (arch.Spec, error) {
 	spec := arch.Spec{
-		RootDirectory: domain.NewEmptyReferable(prj.Directory),
-		ModuleName:    domain.NewEmptyReferable(prj.ModuleName),
+		RootDirectory:    domain.NewEmptyReferable(prj.Directory),
+		ModuleName:       domain.NewEmptyReferable(prj.ModuleName),
+		WorkspaceModules: prj.WorkspaceModules,
 		Integrity: arch.Integrity{
 			DocumentNotices: []arch.Notice{},
 			Suggestions:     []arch.Notice{},
@@ -59,6 +60,7 @@ func (sa *Assembler) Assemble(prj domain.Project) (arch.Spec, error) {
 		sa.pathResolver,
 		prj.Directory,
 		prj.ModuleName,
+		prj.WorkspaceModules,
 	)
 
 	assembler := newSpecCompositeAssembler([]assembler{

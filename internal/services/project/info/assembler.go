@@ -48,12 +48,61 @@ func (a *Assembler) ProjectInfo(rootDirectory string, archFilePath string) (doma
 		return domain.Project{}, fmt.Errorf("failed get module name: %w", err)
 	}
 
+	workspaceModules, err := collectWorkspaceModules(projectPath)
+	if err != nil {
+		return domain.Project{}, err
+	}
+
 	return domain.Project{
-		Directory:      projectPath,
-		GoArchFilePath: goArchFilePath,
-		GoModFilePath:  goModFilePath,
-		ModuleName:     moduleName,
+		Directory:        projectPath,
+		GoArchFilePath:   goArchFilePath,
+		GoModFilePath:    goModFilePath,
+		ModuleName:       moduleName,
+		WorkspaceModules: workspaceModules,
 	}, nil
+}
+
+// collectWorkspaceModules parses the project's go.work (if any) and returns
+// its `use` entries with the module path each member declares in its own
+// go.mod. Entries whose go.mod is missing or unreadable are skipped — the
+// arch check must not fail because a workspace lists a module outside the
+// linted tree. The root module itself is not listed (see domain.Project).
+func collectWorkspaceModules(projectPath string) ([]domain.WorkspaceModule, error) {
+	goWorkPath := filepath.Join(projectPath, models.DefaultGoWorkFileName)
+	body, err := os.ReadFile(goWorkPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to read '%s': %w", goWorkPath, err)
+	}
+
+	work, err := modfile.ParseWork(goWorkPath, body, nil)
+	if err != nil {
+		// A malformed go.work must not break projects that do not rely on
+		// workspace semantics: the `go` tooling itself refuses such files,
+		// but the arch lint keeps working with root-module-only knowledge.
+		return nil, nil //nolint:nilerr // deliberate degradation to non-workspace mode
+	}
+
+	modules := make([]domain.WorkspaceModule, 0, len(work.Use))
+	for _, use := range work.Use {
+		// `use <dir>` carries the member directory; the module path comes
+		// from the member's own go.mod.
+		dir := filepath.Clean(filepath.Join(projectPath, use.Path))
+		if dir == filepath.Clean(projectPath) {
+			continue // root module — already covered by ModuleName
+		}
+
+		modulePath, err := checkCmdExtractModuleName(filepath.Join(dir, models.DefaultGoModFileName))
+		if err != nil {
+			continue
+		}
+
+		modules = append(modules, domain.WorkspaceModule{Dir: dir, Path: modulePath})
+	}
+
+	return modules, nil
 }
 
 // workspaceHint explains the missing-go.mod failure when the directory is a
