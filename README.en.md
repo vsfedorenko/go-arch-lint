@@ -116,7 +116,7 @@ compare.
 
 - **Go 1.25+** (the two latest major versions are supported: 1.25 and 1.26; CI tests both).
 - `go` must be on your `PATH` — the CLI compiles `.go-arch-lint/arch.go` via `go run` (cached, steady-state runs take ~2s).
-- **Go workspaces (`go.work`).** A project with a root `go.mod` works fully — including sibling workspace member modules: `init` excludes them from the architecture by default, and you can declare them as components (`Path("two/y")`) to write cross-module `Use` rules. A workspace of sibling modules with no root `go.mod` is not supported yet — the CLI explains this when you run it.
+- **Go workspaces (`go.work`).** A project with a root `go.mod` works fully — including sibling workspace member modules: `init` excludes them from the architecture by default, and you can declare them as components (`Path("two/y")`) to write cross-module `Use` rules. A member module may carry any module path of its own (`example.com/y`, not necessarily `example.com/root/two/y`) — member imports classify as project code, not vendor. A workspace of sibling modules with no root `go.mod` is not supported yet — the CLI explains this when you run it.
 
 ## Configuration
 

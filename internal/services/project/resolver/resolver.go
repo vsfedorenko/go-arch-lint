@@ -30,8 +30,9 @@ func (r *Resolver) ProjectFiles(ctx context.Context, spec arch.Spec) ([]models.F
 		spec.WorkingDirectory.Value,
 	))
 
-	projectFiles, err := r.projectFilesResolver.Scan(
+	projectFiles, err := r.projectFilesResolver.ScanInWorkspace(
 		ctx,
+		spec.WorkspaceModules,
 		scanDirectory,
 		spec.ModuleName.Value,
 		refPathToList(spec.Exclude),

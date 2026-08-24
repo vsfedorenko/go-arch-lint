@@ -12,6 +12,7 @@ type (
 		RootDirectory       domain.Referable[string]
 		WorkingDirectory    domain.Referable[string]
 		ModuleName          domain.Referable[string]
+		WorkspaceModules    []domain.WorkspaceModule
 		Allow               Allow
 		Components          []Component
 		Exclude             []domain.Referable[models.ResolvedPath]
