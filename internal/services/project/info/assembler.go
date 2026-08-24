@@ -35,9 +35,10 @@ func (a *Assembler) ProjectInfo(rootDirectory string, archFilePath string) (doma
 	goModFilePath := filepath.Clean(fmt.Sprintf("%s/%s", projectPath, models.DefaultGoModFileName))
 	_, err = os.Stat(goModFilePath)
 	if os.IsNotExist(err) {
-		return domain.Project{}, fmt.Errorf("not found project '%s' in '%s'",
+		return domain.Project{}, fmt.Errorf("not found project '%s' in '%s'%s",
 			models.DefaultGoModFileName,
 			goModFilePath,
+			workspaceHint(projectPath),
 		)
 	}
 
@@ -53,6 +54,25 @@ func (a *Assembler) ProjectInfo(rootDirectory string, archFilePath string) (doma
 		GoModFilePath:  goModFilePath,
 		ModuleName:     moduleName,
 	}, nil
+}
+
+// workspaceHint explains the missing-go.mod failure when the directory is a
+// Go workspace root: go-arch-lint resolves packages relative to a root
+// go.mod, and a workspace of sibling modules without one has no module to
+// lint. The hint names the two working layouts instead of leaving a bare
+// "not found" error.
+func workspaceHint(projectPath string) string {
+	goWorkPath := filepath.Join(projectPath, models.DefaultGoWorkFileName)
+	if _, err := os.Stat(goWorkPath); err != nil {
+		return ""
+	}
+	return fmt.Sprintf(
+		" (found %s without a root %s: run go-arch-lint from a directory with its own %s; "+
+			"a workspace of sibling modules with no root module is not supported yet)",
+		models.DefaultGoWorkFileName,
+		models.DefaultGoModFileName,
+		models.DefaultGoModFileName,
+	)
 }
 
 func checkCmdExtractModuleName(goModPath string) (string, error) {
