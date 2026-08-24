@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+- The `help` header carried a hardcoded major (`go-arch-lint v3.0 — Go
+  architectural linter`) while `version` reported the real release: the
+  v3.1.3 binary greeted users with "v3.0". The header now resolves the
+  version the same way `version` does (goreleaser ldflags, then module
+  build info), so the two can never diverge again. Found by the
+  post-release consumer probe of v3.1.3.
+
 ## [3.1.3] — 2026-08-23
 
 ### Fixed

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/vsfedorenko/go-arch-lint/v3/internal/app"
+	"github.com/vsfedorenko/go-arch-lint/v3/internal/models"
 	versionop "github.com/vsfedorenko/go-arch-lint/v3/internal/operations/version"
 )
 
@@ -105,15 +106,29 @@ func main() {
 	os.Exit(run())
 }
 
+// resolveVersion resolves the launcher's own version data the same way the
+// `version` command always has: goreleaser ldflags first (app.Version is
+// not "dev"), then module build info (go install ...@vX.Y.Z), then the raw
+// ldflags defaults. Shared by printVersion and printUsage so the help
+// header can never drift from the reported version again (v3.1.3's help
+// still said "v3.0").
+func resolveVersion() models.CmdVersionOut {
+	out, err := versionop.NewOperation(app.Version, app.BuildTime, app.CommitHash).Behave()
+	if err != nil {
+		return models.CmdVersionOut{
+			LinterVersion: app.Version,
+			BuildTime:     app.BuildTime,
+			CommitHash:    app.CommitHash,
+		}
+	}
+	return out
+}
+
 // printVersion serves the `version` command and its flag forms. When the
 // operation fails (no build info), it falls back to the ldflags defaults
 // rather than erroring: a version query must never fail.
 func printVersion() int {
-	out, err := versionop.NewOperation(app.Version, app.BuildTime, app.CommitHash).Behave()
-	if err != nil {
-		fmt.Printf("%s%s (commit %s, built %s)\n", versionLinePrefix, app.Version, app.CommitHash, app.BuildTime)
-		return 0
-	}
+	out := resolveVersion()
 	fmt.Printf("%s%s (commit %s, built %s)\n", versionLinePrefix, out.LinterVersion, out.CommitHash, out.BuildTime)
 	return 0
 }
@@ -294,8 +309,10 @@ func dirExists(path string) bool {
 }
 
 func printUsage() {
-	fmt.Print(`go-arch-lint v3.0 — Go architectural linter
-
+	// The header carries the real version (ldflags/build-info), not a
+	// hardcoded major: v3.1.3's help still greeted users with "v3.0".
+	fmt.Printf("go-arch-lint %s — Go architectural linter\n", resolveVersion().LinterVersion)
+	fmt.Print(`
 Usage:
   go-arch-lint <command> [flags]
 
