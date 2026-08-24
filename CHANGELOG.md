@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.1.7] — 2026-08-24
 
 ### Fixed
 - Cross-module `Use` rules in `go.work` projects were broken for sibling
