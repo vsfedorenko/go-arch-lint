@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Fixed
+- Delegated commands (`check`, `mapping`, `graph`, `selfInspect`) failed in
+  projects with a `go.work` at the root: the scaffolded `.go-arch-lint/`
+  module is not a workspace member, so `go run` rejected it ("current
+  directory is contained in a module that is not one of the workspace
+  modules", or "main module does not contain package …/.go-arch-lint").
+  The launcher now runs the delegated build with `GOWORK=off` — the arch
+  module is self-contained (own `go.mod` + require), so workspace mode
+  bought it nothing. The user's `go.work` is untouched. First slice of the
+  roadmap's workspace support: multi-module workspaces (no root `go.mod`)
+  still require the module-path scan to learn workspace awareness.
+
 ## [3.1.4] — 2026-08-24
 
 ### Fixed

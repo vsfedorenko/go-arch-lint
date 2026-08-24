@@ -262,6 +262,15 @@ func cmdDelegate(command string, args []string) int {
 	// .go-arch-lint/ has its own go.mod; -C runs go from that directory.
 	goArgs := append([]string{"-C", archDir, "run", ".", command}, delegatedArgs...)
 	cmd := exec.Command("go", goArgs...) //nolint:gosec,noctx // intentional: CLI delegates to 'go run .go-arch-lint/' per documented design; signal propagation is handled by the foreground process group
+	// The arch module is self-contained (own go.mod + require of the DSL),
+	// so workspace mode buys it nothing — but a go.work at the project
+	// root breaks it: the scaffold module is not a workspace member, so
+	// `go run` fails with "current directory is contained in a module
+	// that is not one of the workspace modules listed in go.work" (or,
+	// with `use .` covering the root, "main module does not contain
+	// package <dir>/.go-arch-lint"). Disable workspace mode for the
+	// delegated build only; the user's go.work is untouched.
+	cmd.Env = append(os.Environ(), "GOWORK=off")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 
