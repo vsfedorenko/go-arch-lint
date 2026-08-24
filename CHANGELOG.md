@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.4] — 2026-08-24
+
 ### Fixed
 - The `help` header carried a hardcoded major (`go-arch-lint v3.0 — Go
   architectural linter`) while `version` reported the real release: the
