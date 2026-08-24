@@ -454,7 +454,7 @@ directly on the diff lines, binary installed from the release — no JS glue:
 - uses: actions/checkout@v7
 - uses: actions/setup-go@v7
   with: { go-version: '1.25.13' }
-- uses: vsfedorenko/go-arch-lint@v3.0.0
+- uses: vsfedorenko/go-arch-lint@v3.1.5
 ```
 
 Details and all inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).
