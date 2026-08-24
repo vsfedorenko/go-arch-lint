@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -237,4 +238,32 @@ func TestLauncher_HelpOutsideProject_ShowsUsage(t *testing.T) {
 			assert.NotContains(t, stderr.String(), "directory not found", "help must not surface the config error")
 		})
 	}
+}
+
+// TestLauncher_HelpHeaderMatchesVersion pins the version-drift contract:
+// the help header must carry the SAME version the `version` command
+// reports (ldflags or build info), never a hardcoded major. Found by the
+// post-release consumer probe of v3.1.3: `version` said v3.1.3 while
+// `help` still greeted users with "go-arch-lint v3.0".
+func TestLauncher_HelpHeaderMatchesVersion(t *testing.T) {
+	bin := buildLauncher(t)
+
+	var verOut, helpOut bytes.Buffer
+
+	verCmd := exec.Command(bin, "version")
+	verCmd.Stdout = &verOut
+	require.NoError(t, verCmd.Run(), "version must exit 0")
+
+	helpCmd := exec.Command(bin, "help")
+	helpCmd.Stdout = &helpOut
+	require.NoError(t, helpCmd.Run(), "help must exit 0")
+
+	// `version` prints "go-arch-lint launcher vX.Y.Z (commit …, built …)".
+	verLine := strings.TrimSpace(verOut.String())
+	require.True(t, strings.HasPrefix(verLine, versionLinePrefix), "unexpected version line: %q", verLine)
+	reported := strings.TrimPrefix(verLine, versionLinePrefix)
+	reported = strings.SplitN(reported, " ", 2)[0]
+
+	assert.Contains(t, helpOut.String(), "go-arch-lint "+reported+" ",
+		"help header must carry the reported version %q, not a hardcoded major", reported)
 }
