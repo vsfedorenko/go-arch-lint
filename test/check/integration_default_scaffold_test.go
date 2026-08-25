@@ -140,7 +140,7 @@ func TestDefaultScaffoldVendorImportsCheckGreen(t *testing.T) {
 	// The scaffold must mirror the x/text import as a Vendor + Use rule.
 	arch, err := os.ReadFile(filepath.Join(proj, ".go-arch-lint", "arch.go"))
 	require.NoError(t, err, "read scaffolded arch.go")
-	assert.Contains(t, string(arch), `Vendor("golang.org/x/text/cases"`, "scaffold must declare the third-party import as a Vendor")
+	assert.Contains(t, string(arch), `Vendor("cases", "golang.org/x/text/cases"`, "scaffold must declare the third-party import as a Vendor")
 
 	out, code := runArchCheck(t, proj)
 	assert.Equal(t, 0, code, "fresh scaffold with vendor imports must check green; exit %d.\noutput:\n%s", code, out)
