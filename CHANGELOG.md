@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- A fresh `init` scaffold was red on any project importing a third-party
+  library (`golang.org/x/...`, `github.com/...`): the scaffold mirrored
+  only internal imports as `Use` rules, while the vendor linter is on by
+  default — the advertised "3. Run 'go-arch-lint check'" next-step fired
+  `Component . shouldn't depend on golang.org/x/text/cases` on day one.
+  The scaffold now mirrors third-party imports too: each becomes a
+  `Vendor` declaration listed before the paths, referenced from the
+  owning component's `Use` rule (internal targets first, vendors after,
+  both alphabetical). Identifier collisions between a vendor and a path
+  (`internal/errgroup` vs `golang.org/x/sync/errgroup`) are resolved by
+  renumbering the path variable. Standard library imports are recognized
+  by the no-dot-in-first-segment rule and need no scaffold entry (the
+  checker always allows them); imports of `go.work` member modules stay
+  project code and are not mirrored as vendors. Probe-found on v3.1.7:
+  a plain module importing `golang.org/x/text/cases` and a go.work
+  project importing a sibling member were both red after
+  `init → go mod tidy → check`; pinned by a new integration test with
+  the third-party-import fixture.
+
 ## [3.1.7] — 2026-08-24
 
 ### Fixed

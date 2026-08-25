@@ -169,6 +169,9 @@ func scanGoDirs(root string) ([]string, []string) { //nolint:gosec // root is th
 // its own Go module and not part of this module's package graph.
 const moduleFileName = "go.mod"
 
+// goWorkFileName names the go.work file at the project root.
+const goWorkFileName = "go.work"
+
 // hasModuleFile reports whether dir contains its own go.mod.
 func hasModuleFile(dir string) bool {
 	entries, err := os.ReadDir(dir)
@@ -186,16 +189,27 @@ func hasModuleFile(dir string) bool {
 // v2SpecFromDirs renders the scaffolded arch.go body declaring every
 // discovered Go directory as a Path component, with Use rules mirroring
 // the imports that already exist (dependencies declared first, so the
-// spec compiles). A module without any Go subdirectory falls back to the
-// module root alone.
-func v2SpecFromDirs(dirs, excludes []string, edges map[string][]string) string {
-	names := specVarNames(dirs)
+// spec compiles). Vendor imports and cross-module workspace imports are
+// mirrored as Vendor declarations + Use targets, so a fresh scaffold is
+// green on projects with third-party dependencies too. A module without
+// any Go subdirectory falls back to the module root alone.
+func v2SpecFromDirs(dirs, excludes []string, imports projectImports) string {
+	vendorNames := vendorVarNames(imports.vendors)
+	reserved := make(map[string]bool, len(vendorNames))
+	for _, name := range vendorNames {
+		reserved[name] = true
+	}
+	names := specVarNames(dirs, reserved)
 	// A path needs a variable only when it is REFERENCED by a later Use
 	// rule (a Use target). Sources are consumed by their own statement.
 	needsVar := map[string]bool{}
-	for _, targets := range edges {
+	for _, targets := range imports.edges {
 		for _, t := range targets {
-			needsVar[t] = true
+			if t.isVendor {
+				needsVar["vendor:"+t.name] = true
+			} else {
+				needsVar[t.dir] = true
+			}
 		}
 	}
 	var b strings.Builder
@@ -211,12 +225,20 @@ func v2SpecFromDirs(dirs, excludes []string, edges map[string][]string) string {
 		// valid (at least one component must be defined).
 		b.WriteString("	Path(\".\")\n")
 	}
-	for _, d := range specDeclOrder(dirs, edges) {
-		targets := edges[d]
+	// Vendors are declared before the paths that use them.
+	for _, v := range imports.vendors {
+		fmt.Fprintf(&b, "	%s := Vendor(%q, %q)\n", vendorNames[v], v, v)
+	}
+	for _, d := range specDeclOrder(dirs, imports.edges) {
+		targets := imports.edges[d]
 		if len(targets) > 0 {
 			uses := make([]string, 0, len(targets))
 			for _, t := range targets {
-				uses = append(uses, names[t])
+				if t.isVendor {
+					uses = append(uses, vendorNames[t.name])
+				} else {
+					uses = append(uses, names[t.dir])
+				}
 			}
 			decl := fmt.Sprintf("Path(%q, func() { Use(%s) })", d, strings.Join(uses, ", "))
 			if needsVar[d] {
@@ -290,9 +312,14 @@ var goKeywords = map[string]bool{
 // the module root becomes "root", other directories take their last
 // element (lowercased, symbols folded away). Collisions get a numeric
 // suffix; Go keywords and the reserved "build" get a trailing underscore.
-func specVarNames(dirs []string) map[string]string {
+// reserved pre-seeds names already taken (vendor identifiers), so a path
+// and a vendor can never share a variable.
+func specVarNames(dirs []string, reserved map[string]bool) map[string]string {
 	names := make(map[string]string, len(dirs))
-	taken := map[string]bool{}
+	taken := make(map[string]bool, len(reserved)+len(dirs))
+	for k := range reserved {
+		taken[k] = true
+	}
 	for _, d := range dirs {
 		base := specVarName(d)
 		if goKeywords[base] || base == "build" {
@@ -308,12 +335,52 @@ func specVarNames(dirs []string) map[string]string {
 	return names
 }
 
+// vendorVarNames assigns a unique Go identifier to every mirrored vendor
+// import: the last path element, sanitized to letters/digits
+// ("golang.org/x/sync/errgroup" -> "errgroup"). Collisions get a numeric
+// suffix; Go keywords and the reserved "build" get a trailing underscore.
+func vendorVarNames(vendors []string) map[string]string {
+	names := make(map[string]string, len(vendors))
+	taken := map[string]bool{}
+	for _, v := range vendors {
+		base := sanitizeIdent(path.Base(v))
+		if base == "" {
+			base = "vendor"
+		}
+		if goKeywords[base] || base == "build" {
+			base += "_"
+		}
+		name := base
+		for i := 2; taken[name]; i++ {
+			name = fmt.Sprintf("%s%d", base, i)
+		}
+		taken[name] = true
+		names[v] = name
+	}
+	return names
+}
+
+// sanitizeIdent folds a path element into a Go identifier: lowercase
+// letters, digits kept, everything else dropped.
+func sanitizeIdent(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r + 'a' - 'A')
+		}
+	}
+	return b.String()
+}
+
 // specDeclOrder orders declarations dependencies-first (Kahn's algorithm
 // over the Use edges) so every referenced variable is declared before its
 // first Use. Non-test Go imports cannot cycle, but the sort is defensive:
 // any leftover (impossible cycle) appends in sorted order rather than
 // looping forever.
-func specDeclOrder(dirs []string, edges map[string][]string) []string {
+func specDeclOrder(dirs []string, edges map[string][]useTarget) []string {
 	sorted := append([]string(nil), dirs...)
 	sort.Strings(sorted)
 	deps := make(map[string][]string, len(edges))
@@ -323,10 +390,10 @@ func specDeclOrder(dirs []string, edges map[string][]string) []string {
 	}
 	for from, targets := range edges {
 		for _, t := range targets {
-			if t == from {
-				continue
+			if t.isVendor || t.dir == from {
+				continue // vendor targets are declared before all paths
 			}
-			deps[t] = append(deps[t], from)
+			deps[t.dir] = append(deps[t.dir], from)
 			indeg[from]++
 		}
 	}
@@ -354,23 +421,47 @@ func specDeclOrder(dirs []string, edges map[string][]string) []string {
 	return sorted // unreachable with real Go imports; defensive fallback
 }
 
-// scanImports maps every declared directory to the declared directories
-// its non-test Go files import. Import paths are matched against the
-// module path from go.mod: module "probe" makes "probe/internal/hello"
-// resolve to the directory "internal/hello". Test files are skipped —
-// the checker does not flag test imports, and test-only edges may cycle.
-func scanImports(root string, dirs []string) map[string][]string {
-	edges := make(map[string][]string, len(dirs))
-	if moduleName(root) == "" {
-		return edges
+// useTarget is one mirrored dependency of a declared directory: either an
+// internal edge to another declared directory, or a vendor import
+// (third-party or a cross-module workspace member).
+type useTarget struct {
+	dir      string // internal target: a declared directory
+	name     string // vendor target: the import path
+	isVendor bool
+}
+
+// projectImports is the scanned dependency surface the scaffold mirrors:
+// edges maps each declared directory to its mirrored targets, vendors
+// lists every distinct vendor import path in first-seen order.
+type projectImports struct {
+	edges   map[string][]useTarget
+	vendors []string
+}
+
+// scanImports maps every declared directory to its mirrored dependencies:
+// internal edges to other declared directories, vendor imports
+// (third-party libraries), and imports of go.work member modules (which
+// the checker treats as project code, but which live outside the root
+// module — mirrored as vendor targets so the scaffold compiles and the
+// check is green). Import paths are matched against the module path from
+// go.mod: module "probe" makes "probe/internal/hello" resolve to the
+// directory "internal/hello". Test files are skipped — the checker does
+// not flag test imports, and test-only edges may cycle.
+func scanImports(root string, dirs []string) projectImports {
+	result := projectImports{edges: make(map[string][]useTarget, len(dirs))}
+	mod := moduleName(root)
+	if mod == "" {
+		return result
 	}
+	// Workspace members classify as project code, not vendor.
+	workspace := workspaceModulePaths(root)
 	byImport := make(map[string]string, len(dirs)+1)
 	for _, d := range dirs {
 		if d == "." {
-			byImport[moduleName(root)] = "."
+			byImport[mod] = "."
 			continue
 		}
-		byImport[moduleName(root)+"/"+d] = d
+		byImport[mod+"/"+d] = d
 	}
 	fset := token.NewFileSet()
 	for _, d := range dirs {
@@ -389,17 +480,111 @@ func scanImports(root string, dirs []string) map[string][]string {
 				continue
 			}
 			for _, imp := range astFile.Imports {
-				target, ok := byImport[strings.Trim(imp.Path.Value, `"`)]
-				if !ok || target == d || seen[target] {
+				path := strings.Trim(imp.Path.Value, `"`)
+				if target, ok := byImport[path]; ok {
+					// Internal edge to another declared directory.
+					if target == d || seen[target] {
+						continue
+					}
+					seen[target] = true
+					result.edges[d] = append(result.edges[d], useTarget{dir: target})
 					continue
 				}
-				seen[target] = true
-				edges[d] = append(edges[d], target)
+				// Everything else: stdlib and workspace-member imports
+				// are always allowed; the root module's own packages
+				// matched above; only third-party imports remain.
+				if isStdLibImport(path) || isWorkspaceImport(path, workspace) {
+					continue
+				}
+				if seen[path] {
+					continue
+				}
+				seen[path] = true
+				result.edges[d] = append(result.edges[d], useTarget{name: path, isVendor: true})
+				result.vendors = append(result.vendors, path)
 			}
 		}
-		sort.Strings(edges[d])
 	}
-	return edges
+	return normalizeImports(result)
+}
+
+// isStdLibImport reports whether an import path is a standard library
+// package: stdlib paths never contain a dot in the first segment
+// ("fmt", "net/http"), while every third-party module is hosted under
+// a dotted domain ("github.com/…", "golang.org/x/…"). Same heuristic
+// as the go tool's own module-vs-std checks. Standard library imports
+// need no scaffold rule: the checker always allows them.
+func isStdLibImport(importPath string) bool {
+	first := importPath
+	if i := strings.Index(first, "/"); i >= 0 {
+		first = first[:i]
+	}
+	return !strings.Contains(first, ".")
+}
+
+// isModuleOrSubpackage reports whether importPath is exactly the module or
+// a package below it. A straight prefix match is wrong: module
+// "example.com/foo/bar" must not match "example.com/foo/bar-utils".
+func isModuleOrSubpackage(importPath, modulePath string) bool {
+	return importPath == modulePath || strings.HasPrefix(importPath, modulePath+"/")
+}
+
+// workspaceModulePaths lists the module paths of the go.work members
+// (excluding the root module): an import of a member classifies as project
+// code, so it must not be mirrored as a vendor. A missing or malformed
+// go.work simply yields no members.
+func workspaceModulePaths(root string) []string {
+	body, err := os.ReadFile(filepath.Join(root, goWorkFileName)) //nolint:gosec // root is the init --project-path argument, same trust level as every other init read
+	if err != nil {
+		return nil
+	}
+	work, err := modfile.ParseWork(goWorkFileName, body, nil)
+	if err != nil {
+		return nil // a malformed go.work must not break init
+	}
+	var paths []string
+	for _, use := range work.Use {
+		dir := filepath.Clean(filepath.Join(root, use.Path))
+		if dir == filepath.Clean(root) {
+			continue // the root module: its imports are matched by mod
+		}
+		modPath := moduleName(dir)
+		if modPath == "" {
+			continue // member without a readable go.mod: not a member
+		}
+		paths = append(paths, modPath)
+	}
+	return paths
+}
+
+// isWorkspaceImport reports whether the import path belongs to a go.work
+// member module (project code, allowed by cross-module Use rules).
+func isWorkspaceImport(importPath string, workspace []string) bool {
+	for _, modPath := range workspace {
+		if isModuleOrSubpackage(importPath, modPath) {
+			return true
+		}
+	}
+	return false
+}
+
+// normalizeImports sorts each edge's targets deterministically: internal
+// targets alphabetically, vendor targets after them, also alphabetically.
+func normalizeImports(imports projectImports) projectImports {
+	for d, targets := range imports.edges {
+		sort.Slice(targets, func(i, j int) bool {
+			if targets[i].isVendor != targets[j].isVendor {
+				return targets[j].isVendor // internal before vendor
+			}
+			if targets[i].isVendor {
+				return targets[i].name < targets[j].name
+			}
+			return targets[i].dir < targets[j].dir
+		})
+		imports.edges[d] = targets
+	}
+	sort.Strings(imports.vendors)
+	return imports
 }
 
 // moduleName reads the module path from the go.mod at root. An empty
@@ -450,8 +635,8 @@ func cmdInit(args []string) int {
 	// Use rules mirroring the imports that already exist.
 	prefix := scaffoldPrefix()
 	dirs, excludes := scanGoDirs(projectPath)
-	edges := scanImports(projectPath, dirs)
-	body := prefix + v2SpecFromDirs(dirs, excludes, edges) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
+	imports := scanImports(projectPath, dirs)
+	body := prefix + v2SpecFromDirs(dirs, excludes, imports) //nolint:gosec // project path is a user-specified CLI argument, same trust level as the rest of init
 	return writeScaffold(projectPath, body, scaffoldMainGo, "")
 }
 

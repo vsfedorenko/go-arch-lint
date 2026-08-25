@@ -168,7 +168,7 @@ func main() {
 
 How this works:
 
-— `init` scans the project and declares every directory with Go code as a component (`Path`), and every import that already exists becomes a `Use` rule — the fresh scaffold mirrors the code as-is and checks green on day one. Tightening a rule is then deleting a `Use` line and watching the violations surface.
+— `init` scans the project and declares every directory with Go code as a component (`Path`), every internal import becomes a `Use` rule, and every third-party library becomes a `Vendor` declaration + `Use` — the fresh scaffold mirrors the code as-is and checks green on day one. Tightening a rule is then deleting a `Use` line and watching the violations surface.
 — `Use` is the only rule: "this path uses these targets". Without an explicit `Use`, everything is denied.
 — `Vendor(name, import)` — an external library as a legal target; the standard library is always allowed.
 — Declaration order mirrors dependency direction: referring forward is a Go compile error.
