@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+- A fresh `init` scaffold on a project importing a hyphenated library behind
+  a major-version suffix (`github.com/go-git/go-git/v5`, `grpc-gateway/v2`)
+  did not compile: the scaffolded vendor variable took the raw parent path
+  segment (`go-git`) as its identifier. Both `vendorBaseName` branches now
+  sanitize the winning segment (`gogit`), and digit-leading vendor names get
+  a `v` prefix so the identifier always compiles.
+
 ## [3.1.8] — 2026-08-25
 
 ### Fixed

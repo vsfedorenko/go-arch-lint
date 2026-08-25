@@ -146,3 +146,37 @@ func TestDefaultScaffoldVendorImportsCheckGreen(t *testing.T) {
 	assert.Equal(t, 0, code, "fresh scaffold with vendor imports must check green; exit %d.\noutput:\n%s", code, out)
 	assert.Contains(t, out, "No warnings found", "expected OK banner")
 }
+
+// TestDefaultScaffoldHyphenatedVendorChecksGreen covers the identifier
+// shape the chi/pgx fixtures missed: a hyphenated library behind a major
+// suffix ("github.com/go-git/go-git/v5") — vendorBaseName returned the
+// raw parent segment "go-git", an invalid Go identifier, so the fresh
+// scaffold did not COMPILE (arch.go: syntax error: unexpected -), and
+// the advertised "3. Run 'go-arch-lint check'" next-step failed before
+// any linting. The name is now sanitized to "gogit" in both branches.
+func TestDefaultScaffoldHyphenatedVendorChecksGreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds the launcher binary")
+	}
+	root := repoRoot(t)
+
+	proj := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(proj, rel), []byte(body), 0o600), "write %s", rel) //nolint:gosec // test fixture in t.TempDir()
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport (\n	\"fmt\"\n\n	\"github.com/go-git/go-git/v5\"\n)\n\nfunc main() { fmt.Println(gogit.ErrRepositoryNotExists) }\n")
+
+	scaffoldDefaultArchDir(t, proj, root)
+
+	// The scaffolded identifier must compile: sanitized, not the raw hyphenated parent.
+	arch, err := os.ReadFile(filepath.Join(proj, ".go-arch-lint", "arch.go"))
+	require.NoError(t, err, "read scaffolded arch.go")
+	assert.Contains(t, string(arch), `gogit := Vendor("gogit", "github.com/go-git/go-git/v5")`,
+		"hyphenated library name must fold to a valid identifier")
+
+	out, code := runArchCheck(t, proj)
+	assert.Equal(t, 0, code, "hyphenated vendor scaffold must compile and check green; exit %d.\noutput:\n%s", code, out)
+	assert.Contains(t, out, "No warnings found", "expected OK banner")
+}
