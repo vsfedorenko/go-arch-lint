@@ -337,9 +337,11 @@ func specVarNames(dirs []string, reserved map[string]bool) map[string]string {
 }
 
 // vendorVarNames assigns a unique Go identifier to every mirrored vendor
-// import: the last path element, sanitized to letters/digits
-// ("golang.org/x/sync/errgroup" -> "errgroup"). Collisions get a numeric
-// suffix; Go keywords and the reserved "build" get a trailing underscore.
+// import: vendorBaseName sanitized to letters/digits ("golang.org/x/sync/
+// errgroup" -> "errgroup", "github.com/go-git/go-git/v5" -> "gogit").
+// Collisions get a numeric suffix; Go keywords and the reserved "build"
+// get a trailing underscore; digit-leading names get a "v" prefix ("4geese"
+// -> "v4geese") so the identifier always compiles.
 func vendorVarNames(vendors []string) map[string]string {
 	names := make(map[string]string, len(vendors))
 	taken := map[string]bool{}
@@ -347,6 +349,9 @@ func vendorVarNames(vendors []string) map[string]string {
 		base := vendorBaseName(v)
 		if base == "" {
 			base = "vendor"
+		}
+		if base[0] >= '0' && base[0] <= '9' {
+			base = "v" + base
 		}
 		if goKeywords[base] || base == "build" {
 			base += "_"
@@ -363,11 +368,15 @@ func vendorVarNames(vendors []string) map[string]string {
 
 // vendorBaseName picks the identifying segment of an import path: the
 // last element, unless it is a major-version suffix ("/v5"), in which
-// case the element before it names the library ("chi", "pgx").
+// case the element before it names the library ("chi", "pgx"). Whatever
+// segment wins is sanitized: hyphens and dots fold away ("go-git" ->
+// "gogit"), because the name becomes BOTH the Vendor display name and
+// the scaffolded variable identifier — an unsanitized segment emits a
+// spec that does not compile.
 func vendorBaseName(importPath string) string {
 	base := sanitizeIdent(path.Base(importPath))
 	if n, err := strconv.Atoi(strings.TrimPrefix(base, "v")); err == nil && n > 1 && base != path.Clean(importPath) {
-		if parent := path.Base(path.Dir(importPath)); parent != "." && parent != "/" {
+		if parent := sanitizeIdent(path.Base(path.Dir(importPath))); parent != "" {
 			return parent
 		}
 	}
