@@ -2,13 +2,27 @@
 
 ## [Unreleased]
 
+## [3.1.9] — 2026-08-25
+
 ### Fixed
-- A fresh `init` scaffold on a project importing a hyphenated library behind
-  a major-version suffix (`github.com/go-git/go-git/v5`, `grpc-gateway/v2`)
-  did not compile: the scaffolded vendor variable took the raw parent path
-  segment (`go-git`) as its identifier. Both `vendorBaseName` branches now
-  sanitize the winning segment (`gogit`), and digit-leading vendor names get
-  a `v` prefix so the identifier always compiles.
+- **Vendor names say the library, not the version suffix (#129).** A
+  scaffolded `Vendor` on a major-versioned module took the import-path
+  suffix as its name (`v5 := Vendor("github.com/go-chi/chi/v5", ...)`,
+  `v52 := ...pgx/v5`) — `path.Base` of a major-versioned module IS the
+  suffix. `vendorBaseName` now names the library: the last path element,
+  unless it is a major-version suffix (`/vN`, N>1), in which case the
+  element before it (`chi`, `pgx`). Diagnostics unchanged: violations
+  still report import paths.
+- **Scaffolded vendor identifiers are always valid Go (#130).** Probing
+  #129 as a fresh consumer found the day-one-red class one layer deeper:
+  `github.com/go-git/go-git/v5` produced `go-git := Vendor(...)` — a raw
+  hyphenated parent segment, not a valid identifier — so the fresh
+  scaffold did not compile (`arch.go: syntax error: unexpected -`) and
+  the advertised "3. Run 'go-arch-lint check'" next-step failed before
+  any linting. Both `vendorBaseName` branches now sanitize the winning
+  segment (`gogit`), and digit-leading vendor names get a `v` prefix
+  (`4geese` → `v4geese`). Pinned by a new integration test with the
+  go-git fixture.
 
 ## [3.1.8] — 2026-08-25
 
