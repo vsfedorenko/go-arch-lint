@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/mod/modfile"
@@ -227,7 +228,7 @@ func v2SpecFromDirs(dirs, excludes []string, imports projectImports) string {
 	}
 	// Vendors are declared before the paths that use them.
 	for _, v := range imports.vendors {
-		fmt.Fprintf(&b, "	%s := Vendor(%q, %q)\n", vendorNames[v], v, v)
+		fmt.Fprintf(&b, "	%s := Vendor(%q, %q)\n", vendorNames[v], vendorBaseName(v), v)
 	}
 	for _, d := range specDeclOrder(dirs, imports.edges) {
 		targets := imports.edges[d]
@@ -343,7 +344,7 @@ func vendorVarNames(vendors []string) map[string]string {
 	names := make(map[string]string, len(vendors))
 	taken := map[string]bool{}
 	for _, v := range vendors {
-		base := sanitizeIdent(path.Base(v))
+		base := vendorBaseName(v)
 		if base == "" {
 			base = "vendor"
 		}
@@ -358,6 +359,19 @@ func vendorVarNames(vendors []string) map[string]string {
 		names[v] = name
 	}
 	return names
+}
+
+// vendorBaseName picks the identifying segment of an import path: the
+// last element, unless it is a major-version suffix ("/v5"), in which
+// case the element before it names the library ("chi", "pgx").
+func vendorBaseName(importPath string) string {
+	base := sanitizeIdent(path.Base(importPath))
+	if n, err := strconv.Atoi(strings.TrimPrefix(base, "v")); err == nil && n > 1 && base != path.Clean(importPath) {
+		if parent := path.Base(path.Dir(importPath)); parent != "." && parent != "/" {
+			return parent
+		}
+	}
+	return base
 }
 
 // sanitizeIdent folds a path element into a Go identifier: lowercase

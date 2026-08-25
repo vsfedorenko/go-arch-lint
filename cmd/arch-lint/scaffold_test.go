@@ -134,7 +134,7 @@ func TestV2SpecFromDirs_VendorRules(t *testing.T) {
 	})
 
 	// Vendor declared first with a derived identifier...
-	assert.Regexp(t, `cases := Vendor\("golang\.org/x/text/cases", "golang\.org/x/text/cases"\)`, spec,
+	assert.Regexp(t, `cases := Vendor\("cases", "golang\.org/x/text/cases"\)`, spec,
 		"vendor must be declared before the paths with a basename identifier")
 	// ...then referenced in the root's Use rule alongside the internal edge.
 	assert.Regexp(t, `Path\("\.", func\(\) \{ Use\(app, cases\) \}\)`, spec,
