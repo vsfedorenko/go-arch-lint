@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.8] — 2026-08-25
+
 ### Fixed
 - A fresh `init` scaffold was red on any project importing a third-party
   library (`golang.org/x/...`, `github.com/...`): the scaffold mirrored
