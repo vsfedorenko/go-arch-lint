@@ -96,14 +96,15 @@ const (
 	tcDirDomain   = "internal/domain"
 	tcDirHandlers = "internal/handlers"
 	tcDirHello    = "internal/hello"
+	tcVendorText  = "golang.org/x/text/cases"
 )
 
 // TestV2SpecFromDirs_ExcludeLine pins the rendered spec: excluded globs
 // appear in one Exclude call after the Path declarations.
 func TestV2SpecFromDirs_ExcludeLine(t *testing.T) {
-	spec := v2SpecFromDirs([]string{".", tcDirApp}, []string{"testdata/**"}, map[string][]string{
-		".": {tcDirApp},
-	})
+	spec := v2SpecFromDirs([]string{".", tcDirApp}, []string{"testdata/**"}, projectImports{edges: map[string][]useTarget{
+		".": {{dir: tcDirApp}},
+	}})
 	assert.Contains(t, spec, `Path("`+tcDirApp+`")`, "spec missing Path decl: %s", spec)
 	assert.Contains(t, spec, `Exclude("testdata/**")`, "spec missing Exclude call: %s", spec)
 
@@ -111,33 +112,106 @@ func TestV2SpecFromDirs_ExcludeLine(t *testing.T) {
 	// referenced targets become vars; sources stay as plain statements.
 	assert.Regexp(t, `app := Path\("`+tcDirApp+`"\)`,
 		spec, "dependency must be declared as a var first")
-	assert.Regexp(t, `Path\(".", func\(\) \{ Use\(app\) \}\)`,
+	assert.Regexp(t, `Path\("\.", func\(\) \{ Use\(app\) \}\)`,
 		spec, "root's Use rule references the dependency var")
 
 	// no excludes -> no Exclude call and no comment noise
-	plain := v2SpecFromDirs([]string{"."}, nil, nil)
+	plain := v2SpecFromDirs([]string{"."}, nil, projectImports{})
 	assert.NotContains(t, plain, "Exclude(", "unexpected Exclude in %s", plain)
 	assert.Contains(t, plain, `Path(".")`, "empty module falls back to the root: %s", plain)
 }
 
+// TestV2SpecFromDirs_VendorRules pins the vendor mirroring shape: third-party
+// imports become Vendor declarations listed before the paths, each path's
+// Use rule mixes internal and vendor targets, and a path variable never
+// collides with a vendor variable of the same base name.
+func TestV2SpecFromDirs_VendorRules(t *testing.T) {
+	spec := v2SpecFromDirs([]string{".", tcDirApp}, nil, projectImports{
+		edges: map[string][]useTarget{
+			".": {{dir: tcDirApp}, {name: tcVendorText, isVendor: true}},
+		},
+		vendors: []string{tcVendorText},
+	})
+
+	// Vendor declared first with a derived identifier...
+	assert.Regexp(t, `cases := Vendor\("golang\.org/x/text/cases", "golang\.org/x/text/cases"\)`, spec,
+		"vendor must be declared before the paths with a basename identifier")
+	// ...then referenced in the root's Use rule alongside the internal edge.
+	assert.Regexp(t, `Path\("\.", func\(\) \{ Use\(app, cases\) \}\)`, spec,
+		"root's Use must reference internal then vendor targets")
+}
+
+// TestScanImports_VendorAndStdlib pins the classification: internal edges
+// are directories, stdlib imports are skipped, third-party imports become
+// vendor targets.
+func TestScanImports_VendorAndStdlib(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		p := filepath.Join(root, rel)
+		require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o755), "mkdir %s", rel)
+		require.NoError(t, os.WriteFile(p, []byte(body), 0o600), "write %s", rel)
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport (\n	\"fmt\"\n\n	\"golang.org/x/text/cases\"\n	\"fixt/internal/hello\"\n)\n")
+	write(tcDirHello+"/hello.go", "package hello\n")
+
+	imports := scanImports(root, []string{".", tcDirHello})
+	assert.Equal(t, map[string][]useTarget{
+		".": {
+			{dir: "internal/hello"},
+			{name: tcVendorText, isVendor: true},
+		},
+	}, imports.edges, "root must mirror hello + the x/text vendor, not fmt")
+	assert.Equal(t, []string{tcVendorText}, imports.vendors,
+		"only the third-party import is a vendor")
+}
+
+// TestScanImports_WorkspaceMemberIsProject pins the go.work contract: an
+// import of a workspace member module classifies as project code and is
+// NOT mirrored as a vendor (the scanner resolves it via the workspace).
+func TestScanImports_WorkspaceMemberIsProject(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		p := filepath.Join(root, rel)
+		require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o755), "mkdir %s", rel)
+		require.NoError(t, os.WriteFile(p, []byte(body), 0o600), "write %s", rel)
+	}
+	write("go.mod", "module example.com/root\n\ngo 1.25\n")
+	write("go.work", "go 1.25\n\nuse ./two\n")
+	write("two/go.mod", "module example.com/y\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport \"example.com/y\"\n")
+
+	imports := scanImports(root, []string{"."})
+	assert.Empty(t, imports.edges, "workspace member import must not be mirrored")
+	assert.Empty(t, imports.vendors, "workspace member import is project code, not vendor")
+}
+
 // TestSpecVarNames pins identifier derivation: root, sanitized basenames,
-// collision suffixes and keyword escapes.
+// collision suffixes and keyword escapes — including collision avoidance
+// against vendor-reserved names.
 func TestSpecVarNames(t *testing.T) {
-	names := specVarNames([]string{".", "internal/app", "pkg/app", "cmd/type", "weird/My-Dir"})
+	names := specVarNames([]string{".", "internal/app", "pkg/app", "cmd/type", "weird/My-Dir"}, nil)
 	assert.Equal(t, "root", names["."], "module root identifier")
 	assert.Equal(t, "app", names["internal/app"], "basename identifier")
 	assert.Equal(t, "app2", names["pkg/app"], "collision gets a numeric suffix")
 	assert.Equal(t, "type_", names["cmd/type"], "keyword gets a trailing underscore")
 	assert.Equal(t, "mydir", names["weird/My-Dir"], "symbols fold, case lowers")
+
+	reserved := map[string]bool{"cases": true}
+	names = specVarNames([]string{".", "internal/cases"}, reserved)
+	assert.Equal(t, "root", names["."], "module root identifier")
+	assert.Equal(t, "cases2", names["internal/cases"], "path colliding with a vendor name is renumbered")
 }
 
 // TestSpecDeclOrder pins dependencies-first ordering: a referenced path
 // is declared before any path that Uses it.
 func TestSpecDeclOrder(t *testing.T) {
 	dirs := []string{".", tcDirHandlers, tcDirDomain}
-	edges := map[string][]string{
-		".":           {tcDirHandlers},
-		tcDirHandlers: {tcDirDomain},
+	edges := map[string][]useTarget{
+		".":           {{dir: tcDirHandlers}},
+		tcDirHandlers: {{dir: tcDirDomain}},
 	}
 	order := specDeclOrder(dirs, edges)
 	pos := map[string]int{}
@@ -162,17 +236,17 @@ func TestScanImports(t *testing.T) {
 	}
 	write("go.mod", "module fixt\n\ngo 1.25\n")
 	write("main.go", "package main\n\nimport \"fixt/internal/hello\"\n")
-	write("internal/hello/hello.go", "package hello\n")
-	write("internal/hello/hello_test.go", "package hello_test\n\nimport _ \"fixt\"\n")
+	write(tcDirHello+"/hello.go", "package hello\n")
+	write(tcDirHello+"/hello_test.go", "package hello_test\n\nimport _ \"fixt\"\n")
 
-	edges := scanImports(root, []string{".", "internal/hello"})
-	assert.Equal(t, map[string][]string{
-		".": {"internal/hello"},
-	}, edges, "only the non-test root->hello edge must be scanned")
+	imports := scanImports(root, []string{".", tcDirHello})
+	assert.Equal(t, map[string][]useTarget{
+		".": {{dir: "internal/hello"}},
+	}, imports.edges, "only the non-test root->hello edge must be scanned")
 
 	// no go.mod -> no edges, scaffold still renders declarations
 	nomod := t.TempDir()
-	assert.Empty(t, scanImports(nomod, []string{"."}), "missing go.mod disables the scan")
+	assert.Empty(t, scanImports(nomod, []string{"."}).edges, "missing go.mod disables the scan")
 }
 
 func TestCmdInit_AlreadyExists(t *testing.T) {

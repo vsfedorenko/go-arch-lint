@@ -107,9 +107,42 @@ func TestDefaultScaffoldEmptyModuleChecksGreen(t *testing.T) {
 	root := repoRoot(t)
 
 	proj := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(proj, "go.mod"), []byte("module fixt\n\ngo 1.25\n"), 0o600), "write go.mod") //nolint:gosec // test fixture in t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(proj, "go.mod"), []byte("module fixt\n\ngo 1.25\n"), 0o600), "write go.mod") //nolint:gosec // test fixture
 
 	scaffoldDefaultArchDir(t, proj, root)
 	out, code := runArchCheck(t, proj)
 	assert.Equal(t, 0, code, "empty module must check green; exit %d.\noutput:\n%s", code, out)
+}
+
+// TestDefaultScaffoldVendorImportsCheckGreen covers the day-one shape the
+// internal-only fixtures missed: a project importing a third-party library
+// (golang.org/x/text/cases). The scaffold mirrored only internal imports,
+// so the vendor linter (on by default) fired "shouldn't depend on
+// golang.org/x/text/cases" on a fresh `init` — the advertised
+// "3. Run 'go-arch-lint check'" next-step was red. The scaffold now mirrors
+// third-party imports as Vendor declarations + Use targets.
+func TestDefaultScaffoldVendorImportsCheckGreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds the launcher binary")
+	}
+	root := repoRoot(t)
+
+	proj := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(proj, rel), []byte(body), 0o600), "write %s", rel) //nolint:gosec // test fixture
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport (\n	\"fmt\"\n\n	\"golang.org/x/text/cases\"\n)\n\nfunc main() { fmt.Println(cases.Title.String(\"hello\")) }\n")
+
+	scaffoldDefaultArchDir(t, proj, root)
+
+	// The scaffold must mirror the x/text import as a Vendor + Use rule.
+	arch, err := os.ReadFile(filepath.Join(proj, ".go-arch-lint", "arch.go"))
+	require.NoError(t, err, "read scaffolded arch.go")
+	assert.Contains(t, string(arch), `Vendor("golang.org/x/text/cases"`, "scaffold must declare the third-party import as a Vendor")
+
+	out, code := runArchCheck(t, proj)
+	assert.Equal(t, 0, code, "fresh scaffold with vendor imports must check green; exit %d.\noutput:\n%s", code, out)
+	assert.Contains(t, out, "No warnings found", "expected OK banner")
 }
