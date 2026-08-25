@@ -34,6 +34,4 @@ require (
 	oss.terrastruct.com/util-go v0.0.0-20250213174338-243d8661088a // indirect
 )
 
-replace github.com/vsfedorenko/go-arch-lint => ../../..
-
 replace github.com/vsfedorenko/go-arch-lint/v3 => ../../../

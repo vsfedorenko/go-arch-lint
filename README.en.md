@@ -108,9 +108,9 @@ Vendors (`pgx`, `chi`) live in the single outermost layer — framework and
 the entry point; inner layers know nothing about them. Importing `pgx`
 from `usecase` is a file:line violation.
 
-Both are real projects in [examples/](examples/): the hexagonal one is
-CI-checked, the clean one you can scaffold with `go-arch-lint init` and
-compare.
+All three are real projects in [examples/](examples/) (basic — layers, ddd —
+bounded contexts, hexagonal — ports and adapters), and CI checks every one of
+them: the `examples` job runs `go-arch-lint check` on all three per PR.
 
 ## Requirements
 

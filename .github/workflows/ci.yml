@@ -79,6 +79,38 @@ jobs:
       - name: Check own architecture
         run: go run ./cmd/arch-lint check
 
+  examples:
+    name: examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.25.13'
+
+      # The README promises the examples are checked; make it true. Each
+      # example's .go-arch-lint/ module replaces the dependency with the
+      # CURRENT tree (../../../), so this exercises the examples against
+      # the code under review, not the last published release.
+      - name: Build local launcher
+        run: |
+          mkdir -p .example-bin
+          go build -o .example-bin/go-arch-lint ./cmd/arch-lint
+          echo "$PWD/.example-bin" >> "$GITHUB_PATH"
+
+      - name: Check examples
+        run: |
+          set -e
+          for example in basic ddd hexagonal; do
+            echo "::group::examples/$example"
+            (cd "examples/$example/.go-arch-lint" && go mod tidy)
+            (cd "examples/$example" && go-arch-lint check)
+            echo "::endgroup::"
+          done
+
   action-smoke:
     name: action smoke
     runs-on: ubuntu-latest
