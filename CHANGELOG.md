@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+
+## [3.1.10] — 2026-08-26
+
 ### Changed
 - **Moving major tag `v3` for the GitHub Action (#131).** The release
   workflow now moves a bare `v3` tag onto every released commit (same
