@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -178,5 +179,81 @@ func TestDefaultScaffoldHyphenatedVendorChecksGreen(t *testing.T) {
 
 	out, code := runArchCheck(t, proj)
 	assert.Equal(t, 0, code, "hyphenated vendor scaffold must compile and check green; exit %d.\noutput:\n%s", code, out)
+	assert.Contains(t, out, "No warnings found", "expected OK banner")
+}
+
+// TestDefaultScaffoldSharedVendorChecksGreen covers the most common
+// real-world shape the single-package fixtures missed: TWO packages
+// importing the SAME third-party library (errgroup). The vendor list was
+// not deduplicated, so the scaffold emitted the same
+// `errgroup2 := Vendor(...)` declaration twice — the fresh spec did not
+// COMPILE ("no new variables on left side of :="), and the advertised
+// "3. Run 'go-arch-lint check'" next-step failed before any linting
+// (probe on v3.1.10). Vendors are now deduplicated in normalizeImports.
+func TestDefaultScaffoldSharedVendorChecksGreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds the launcher binary")
+	}
+	root := repoRoot(t)
+
+	proj := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(proj, "internal", "util"), 0o755), "mkdir internal/util") //nolint:gosec // test fixture dirs
+	write := func(rel, body string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(proj, rel), []byte(body), 0o600), "write %s", rel) //nolint:gosec // test fixture in t.TempDir()
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport (\n\t\"fmt\"\n\n\t\"golang.org/x/sync/errgroup\"\n\n\t\"fixt/internal/util\"\n)\n\nfunc main() {\n\tvar g errgroup.Group\n\tg.Go(func() error { util.U(); return nil })\n\tfmt.Println(g.Wait())\n}\n")
+	write("internal/util/util.go", "package util\n\nimport \"golang.org/x/sync/errgroup\"\n\n// U does nothing; it exists so two packages share one vendor import.\nfunc U() { var g errgroup.Group; _ = g.Wait() }\n")
+
+	scaffoldDefaultArchDir(t, proj, root)
+
+	// The vendor must be declared exactly once.
+	arch, err := os.ReadFile(filepath.Join(proj, ".go-arch-lint", "arch.go"))
+	require.NoError(t, err, "read scaffolded arch.go")
+	assert.Equal(t, 1, strings.Count(string(arch), `Vendor("errgroup"`),
+		"a library shared by two packages must be declared once: %s", arch)
+
+	out, code := runArchCheck(t, proj)
+	assert.Equal(t, 0, code, "fresh scaffold with a shared vendor must compile and check green; exit %d.\noutput:\n%s", code, out)
+	assert.Contains(t, out, "No warnings found", "expected OK banner")
+}
+
+// TestDefaultScaffoldVendorNameCollisionChecksGreen covers the
+// display-name collision the identifier-only dedup missed: two libraries
+// sharing a basename (gofrs/uuid vs google/uuid) scaffolded as
+// uuid := Vendor("uuid", gofrs) and uuid2 := Vendor("uuid", google) —
+// the IDENTIFIER was deduplicated but the display name was not, and the
+// DSL panics on a duplicate Vendor name at spec build time, so the fresh
+// `init` never even compiled (probe on v3.1.10). The display name now
+// uses the same unique identifier, giving uuid/uuid2.
+func TestDefaultScaffoldVendorNameCollisionChecksGreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds the launcher binary")
+	}
+	root := repoRoot(t)
+
+	proj := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(proj, "internal", "util"), 0o755), "mkdir internal/util") //nolint:gosec // test fixture dirs
+	write := func(rel, body string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(proj, rel), []byte(body), 0o600), "write %s", rel) //nolint:gosec // test fixture in t.TempDir()
+	}
+	write("go.mod", "module fixt\n\ngo 1.25\n")
+	write("main.go", "package main\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/google/uuid\"\n\n\t\"fixt/internal/util\"\n)\n\nfunc main() {\n\tfmt.Println(uuid.NewString(), util.V())\n}\n")
+	write("internal/util/util.go", "package util\n\nimport \"github.com/gofrs/uuid\"\n\n// V does nothing; it exists so two uuid libraries share a basename.\nfunc V() string { return uuid.Must(uuid.NewV4()).String() }\n")
+
+	scaffoldDefaultArchDir(t, proj, root)
+
+	// Both display names must be unique: the DSL panics on duplicates.
+	arch, err := os.ReadFile(filepath.Join(proj, ".go-arch-lint", "arch.go"))
+	require.NoError(t, err, "read scaffolded arch.go")
+	assert.Contains(t, string(arch), `uuid := Vendor("uuid", "github.com/gofrs/uuid")`,
+		"first uuid library keeps the basename: %s", arch)
+	assert.Contains(t, string(arch), `uuid2 := Vendor("uuid2", "github.com/google/uuid")`,
+		"colliding library must get a unique display name: %s", arch)
+
+	out, code := runArchCheck(t, proj)
+	assert.Equal(t, 0, code, "fresh scaffold with colliding vendor basenames must compile and check green; exit %d.\noutput:\n%s", code, out)
 	assert.Contains(t, out, "No warnings found", "expected OK banner")
 }
