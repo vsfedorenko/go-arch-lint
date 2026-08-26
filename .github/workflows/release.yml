@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+      - '!v[0-9]' # bare major tags (v3) are moved post-release, not releases
 
 permissions:
   contents: write
@@ -35,5 +36,15 @@ jobs:
         with:
           version: latest
           args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Moving major tag: consumers pin @v3 and stay on the latest v3.x
+      # (same convention as the Docker tags below). Runs after GoReleaser
+      # so the tag always points at a released commit.
+      - name: Move major tag v3
+        run: |
+          git tag -f v3 "$GITHUB_SHA"
+          git push origin "refs/tags/v3" --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

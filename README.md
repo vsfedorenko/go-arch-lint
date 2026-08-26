@@ -483,7 +483,7 @@ HTML-отчёт (инлайн-CSS, без скриптов и внешних а�
 - uses: actions/checkout@v7
 - uses: actions/setup-go@v7
   with: { go-version: '1.25.13' }
-- uses: vsfedorenko/go-arch-lint@v3.1.8
+- uses: vsfedorenko/go-arch-lint@v3 # moving major tag: always the latest v3.x
 ```
 
 Подробности и все inputs: [docs/json-schema.md → GitHub Action](docs/json-schema.md#github-action-with-inline-annotations).
