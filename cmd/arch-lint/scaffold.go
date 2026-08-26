@@ -226,9 +226,14 @@ func v2SpecFromDirs(dirs, excludes []string, imports projectImports) string {
 		// valid (at least one component must be defined).
 		b.WriteString("	Path(\".\")\n")
 	}
-	// Vendors are declared before the paths that use them.
+	// Vendors are declared before the paths that use them. The display
+	// name IS the identifier: one unique name per import path serves both
+	// roles, so two libraries sharing a basename (gofrs/uuid vs
+	// google/uuid) get uuid/uuid2 in the declaration AND in Use targets —
+	// distinct Vendor names are a DSL contract (a duplicate name panics
+	// at spec build time).
 	for _, v := range imports.vendors {
-		fmt.Fprintf(&b, "	%s := Vendor(%q, %q)\n", vendorNames[v], vendorBaseName(v), v)
+		fmt.Fprintf(&b, "	%s := Vendor(%q, %q)\n", vendorNames[v], vendorNames[v], v)
 	}
 	for _, d := range specDeclOrder(dirs, imports.edges) {
 		targets := imports.edges[d]
@@ -593,6 +598,10 @@ func isWorkspaceImport(importPath string, workspace []string) bool {
 
 // normalizeImports sorts each edge's targets deterministically: internal
 // targets alphabetically, vendor targets after them, also alphabetically.
+// The vendor list is sorted and DEDUPLICATED: several directories routinely
+// import the same library (errgroup in every package), and a duplicated
+// entry would emit the same `x := Vendor(...)` declaration twice — a spec
+// that does not compile.
 func normalizeImports(imports projectImports) projectImports {
 	for d, targets := range imports.edges {
 		sort.Slice(targets, func(i, j int) bool {
@@ -607,6 +616,14 @@ func normalizeImports(imports projectImports) projectImports {
 		imports.edges[d] = targets
 	}
 	sort.Strings(imports.vendors)
+	deduped := imports.vendors[:0]
+	for i, v := range imports.vendors {
+		if i > 0 && v == imports.vendors[i-1] {
+			continue
+		}
+		deduped = append(deduped, v)
+	}
+	imports.vendors = deduped
 	return imports
 }
 

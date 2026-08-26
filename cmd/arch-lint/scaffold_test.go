@@ -97,6 +97,14 @@ const (
 	tcDirHandlers = "internal/handlers"
 	tcDirHello    = "internal/hello"
 	tcVendorText  = "golang.org/x/text/cases"
+
+	// tcVendorErrgroup is the canonical shared-vendor fixture: errgroup
+	// imported by several packages is the most common real-world shape.
+	tcVendorErrgroup = "golang.org/x/sync/errgroup"
+	// tcVendorGofrsUUID and tcVendorGoogleUUID collide on the "uuid"
+	// basename — the display-name uniqueness fixture.
+	tcVendorGofrsUUID  = "github.com/gofrs/uuid"
+	tcVendorGoogleUUID = "github.com/google/uuid"
 )
 
 // TestV2SpecFromDirs_ExcludeLine pins the rendered spec: excluded globs
@@ -396,4 +404,48 @@ func TestLauncher_InitUnknownFlagFailsFast(t *testing.T) {
 			assert.Empty(t, stdout.String(), "nothing on stdout")
 		})
 	}
+}
+
+// TestNormalizeImports_DedupesSharedVendors pins the shared-vendor
+// contract: two directories importing the same third-party library must
+// yield ONE vendor entry, not two — a duplicated entry rendered as the
+// same `x := Vendor(...)` declaration twice, a spec that does not compile
+// (probe on v3.1.10: errgroup used by two packages broke every fresh
+// `init` with "no new variables on left side of :=").
+func TestNormalizeImports_DedupesSharedVendors(t *testing.T) {
+	got := normalizeImports(projectImports{
+		edges: map[string][]useTarget{
+			".":           {{dir: tcDirApp}, {name: tcVendorErrgroup, isVendor: true}},
+			tcDirApp:      {{name: tcVendorErrgroup, isVendor: true}},
+			tcDirHandlers: {{name: tcVendorErrgroup, isVendor: true}},
+		},
+		vendors: []string{tcVendorErrgroup, tcVendorErrgroup, tcVendorErrgroup},
+	})
+	assert.Equal(t, []string{tcVendorErrgroup}, got.vendors,
+		"a library imported by several directories must be declared once")
+	assert.Equal(t, []useTarget{{name: tcVendorErrgroup, isVendor: true}}, got.edges[tcDirApp],
+		"per-directory edges stay intact")
+}
+
+// TestV2SpecFromDirs_VendorNamesUnique pins the Vendor display-name
+// contract: the DSL panics on a duplicate Vendor NAME, so two libraries
+// sharing a basename (gofrs/uuid vs google/uuid) must scaffold as
+// uuid/uuid2 in BOTH the declaration and the Use targets — the identifier
+// and the display name are one value now, not two independent machines.
+func TestV2SpecFromDirs_VendorNamesUnique(t *testing.T) {
+	spec := v2SpecFromDirs([]string{"."}, nil, projectImports{
+		edges: map[string][]useTarget{
+			".": {{name: tcVendorGofrsUUID, isVendor: true}, {name: tcVendorGoogleUUID, isVendor: true}},
+		},
+		vendors: []string{tcVendorGofrsUUID, tcVendorGoogleUUID},
+	})
+
+	assert.Contains(t, spec, `uuid := Vendor("uuid", "github.com/gofrs/uuid")`,
+		"first library keeps the basename: %s", spec)
+	assert.Contains(t, spec, `uuid2 := Vendor("uuid2", "github.com/google/uuid")`,
+		"colliding library gets the SAME deduplicated name as its identifier: %s", spec)
+	assert.Contains(t, spec, `Path(".", func() { Use(uuid, uuid2) })`,
+		"Use targets reference the deduplicated names: %s", spec)
+	assert.NotContains(t, spec, `Vendor("uuid", "github.com/google/uuid")`,
+		"a duplicate Vendor display name panics the DSL at spec build time")
 }

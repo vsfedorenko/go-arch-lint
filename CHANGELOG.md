@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Shared and colliding vendor imports in the `init` scaffold (#133).**
+  Two bugs found by a synthetic probe on v3.1.10, both breaking the
+  advertised "3. Run 'go-arch-lint check'" happy path on ordinary
+  projects:
+  - a library imported by TWO packages (errgroup in every package is
+    the canonical shape) was declared twice — `errgroup2 := Vendor(...)`
+    on two lines, a fresh spec that did not compile
+    ("no new variables on left side of :=");
+  - two libraries sharing a basename (gofrs/uuid vs google/uuid)
+    scaffolded as `uuid := Vendor("uuid", …)` twice with only the
+    IDENTIFIER deduplicated — the DSL panics on a duplicate Vendor
+    display name, so the spec never built.
+  The vendor list is now deduplicated in `normalizeImports`, and the
+  display name IS the identifier (one unique name per import path
+  serves both roles: `uuid` / `uuid2`).
+
 ## [3.1.10] — 2026-08-26
 
 ### Changed
