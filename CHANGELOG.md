@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.11] — 2026-08-26
+
 ### Fixed
 - **Shared and colliding vendor imports in the `init` scaffold (#133).**
   Two bugs found by a synthetic probe on v3.1.10, both breaking the
