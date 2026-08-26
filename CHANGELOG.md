@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Moving major tag `v3` for the GitHub Action (#131).** The release
+  workflow now moves a bare `v3` tag onto every released commit (same
+  convention as the Docker `{{.Major}}` tags), and README/docs examples
+  pin `vsfedorenko/go-arch-lint@v3` instead of an exact patch. The exact
+  patch pin went stale between releases twice (v3.1.5 → #128 → v3.1.8 →
+  v3.1.9), forcing manual doc catch-up PRs; `@v3` never goes stale. The
+  tag push is excluded from the release trigger (`!v[0-9]`) so moving
+  the tag does not re-run GoReleaser.
 
 ## [3.1.9] — 2026-08-25
 

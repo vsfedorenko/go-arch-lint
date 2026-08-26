@@ -123,7 +123,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: '1.25'
-      - uses: vsfedorenko/go-arch-lint@main   # pin to a tag once released
+      - uses: vsfedorenko/go-arch-lint@v3 # moving major tag: always the latest v3.x
 ```
 
 Inputs: `version` (release to install, default `latest`), `project-path`
