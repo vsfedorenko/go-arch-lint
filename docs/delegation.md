@@ -36,7 +36,7 @@ code, and the failure modes you should not be surprised by.
 | Command dispatch | `init`/`version`/`help` are local; any other command delegates |
 | `--project-path` / `-p` | Rewritten to an **absolute** path before delegation (the spec module runs from inside `.go-arch-lint/`) |
 | No `--project-path` given | `--project-path <abs>` is **appended** — the spec's default (`../`) is overridden deterministically |
-| Other flags | Passed through verbatim (`--format json`, `--max-warnings`, `--no-colors`, `--output-type`, `--json`, `--output-json-one-line`, …) and parsed by the scaffolded runner (`archlint.MustRunCLI` → cobra flag tree) |
+| Other flags | Passed through verbatim (`--format json`, `--max-warnings`, `--no-colors`, `--output-type`, `--json`, `--output-json-one-line`, …) and parsed by the scaffolded runner (`archlint.MustRunCLI` → cobra flag tree). A pass-through value flag without its value (`check --format`) fails fast in the launcher with `flag needs an argument` — the delegated parser would otherwise consume the launcher's appended defaults and name a flag the user never typed |
 | stdout / stdin | Streamed through untouched (JSON output is pipe-safe) |
 | stderr | **Teed**: shown to you *and* captured, because the child's exit code is only available there (see below) |
 

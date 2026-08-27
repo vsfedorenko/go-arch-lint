@@ -106,6 +106,73 @@ Example:
 - `naming` — forbidden package name: `package` set, `rule` carries the
   banned name, package path and file count.
 
+## Explain model (`explain --output-type json`)
+
+`go-arch-lint explain <import>` dissects one import path against the
+current spec. The JSON wrapper is the same `Type`/`Payload` envelope as
+every other command; the payload schema:
+
+| Field            | Type    | Always | Description                                                       |
+|------------------|---------|--------|-------------------------------------------------------------------|
+| `ModuleName`     | string  | yes    | Module path of the checked project                                |
+| `ImportPath`     | string  | yes    | The queried path, echoed back                                     |
+| `ImportType`     | string  | yes    | `std` \| `project` \| `vendor` — the same classification `check` uses |
+| `OwnerComponent` | string  | yes    | Component whose paths contain the import (project imports only, `""` otherwise) |
+| `Verdicts[]`     | array   | yes    | One entry per declared component (may be empty)                  |
+| `Usages[]`       | array   | yes    | Actual import sites found in the scan, capped at 20              |
+| `OmittedUsages`  | number  | yes    | Usage sites beyond the cap                                        |
+
+`Verdicts[]` entries:
+
+| Field       | Type   | Always | Description                                                       |
+|-------------|--------|--------|-------------------------------------------------------------------|
+| `Component` | string | yes    | Component the verdict is for                                      |
+| `Allowed`   | bool   | yes    | Decision under the current spec                                   |
+| `Rule`      | string | yes    | The exact rule that produced the decision (e.g. `Use(core) in arch.go:12`) |
+| `Fix`       | string | no     | Concrete spec edit that would allow the import (denied verdicts only) |
+
+`Usages[]` entries: `File` (project-relative path), `Line` (1-based),
+`Component` (importing component, `""` for files outside any component).
+
+Example:
+
+```json
+{
+  "Type": "models.Explain",
+  "Payload": {
+    "ModuleName": "example.com/app",
+    "ImportPath": "example.com/app/internal/beta",
+    "ImportType": "project",
+    "OwnerComponent": "beta",
+    "Verdicts": [
+      {
+        "Component": "alpha",
+        "Allowed": false,
+        "Rule": "path \"internal/beta\" is part of another component this one does not Use",
+        "Fix": "allow the dependency: Use(<component owning \"example.com/app/internal/beta\">) inside this component's Path(...)"
+      },
+      {
+        "Component": "beta",
+        "Allowed": true,
+        "Rule": "path \"internal/beta\" is part of this component or of a component it Uses"
+      }
+    ],
+    "Usages": [
+      {"File": "/internal/alpha/a.go", "Line": 3, "Component": "alpha"}
+    ],
+    "OmittedUsages": 0
+  }
+}
+```
+
+Notes:
+
+- The command is a **query**: exit `0` means the explanation was produced
+  (even when verdicts are `DENY`); exit `2` is a config error (invalid
+  spec, unreadable project). Exit codes never depend on the verdicts.
+- `--format json` is the `check` command's flat-violations format and
+  does not apply here; use `--output-type json` (or the `--json` alias).
+
 ## GitHub Action with inline annotations
 
 The official composite action renders violations as `::error` / `::notice`
