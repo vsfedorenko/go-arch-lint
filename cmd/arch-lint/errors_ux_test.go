@@ -119,6 +119,15 @@ func TestLauncher_PathFlagWithoutValue_FailsFast(t *testing.T) {
 		{"out followed by flag", []string{cmdGraph, flagOut, "--verbose"}, flagOut},
 		{"baseline as last token", []string{"check", flagBaseline}, flagBaseline},
 		{"project path as last token", []string{"check", flagProjectPath}, flagProjectPath},
+		// Pass-through value flags: the launcher appends its own defaults
+		// (--project-path=..., graph's --out=...), and the delegated parser
+		// consumes the next token unconditionally — without this guard the
+		// error named a flag the user never typed
+		// (`check --format` → "unknown format: --project-path=/abs").
+		{"format as last token", []string{testCheckCmd, flagFormat}, flagFormat},
+		{"format followed by flag", []string{"explain", "fmt", flagFormat, "--no-colors"}, flagFormat},
+		{"output type as last token", []string{testCheckCmd, flagOutputType}, flagOutputType},
+		{"max warnings as last token", []string{testCheckCmd, flagMaxWarnings}, flagMaxWarnings},
 	}
 
 	for _, tt := range tests {

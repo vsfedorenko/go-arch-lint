@@ -9,6 +9,10 @@ import (
 // File is not a credential store; testOutFile is a graph output fixture name.
 const testOutFile = "graph.svg"
 
+// testCheckCmd is the delegated check command name in test tables (the
+// launcher itself switches on string literals).
+const testCheckCmd = "check"
+
 func TestSplitPathFlag(t *testing.T) {
 	t.Parallel()
 
@@ -51,10 +55,7 @@ func TestSplitPathFlag(t *testing.T) {
 			wantValue:  testOutFile,
 			wantIsPath: true,
 		},
-		{
-			name:  "unrelated flag",
-			token: "--format",
-		},
+		{name: "unrelated flag", token: flagFormat},
 		{
 			name:  "plain arg",
 			token: testOutFile,
@@ -100,6 +101,34 @@ func TestIsFlagLike(t *testing.T) {
 			t.Parallel()
 
 			assert.Equal(t, tt.want, isFlagLike(tt.token))
+		})
+	}
+}
+
+// TestValueFollows pins the missing-value guard for pass-through value
+// flags: a token after the flag counts as its value unless it looks like
+// another flag (a bare negative number still counts — pflag accepts it
+// as an int value for --max-warnings).
+func TestValueFollows(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		args []string
+		i    int
+		want bool
+	}{
+		{name: "plain value follows", args: []string{testCheckCmd, flagFormat, "json"}, i: 1, want: true},
+		{name: "flag is last token", args: []string{testCheckCmd, flagFormat}, i: 1, want: false},
+		{name: "next token is a flag", args: []string{testCheckCmd, flagFormat, "--no-colors"}, i: 1, want: false},
+		{name: "next token is negative number", args: []string{testCheckCmd, flagMaxWarnings, "-5"}, i: 1, want: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, valueFollows(tt.args, tt.i))
 		})
 	}
 }

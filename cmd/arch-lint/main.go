@@ -22,6 +22,12 @@ const (
 	flagOut         = "--out"
 	flagHelp        = "--help"
 
+	// Value flags passed through to the delegated runner verbatim; the
+	// launcher guards their missing-value form (see cmdDelegate).
+	flagFormat      = "--format"
+	flagOutputType  = "--output-type"
+	flagMaxWarnings = "--max-warnings"
+
 	// defaultGraphOutFile mirrors the graph command's own default output
 	// file name (internal/app/container/container_cmd_graph.go).
 	defaultGraphOutFile = "go-arch-lint-graph.svg"
@@ -173,6 +179,32 @@ func run() int {
 	}
 }
 
+// valueFlagNames lists the pass-through flags that require a value, for
+// the missing-value guard below.
+var valueFlagNames = []string{flagFormat, flagOutputType, flagMaxWarnings}
+
+// valueFollows reports whether the token after a space-form value flag
+// can serve as its value. pflag consumes the next token unconditionally,
+// but a flag-looking token (except a bare number — `--max-warnings -5`
+// is a value pflag accepts) is almost certainly a mistyped companion;
+// and when the flag is the LAST token there is no next token at all.
+func valueFollows(args []string, i int) bool {
+	if i+1 >= len(args) {
+		return false
+	}
+
+	next := args[i+1]
+	if !isFlagLike(next) {
+		return true
+	}
+
+	if _, err := strconv.ParseInt(next, 10, 64); err == nil {
+		return true
+	}
+
+	return false
+}
+
 func cmdDelegate(command string, args []string) int {
 	// --help must never require a project: a user exploring the tool outside
 	// any project should get usage, not a config error (same class as
@@ -183,6 +215,25 @@ func cmdDelegate(command string, args []string) int {
 		if a == flagHelp || a == "-h" {
 			printUsage()
 			return 0
+		}
+	}
+
+	// Value flags that pass through verbatim must not lose their value.
+	// The launcher APPENDS its own defaults (--project-path=..., graph's
+	// --out=...), and the delegated parser consumes the next token
+	// unconditionally — a bare `--format` would silently take the appended
+	// default as its value and the error would name a flag the user never
+	// typed (`check --format` → "unknown format: --project-path=/abs").
+	// Fail fast here, naming the real flag.
+	for i, a := range args {
+		for _, name := range valueFlagNames {
+			if a != name || valueFollows(args, i) {
+				continue
+			}
+
+			fmt.Fprintf(os.Stderr, "Error: flag needs an argument: %s\n", name)
+			fmt.Fprintf(os.Stderr, "Run 'go-arch-lint help' for usage.\n")
+			return 1
 		}
 	}
 
