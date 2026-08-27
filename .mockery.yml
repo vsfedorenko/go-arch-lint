@@ -11,6 +11,9 @@ packages:
   github.com/vsfedorenko/go-arch-lint/v3/internal/operations/check:
     config:
       all: true
+  github.com/vsfedorenko/go-arch-lint/v3/internal/operations/explain:
+    config:
+      all: true
   github.com/vsfedorenko/go-arch-lint/v3/internal/operations/mapping:
     config:
       all: true

@@ -47,7 +47,7 @@ var build = Spec(func() {
 // scaffoldMainGo is the stable runner for v2 specs. Keep user-facing
 // configuration in arch.go; this file only forwards CLI flags and executes
 // the spec. MustRunCLI so delegated commands (mapping,
-// graph, selfInspect) keep their own behavior instead of silently
+// graph, explain, selfInspect) keep their own behavior instead of silently
 // degrading to a check run.
 const scaffoldMainGo = `package main
 

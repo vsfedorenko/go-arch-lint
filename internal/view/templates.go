@@ -13,6 +13,9 @@ var viewCheck []byte
 //go:embed view_error.gohtml
 var viewError []byte
 
+//go:embed view_explain.gohtml
+var viewExplain []byte
+
 //go:embed view_graph.gohtml
 var viewGraph []byte
 
@@ -28,6 +31,7 @@ var viewVersion []byte
 var Templates = map[string]string{
 	tpl(models.CmdCheckOut{}):       string(viewCheck),
 	tpl(models.CmdErrorOut{}):       string(viewError),
+	tpl(models.CmdExplainOut{}):     string(viewExplain),
 	tpl(models.CmdGraphOut{}):       string(viewGraph),
 	tpl(models.CmdMappingOut{}):     string(viewMapping),
 	tpl(models.CmdSelfInspectOut{}): string(viewSelfInspect),

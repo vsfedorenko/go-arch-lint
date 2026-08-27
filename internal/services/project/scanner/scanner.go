@@ -52,6 +52,13 @@ func NewScanner() *Scanner {
 	return scanner
 }
 
+// StdPackages exposes the std package index so other components (the
+// `explain` command) classify import paths exactly like the scanner
+// does, without a second packages.Load pass.
+func (r *Scanner) StdPackages() map[string]struct{} {
+	return r.stdPackages
+}
+
 func (r *Scanner) Scan(
 	ctx context.Context,
 	projectDirectory string,

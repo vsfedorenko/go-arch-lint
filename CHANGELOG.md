@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- **`explain` command — why an import is (or is not) allowed.**
+  `go-arch-lint explain <import>` dissects one import path against the
+  current spec: classification (`std`/`project`/`vendor`), owning
+  component, per-component allow/deny verdicts with the exact rule and
+  a concrete `arch.go` fix for denials, and actual usage sites
+  (file:line, capped at 20, remainder in `OmittedUsages`). Verdicts are
+  produced by the same decision point `check` enforces
+  (`checker.VerdictForImport`), so an explanation can never diverge
+  from what the check actually does. `--format json` returns the full
+  model for CI and editor integrations.
+
 ## [3.1.11] — 2026-08-26
 
 ### Fixed

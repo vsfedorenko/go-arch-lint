@@ -15,10 +15,11 @@ import (
 // would blank the HTML view for that command, an extra one is dead weight.
 
 func TestTemplatesCoverAllModels(t *testing.T) {
-	require.Len(t, Templates, 6)
+	require.Len(t, Templates, 7)
 	for _, m := range []any{
 		models.CmdCheckOut{},
 		models.CmdErrorOut{},
+		models.CmdExplainOut{},
 		models.CmdGraphOut{},
 		models.CmdMappingOut{},
 		models.CmdSelfInspectOut{},
