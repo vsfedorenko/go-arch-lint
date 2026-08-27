@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [3.1.13] — 2026-08-27
+
+### Fixed
+- **Launcher: bare value flags fail fast instead of hijacking the next
+  token (#138).** A synthetic consumer probe of `explain` (v3.1.12)
+  caught the silent-no-op flag class again: `explain fmt --format`,
+  `check --format`, `check --output-type` and `check --max-warnings`
+  with no value silently consumed the launcher's appended default
+  (`--project-path=…`) as the value and died with an error naming a
+  flag the user never typed (`unknown format: --project-path=/abs/path`).
+  All four now fail fast before any `go run` with the standard
+  `flag needs an argument: --format` error (exit 1). A negative bare
+  number still counts as a value (`--max-warnings -5`).
+
 ## [3.1.12] — 2026-08-27
 
 ### Added
