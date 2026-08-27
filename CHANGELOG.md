@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.12] — 2026-08-27
+
 ### Added
 - **`explain` command — why an import is (or is not) allowed.**
   `go-arch-lint explain <import>` dissects one import path against the
@@ -13,6 +15,16 @@
   (`checker.VerdictForImport`), so an explanation can never diverge
   from what the check actually does. `--format json` returns the full
   model for CI and editor integrations.
+  (#136)
+
+### Changed
+- **`internal/services/project/holder` coverage: 45.1% → 100%** (#135).
+  The main entry point `HoldProjectFiles` — the resolver that assigns
+  every scanned file to a component and feeds all checkers — had zero
+  direct tests. Probe-first pass confirmed the tie-breaking semantics
+  (narrower component wins; equal counts → deeper path; subpackage of
+  a component dir does not match), found no bugs, and pinned the
+  contracts with 9 table cases through the public API.
 
 ## [3.1.11] — 2026-08-26
 
