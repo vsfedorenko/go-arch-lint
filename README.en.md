@@ -254,7 +254,7 @@ compare mode is a configuration error (exit 2), never a silent pass.
 Once the debt is fixed, simply re-record the baseline (stale
 fingerprints are ignored).
 
-Under the hood, `check`/`mapping`/`graph`/`selfInspect` delegate to
+Under the hood, `check`/`mapping`/`graph`/`explain`/`selfInspect` delegate to
 `.go-arch-lint/` via `go run` — flag routing, exit codes, and caching
 (~45 s cold start, ~2 s steady state) are documented in
 [docs/delegation.md](docs/delegation.md).
@@ -340,7 +340,7 @@ conventional exit code: `1` on violations, `2` on a configuration error
 
 `archlint.RunCLI(build, os.Args[1:])` is the entry point for the scaffolded
 `.go-arch-lint/main.go`: it routes the delegated commands (`check`,
-`mapping`, `graph`, `self-inspect`) to their own behavior instead of
+`mapping`, `graph`, `explain`, `self-inspect`) to their own behavior instead of
 silently running `check`. The launcher dialect (`-p`, `--no-colors`,
 `selfInspect`) is translated automatically, and an invocation without a
 command defaults to `check`. `MustRunCLI` is the conventional-exit-code
@@ -373,6 +373,7 @@ rules are not part of v3 — candidates to return as separate extensions.
 |---------------|--------------------------------------------------|
 | `init`        | Create `.go-arch-lint/` scaffold (the only flag is `--project-path`/`-p`; architecture templates live in [examples/](examples/)) |
 | `check`       | Check project architecture                       |
+| `explain`     | Explain how the spec treats one import path      |
 | `graph`       | Generate dependency graph                        |
 | `mapping`     | Show package-to-component mapping                |
 | `selfInspect` | Inspect go-arch-lint's own architecture          |
@@ -443,6 +444,43 @@ component 'service'
 ```
 
 `Ce` (outgoing dependencies), `Ca` (incoming), stability = `Ce/(Ca+Ce)` — closer to 0 means more stable. Also available in JSON via `--format json`.
+
+### Explain: why an import is denied
+
+`go-arch-lint explain <import>` dissects one import path against the current
+spec — it answers "why does `check` complain (or not complain) about this
+import":
+
+```
+$ go-arch-lint explain github.com/external/dep/pkg
+Import: github.com/external/dep/pkg
+Type:   vendor
+Module: example.com/m
+Verdicts (component -> decision, rule):
+    DENY  internal/core — no matching vendor rule: the import is not covered by any Vendor used by this component
+        fix: declare the dependency and allow it: vendor := Vendor("<name>", "github.com/external/dep/pkg") in arch.go, then Use(vendor) inside this component's Path(...)
+    DENY  internal/util — no matching vendor rule: the import is not covered by any Vendor used by this component
+        fix: declare the dependency and allow it: vendor := Vendor("<name>", "github.com/external/dep/pkg") in arch.go, then Use(vendor) inside this component's Path(...)
+Usages (actual import sites):
+    /app.go:6 ()
+```
+
+It reports:
+
+- the import classification (`std` / `project` / `vendor`) — exactly the
+  one `check` uses;
+- the owning component (for project imports);
+- the allow/deny verdict **for every declared component** with the exact
+  rule that produced it, plus a concrete fix for denials
+  (`Vendor(...)` + `Use(...)` in `arch.go`);
+- actual usage sites (file:line, component), capped at 20 — the rest is
+  counted in `OmittedUsages`.
+
+Verdicts come from the same code path `check` enforces (the single
+decision point `VerdictForImport`) — an explanation can never diverge
+from what is actually checked. With `--format json` it returns the full
+model (`ImportType`, `OwnerComponent`, `Verdicts[]`, `Usages[]`,
+`OmittedUsages`) for CI and editor integrations.
 
 ### JSON output for CI
 

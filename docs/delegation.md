@@ -10,7 +10,7 @@
    so your config is type-checked Go code with IDE completion, not a stringly
    YAML file.
 
-For `check`, `mapping`, `graph`, and `selfInspect` the launcher runs:
+For `check`, `mapping`, `graph`, `explain`, and `selfInspect` the launcher runs:
 
 ```bash
 go -C <project>/.go-arch-lint run . <command> [flags]
@@ -115,7 +115,7 @@ archlint.MustRunCLI(spec, os.Args[1:])
 ```
 
 `MustRunCLI` routes the delegated command name (`check`, `mapping`, `graph`,
-`self-inspect`, `version`) to its own behavior. A runner calling bare
+`explain`, `self-inspect`, `version`) to its own behavior. A runner calling bare
 `MustRun` instead runs `check` for EVERY command — the exact regression
 this entry point exists to prevent. Launcher-dialect spellings (`-p`,
 `--no-colors`, camelCase `selfInspect`) are translated, and an invocation

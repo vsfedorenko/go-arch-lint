@@ -167,7 +167,7 @@ func run() int {
 			fmt.Fprintf(os.Stderr, "Run 'go-arch-lint help' for usage.\n")
 			return 1
 		}
-		// All other commands (check, mapping, graph, selfInspect) delegate
+		// All other commands (check, mapping, graph, explain, selfInspect) delegate
 		// to `go run .go-arch-lint/`
 		return cmdDelegate(command, os.Args[2:])
 	}
@@ -326,15 +326,16 @@ Usage:
   go-arch-lint <command> [flags]
 
 Commands:
-	init          Create .go-arch-lint/ scaffold (go.mod, arch.go + main.go)
+  init          Create .go-arch-lint/ scaffold (go.mod, arch.go + main.go)
   check         Check project architecture against arch rules
   mapping       Show package-to-component mapping
   graph         Generate dependency graph
+  explain       Explain how the spec treats one import path
   selfInspect   Inspect go-arch-lint's own architecture
   version       Print version
   help          Show this help
 
-The 'check', 'mapping', 'graph', and 'selfInspect' commands require a
+The 'check', 'mapping', 'graph', 'explain', and 'selfInspect' commands require a
 .go-arch-lint/ directory (created by 'init') and delegate to 'go run'.
 
 Global flags (passed through to delegated commands):

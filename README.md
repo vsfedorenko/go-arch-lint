@@ -249,7 +249,7 @@ Baseline — JSON с версией схемы и отпечатками (finger
 ошибка конфигурации (exit 2), а не молчаливый пропуск. Когда долг
 починен — просто перезапишите baseline (устаревшие отпечатки игнорируются).
 
-Под капотом команды `check`/`mapping`/`graph`/`selfInspect` делегируются в
+Под капотом команды `check`/`mapping`/`graph`/`explain`/`selfInspect` делегируются в
 `.go-arch-lint/` через `go run` — как устроена маршрутизация флагов, выходные
 коды и кэширование (холодный старт ~45 с, рабочий режим ~2 с), см.
 [docs/delegation.md](docs/delegation.md).
@@ -332,7 +332,7 @@ file:line. Каталоги проверяются по диску: несуще
 `1` при нарушениях, `2` при ошибке конфигурации (см. `archlint.ExitCode`).
 
 `archlint.RunCLI(build, os.Args[1:])` — точка входа для скаффолда `.go-arch-lint/main.go`:
-маршрутизирует делегированные команды (`check`, `mapping`, `graph`, `self-inspect`)
+маршрутизирует делегированные команды (`check`, `mapping`, `graph`, `explain`, `self-inspect`)
 по их собственному поведению, а не молча выполняет `check`. Диалект лаунчера
 (`-p`, `--no-colors`, `selfInspect`) переводится автоматически; запуск без команды
 по умолчанию — `check`. `MustRunCLI` — вариант с конвенциональными кодами возврата.
@@ -363,6 +363,7 @@ file:line. Каталоги проверяются по диску: несуще
 |---------------|---------------------------------------------------|
 | `init`        | Создать каркас `.go-arch-lint/` (единственный флаг — `--project-path`/`-p`; шаблоны архитектур — в [examples/](examples/)) |
 | `check`       | Проверить архитектуру                             |
+| `explain`     | Объяснить, как спецификация относится к одному импорту |
 | `graph`       | Сгенерировать граф зависимостей                   |
 | `mapping`     | Показать соответствие пакетов и компонентов       |
 | `selfInspect` | Проверить архитектуру самого go-arch-lint         |
@@ -453,6 +454,43 @@ Package name utils is forbidden internal/utils (3 file(s)): first at internal/ut
 
 В JSON-выводе метрики приходят в `MappingGrouped[].Coupling`
 (`omitempty` — для компонентов без зависимостей поле отсутствует).
+
+### Explain: почему импорт запрещён
+
+`go-arch-lint explain <import>` разбирает один путь импорта против текущей
+спецификации — команда отвечает на вопрос «почему `check` ругается (или не
+ругается) на этот импорт»:
+
+```
+$ go-arch-lint explain github.com/external/dep/pkg
+Import: github.com/external/dep/pkg
+Type:   vendor
+Module: example.com/m
+Verdicts (component -> decision, rule):
+    DENY  internal/core — no matching vendor rule: the import is not covered by any Vendor used by this component
+        fix: declare the dependency and allow it: vendor := Vendor("<name>", "github.com/external/dep/pkg") in arch.go, then Use(vendor) inside this component's Path(...)
+    DENY  internal/util — no matching vendor rule: the import is not covered by any Vendor used by this component
+        fix: declare the dependency and allow it: vendor := Vendor("<name>", "github.com/external/dep/pkg") in arch.go, then Use(vendor) inside this component's Path(...)
+Usages (actual import sites):
+    /app.go:6 ()
+```
+
+Выводит:
+
+- классификацию импорта (`std` / `project` / `vendor`) — ровно ту же,
+  которой пользуется `check`;
+- владеющую компоненту (для project-импортов);
+- вердикт allow/deny **для каждой объявленной компоненты** с точным
+  правилом, которое его породило, и конкретным фиксом для запрета
+  (`Vendor(...)` + `Use(...)` в `arch.go`);
+- фактические места использования (файл:строка, компонента), до 20 —
+  остальные считаются в `OmittedUsages`.
+
+Вердикты выдаёт тот же код, что работает в `check` (единая точка решения
+`VerdictForImport`) — объяснение не может разойтись с тем, что реально
+проверяется. С `--format json` возвращает полную модель (`ImportType`,
+`OwnerComponent`, `Verdicts[]`, `Usages[]`, `OmittedUsages`) для CI
+и редакторных интеграций.
 
 ### JSON-вывод для CI
 

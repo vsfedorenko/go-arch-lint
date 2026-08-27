@@ -65,7 +65,7 @@ func (c *Imports) assembleComponentsMap(spec arch.Spec) map[string]arch.Componen
 
 func (c *Imports) checkFile(component arch.Component, file models.ProjectFile) error {
 	for _, resolvedImport := range file.Imports {
-		allowed, err := checkImport(component, resolvedImport, c.spec.Allow.DepOnAnyVendor.Value)
+		verdict, err := VerdictForImport(component, resolvedImport, c.spec.Allow.DepOnAnyVendor.Value)
 		if err != nil {
 			return fmt.Errorf("failed check import '%s': %w",
 				resolvedImport.Name,
@@ -73,7 +73,7 @@ func (c *Imports) checkFile(component arch.Component, file models.ProjectFile) e
 			)
 		}
 
-		if allowed {
+		if verdict.Allowed {
 			continue
 		}
 
@@ -87,66 +87,4 @@ func (c *Imports) checkFile(component arch.Component, file models.ProjectFile) e
 	}
 
 	return nil
-}
-
-func checkImport(
-	component arch.Component,
-	resolvedImport models.ResolvedImport,
-	allowDependOnAnyVendor bool,
-) (bool, error) {
-	switch resolvedImport.ImportType {
-	case models.ImportTypeStdLib:
-		return true, nil
-	case models.ImportTypeVendor:
-		if allowDependOnAnyVendor {
-			return true, nil
-		}
-
-		return checkVendorImport(component, resolvedImport)
-	case models.ImportTypeProject:
-		return checkProjectImport(component, resolvedImport), nil
-	default:
-		panic(fmt.Sprintf("unknown import type: %+v", resolvedImport))
-	}
-}
-
-func checkVendorImport(component arch.Component, resolvedImport models.ResolvedImport) (bool, error) {
-	if component.SpecialFlags.AllowAllVendorDeps.Value {
-		return true, nil
-	}
-
-	for _, vendorGlob := range component.AllowedVendorGlobs {
-		matched, err := vendorGlob.Value.Match(resolvedImport.Name)
-		if err != nil {
-			return false, models.NewReferableErr(
-				fmt.Errorf("invalid vendor glob '%s': %w",
-					string(vendorGlob.Value),
-					err,
-				),
-				vendorGlob.Reference,
-			)
-		}
-
-		if matched {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func checkProjectImport(component arch.Component, resolvedImport models.ResolvedImport) bool {
-	if component.SpecialFlags.AllowAllProjectDeps.Value {
-		return true
-	}
-
-	for _, allowedImportRef := range component.AllowedProjectImports {
-		allowedImport := allowedImportRef.Value
-
-		if allowedImport.ImportPath == resolvedImport.Name {
-			return true
-		}
-	}
-
-	return false
 }

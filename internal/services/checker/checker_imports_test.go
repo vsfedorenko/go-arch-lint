@@ -121,7 +121,7 @@ func Test_checkImportPath(t *testing.T) {
 				AllowedProjectImports: tt.args.componentImports,
 			}
 
-			got := checkProjectImport(cmp, tt.args.resolvedImport)
+			got := checkProjectImportVerdict(cmp, tt.args.resolvedImport).Allowed
 			assert.Equal(t, tt.want, got, "checkImportPath()")
 		})
 	}
@@ -259,7 +259,7 @@ func Test_checkProjectImport(t *testing.T) {
 				AllowedProjectImports: tt.args.componentImports,
 			}
 
-			got := checkProjectImport(cmp, tt.args.resolvedImport)
+			got := checkProjectImportVerdict(cmp, tt.args.resolvedImport).Allowed
 			assert.Equal(t, tt.want, got, "checkProjectImport()")
 		})
 	}
@@ -321,7 +321,8 @@ func Test_checkVendorImport(t *testing.T) {
 				AllowedProjectImports: tt.args.componentImports,
 			}
 
-			got, err := checkVendorImport(cmp, tt.args.resolvedImport)
+			verdict, err := checkVendorImportVerdict(cmp, tt.args.resolvedImport)
+			got := verdict.Allowed
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -399,7 +400,8 @@ func TestChecker_checkImport(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := checkImport(cmp, tt.args.resolvedImport, tt.args.dependOnAnyVendor)
+			verdict, err := VerdictForImport(cmp, tt.args.resolvedImport, tt.args.dependOnAnyVendor)
+			got := verdict.Allowed
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -412,7 +414,7 @@ func TestChecker_checkImport(t *testing.T) {
 				ImportType: 100,
 			}
 
-			_, _ = checkImport(cmp, resolvedImport, false)
+			_, _ = VerdictForImport(cmp, resolvedImport, false)
 		})
 	})
 }

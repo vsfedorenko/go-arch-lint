@@ -1,0 +1,14 @@
+{{- /*gotype: github.com/vsfedorenko/go-arch-lint/internal/models.CmdExplainOut*/ -}}
+
+Import: {{ .ImportPath | colorize "yellow" }}
+Type:   {{ .ImportType | colorize "blue" }}{{ if .OwnerComponent }} (owned by component {{ .OwnerComponent | colorize "green" }}){{ end }}
+Module: {{ .ModuleName }}
+
+Verdicts (component -> decision, rule):
+{{ range .Verdicts }}    {{ if .Allowed }}{{ "ALLOW" | colorize "green" }}{{ else }}{{ "DENY " | colorize "red" }}{{ end }} {{ .Component | colorize "blue" }} — {{ .Rule }}
+{{ if .Fix }}        fix: {{ .Fix | colorize "yellow" }}
+{{ end }}{{ end }}Usages (actual import sites):
+{{ if .Usages }}{{ range .Usages }}    {{ .File }}:{{ .Line }} ({{ .Component }})
+{{ end }}{{ else }}    none found in the project
+{{ end }}{{ if .OmittedUsages }}    ... and {{ .OmittedUsages }} more (capped at 20)
+{{ end }}
